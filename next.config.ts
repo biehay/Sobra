@@ -16,7 +16,8 @@ const csp = [
   "base-uri 'self'",
   "form-action 'self'",
   "frame-ancestors 'none'",
-  ...(isDev ? [] : ["upgrade-insecure-requests"]),
+  // Fuerza HTTPS solo si Supabase también lo usa (no con el Supabase local, que va por HTTP).
+  ...(isDev || !supabase.startsWith("https://") ? [] : ["upgrade-insecure-requests"]),
 ].join("; ");
 
 const nextConfig: NextConfig = {

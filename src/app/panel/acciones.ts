@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { exigirRol } from "@/lib/sesion";
-import { CATEGORIAS, ZONAS } from "@/lib/datos";
+import { CATEGORIAS, ZONAS, normalizarTelefono } from "@/lib/datos";
 import { notificar } from "@/lib/email/notificar";
 
 const PANEL_VENDEDOR = "/panel/vendedor";
@@ -62,6 +62,7 @@ export async function guardarLote(formData: FormData) {
   // Las fotos tienen que estar en la carpeta del vendedor (la base también lo exige al subirlas).
   if (lote.fotos.some((f) => !f.startsWith(`${perfil.id}/`))) volverCon(rutaForm, "error", "Foto inválida");
   if (enviar && lote.fotos.length === 0) volverCon(rutaForm, "error", "Subí al menos una foto para enviarlo a revisión");
+  if (enviar && !direccion) volverCon(rutaForm, "error", "Completá la dirección de retiro: el comprador la necesita después de pagar");
 
   const supabase = await crearClienteServidor();
   let loteId = id;
@@ -167,7 +168,10 @@ const esquemaPerfil = z.object({
   nombre: z.string().trim().min(2, "Ingresá tu nombre"),
   empresa: z.string().trim().max(120).default(""),
   cuit: z.string().trim().max(20).default(""),
-  telefono: z.string().trim().min(8, "Ingresá un teléfono de WhatsApp válido"),
+  telefono: z
+    .string()
+    .trim()
+    .refine((t) => normalizarTelefono(t) !== null, "Ingresá un celular con código de área, por ejemplo 11 2345 6789"),
   zona: z.enum(ZONAS, "Elegí tu zona"),
 });
 

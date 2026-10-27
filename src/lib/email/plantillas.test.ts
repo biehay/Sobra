@@ -35,6 +35,7 @@ describe("plantillas de email", () => {
       plantillas.reclamoResuelto("L", "Se devolvió el pago", "Detalle", "/panel/comprador"),
       plantillas.retiroConfirmado("L", 1),
       plantillas.liquidada("L", 1),
+      plantillas.compraCompletada("L"),
       plantillas.lotePublicado("L", 1, "id"),
       plantillas.compradorVerificado(),
       plantillas.adminLoteEnRevision("L", "V"),

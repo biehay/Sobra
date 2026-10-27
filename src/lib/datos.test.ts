@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { descuento, linkWhatsapp, pesos, precioSugerido } from "./datos";
+import { descuento, linkWhatsapp, normalizarTelefono, pesos, precioSugerido } from "./datos";
 
 describe("precioSugerido", () => {
   it("aplica el factor según la condición y redondea a miles", () => {
@@ -35,9 +35,30 @@ describe("formatos", () => {
     expect(pesos(null)).toBe("-");
   });
 
-  it("arma el link de WhatsApp solo con dígitos", () => {
+  it("arma el link de WhatsApp en formato internacional", () => {
     expect(linkWhatsapp("Hola qué tal", "+54 9 11 2345-6789")).toBe(
       "https://wa.me/5491123456789?text=Hola%20qu%C3%A9%20tal",
     );
+    // Como lo escribe la gente: sin código de país.
+    expect(linkWhatsapp("Hola", "11 2345 6789")).toBe("https://wa.me/5491123456789?text=Hola");
+  });
+});
+
+describe("normalizarTelefono", () => {
+  it.each([
+    ["11 2345 6789", "5491123456789"],
+    ["011 15 2345-6789", "5491123456789"],
+    ["+54 9 11 2345 6789", "5491123456789"],
+    ["+54 11 2345 6789", "5491123456789"],
+    ["(0221) 15 412-3456", "5492214123456"],
+    ["0351 15 512 3456", "5493515123456"],
+    ["2966 15 41 2345", "5492966412345"],
+  ])("%s → %s", (entrada, esperado) => {
+    expect(normalizarTelefono(entrada)).toBe(esperado);
+  });
+
+  it("rechaza lo que no es un celular argentino", () => {
+    expect(normalizarTelefono("1234")).toBeNull();
+    expect(normalizarTelefono("abc")).toBeNull();
   });
 });

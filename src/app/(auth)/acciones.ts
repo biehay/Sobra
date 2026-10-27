@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { z } from "zod";
 import { crearClienteServidor } from "@/lib/supabase/server";
+import { normalizarTelefono } from "@/lib/datos";
 import { notificar } from "@/lib/email/notificar";
 
 // Solo rutas internas, para no redirigir a sitios externos.
@@ -51,7 +52,10 @@ const esquemaRegistro = z.object({
   nombre: z.string().trim().min(2, "Ingresá tu nombre"),
   empresa: z.string().trim().default(""),
   cuit: z.string().trim().default(""),
-  telefono: z.string().trim().min(8, "Ingresá un teléfono de WhatsApp válido"),
+  telefono: z
+    .string()
+    .trim()
+    .refine((t) => normalizarTelefono(t) !== null, "Ingresá un celular con código de área, por ejemplo 11 2345 6789"),
   zona: z.string().trim().min(1, "Elegí tu zona"),
   email: z.email("Ingresá un email válido"),
   password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),

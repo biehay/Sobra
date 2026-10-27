@@ -115,6 +115,18 @@ export const plantillas = {
     }),
   }),
 
+  compraCompletada: (lote: string): Plantilla => ({
+    asunto: `Compra completada: "${lote}"`,
+    html: plantilla({
+      titulo: "¡Gracias por comprar en Sobrá!",
+      parrafos: [
+        `Se confirmó el retiro de <strong>${escapar(lote)}</strong> y la compra quedó completa.`,
+        "Cada material que reutilizás es uno menos en la basura. Mirá si hay más lotes que te sirvan.",
+      ],
+      boton: { texto: "Ver lotes", ruta: "/lotes" },
+    }),
+  }),
+
   liquidada: (lote: string, neto: number): Plantilla => ({
     asunto: `Te transferimos ${pesos(neto)}`,
     html: plantilla({

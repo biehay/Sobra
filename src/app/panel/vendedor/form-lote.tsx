@@ -181,7 +181,7 @@ export function FormLote({ usuarioId, lote, retiro }: { usuarioId: string; lote?
         <p className="text-sm text-stone-500">Estos datos solo los ve el comprador después de pagar:</p>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label htmlFor="direccion" className="etiqueta">Dirección de retiro</label>
+            <label htmlFor="direccion" className="etiqueta">Dirección de retiro (obligatoria para publicar)</label>
             <input id="direccion" name="direccion" defaultValue={retiro?.direccion} className="campo" />
           </div>
           <div>

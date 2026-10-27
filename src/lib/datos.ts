@@ -176,7 +176,23 @@ export function urlFoto(ruta: string): string {
   return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/lotes/${ruta}`;
 }
 
+// Lleva un celular argentino escrito como sea ("11 2345-6789", "011 15 2345 6789",
+// "+54 9 11 2345 6789") al formato internacional que pide WhatsApp: 549 + 10 dígitos.
+// Devuelve null si no parece un celular argentino.
+export function normalizarTelefono(telefono: string): string | null {
+  let numero = telefono.replace(/\D/g, "");
+  if (numero.startsWith("54")) numero = numero.slice(2).replace(/^9/, "");
+  numero = numero.replace(/^0/, "");
+  // El "15" que se marca después del código de área (2 a 4 dígitos) no va en el formato internacional.
+  if (numero.length === 12) {
+    const largoArea = [2, 3, 4].find((largo) => numero.slice(largo, largo + 2) === "15");
+    if (largoArea) numero = numero.slice(0, largoArea) + numero.slice(largoArea + 2);
+  }
+  return numero.length === 10 ? `549${numero}` : null;
+}
+
 export function linkWhatsapp(mensaje: string, telefono = process.env.NEXT_PUBLIC_WHATSAPP): string {
-  const numero = (telefono ?? "").replace(/\D/g, "");
+  const crudo = (telefono ?? "").replace(/\D/g, "");
+  const numero = normalizarTelefono(crudo) ?? crudo;
   return `https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`;
 }

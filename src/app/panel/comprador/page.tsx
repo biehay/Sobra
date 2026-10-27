@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Aviso } from "@/components/aviso";
+import { BotonEnviar } from "@/components/boton-enviar";
 import { EtiquetaEstado } from "@/components/etiqueta-estado";
 import { DatosOperacion } from "@/components/datos-operacion";
 import { crearClienteServidor } from "@/lib/supabase/server";
@@ -37,7 +38,10 @@ export default async function PanelComprador({ searchParams }: PageProps<"/panel
   return (
     <div className="contenedor py-10">
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <h1 className="text-3xl font-bold">Mis compras</h1>
+        <div>
+          <h1 className="text-3xl font-bold">Mis compras</h1>
+          <Link href="/panel/perfil" className="text-sm font-medium text-marca hover:underline">Mis datos</Link>
+        </div>
         <Link href="/lotes" className="btn">Buscar lotes</Link>
       </div>
 
@@ -69,7 +73,9 @@ export default async function PanelComprador({ searchParams }: PageProps<"/panel
                     {oferta.lotes?.titulo ?? "Lote"}
                   </Link>
                   <p className="text-2xl font-bold">{pesos(oferta.monto)}</p>
-                  <p className="text-sm text-stone-500">{MODOS_RETIRO[oferta.retiro]}</p>
+                  <p className="text-sm text-stone-500">
+                    Ofertada el {new Date(oferta.created_at).toLocaleDateString("es-AR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })} · {MODOS_RETIRO[oferta.retiro]}
+                  </p>
                 </div>
                 <EtiquetaEstado estado={oferta.estado} tipo="oferta" />
               </div>
@@ -115,7 +121,13 @@ export default async function PanelComprador({ searchParams }: PageProps<"/panel
               {(oferta.estado === "pendiente" || oferta.estado === "aceptada") && (
                 <form action={cancelarOferta}>
                   <input type="hidden" name="id" value={oferta.id} />
-                  <button className="text-sm text-stone-500 underline hover:text-red-700">Cancelar oferta</button>
+                  <BotonEnviar
+                    className="text-sm text-stone-500 underline hover:text-red-700"
+                    pendiente="Cancelando..."
+                    confirmar={oferta.estado === "aceptada" ? "¿Cancelás la compra? El vendedor ya la había aceptado y el lote vuelve a publicarse." : "¿Cancelás tu oferta?"}
+                  >
+                    Cancelar oferta
+                  </BotonEnviar>
                 </form>
               )}
             </div>

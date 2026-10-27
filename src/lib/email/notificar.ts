@@ -99,6 +99,7 @@ export const notificar = {
     enSegundoPlano("retiro confirmado", async (admin) => {
       const o = await datosOferta(admin, ofertaId);
       await enviarEmail({ para: await emailDe(admin, o.vendedorId), ...plantillas.retiroConfirmado(o.titulo, o.neto) });
+      await enviarEmail({ para: await emailDe(admin, o.compradorId), ...plantillas.compraCompletada(o.titulo) });
     });
   },
 

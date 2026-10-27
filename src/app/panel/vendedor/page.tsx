@@ -46,7 +46,10 @@ export default async function PanelVendedor({ searchParams }: PageProps<"/panel/
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold">Hola, {perfil.nombre.split(" ")[0]}</h1>
-          <p className="text-stone-600">{perfil.empresa}</p>
+          <p className="text-stone-600">
+            {perfil.empresa} ·{" "}
+            <Link href="/panel/perfil" className="text-sm font-medium text-marca hover:underline">Mis datos</Link>
+          </p>
         </div>
         <Link href="/panel/vendedor/lotes/nuevo" className="btn">+ Publicar lote</Link>
       </div>
@@ -66,7 +69,7 @@ export default async function PanelVendedor({ searchParams }: PageProps<"/panel/
                     <p className="font-semibold">{titulos.get(oferta.lote_id)}</p>
                     <p className="text-2xl font-bold">{pesos(oferta.monto)}</p>
                     <p className="text-sm text-stone-500">
-                      Comprador verificado · {MODOS_RETIRO[oferta.retiro]}
+                      Recibida el {new Date(oferta.created_at).toLocaleDateString("es-AR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })} · Comprador verificado · {MODOS_RETIRO[oferta.retiro]}
                       {oferta.comision != null && ` · Recibís ${pesos(oferta.monto - oferta.comision)} (comisión ${pesos(oferta.comision)})`}
                     </p>
                     {oferta.mensaje && <p className="mt-2 text-sm italic text-stone-600">“{oferta.mensaje}”</p>}
@@ -76,8 +79,18 @@ export default async function PanelVendedor({ searchParams }: PageProps<"/panel/
                 {oferta.estado === "pendiente" && (
                   <form action={responderOferta} className="flex gap-2">
                     <input type="hidden" name="id" value={oferta.id} />
-                    <button name="aceptar" value="si" className="btn">Aceptar</button>
-                    <button name="aceptar" value="no" className="btn-sec">Rechazar</button>
+                    <BotonEnviar
+                      name="aceptar"
+                      value="si"
+                      className="btn"
+                      pendiente="Aceptando..."
+                      confirmar={`¿Aceptás ${pesos(oferta.monto)}? El lote queda reservado para este comprador y se rechazan las demás ofertas.`}
+                    >
+                      Aceptar
+                    </BotonEnviar>
+                    <BotonEnviar name="aceptar" value="no" className="btn-sec" pendiente="Rechazando..." confirmar="¿Rechazás esta oferta?">
+                      Rechazar
+                    </BotonEnviar>
                   </form>
                 )}
                 {oferta.estado === "aceptada" && (
@@ -177,7 +190,13 @@ function BotonEstado({ id, estado, texto, peligro }: { id: string; estado: strin
     <form action={cambiarEstadoLote}>
       <input type="hidden" name="id" value={id} />
       <input type="hidden" name="estado" value={estado} />
-      <button className={`${peligro ? "btn-peligro" : "btn-sec"} px-3 py-1.5`}>{texto}</button>
+      <BotonEnviar
+        className={`${peligro ? "btn-peligro" : "btn-sec"} px-3 py-1.5`}
+        pendiente="..."
+        confirmar={estado === "eliminar" ? "¿Eliminás este lote? No se puede deshacer." : undefined}
+      >
+        {texto}
+      </BotonEnviar>
     </form>
   );
 }

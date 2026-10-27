@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Aviso } from "@/components/aviso";
+import { BotonEnviar } from "@/components/boton-enviar";
 import { EtiquetaEstado } from "@/components/etiqueta-estado";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { exigirRol } from "@/lib/sesion";
@@ -34,6 +35,7 @@ export default async function Admin({ searchParams }: PageProps<"/admin">) {
   const perfilPorId = new Map(perfiles.map((p) => [p.id, p]));
   const ofertaPorId = new Map(ofertas.map((o) => [o.id, o]));
   const vendedorDeLote = new Map(lotes.map((l) => [l.id, l.vendedor_id]));
+  const conReclamo = new Set(reclamos.map((r) => r.oferta_id));
 
   const enRevision = lotes.filter((l) => l.estado === "en_revision");
   const operaciones = ofertas.filter((o) => o.estado === "aceptada" || o.estado === "pagada");
@@ -122,9 +124,15 @@ export default async function Admin({ searchParams }: PageProps<"/admin">) {
                     <label htmlFor={`resolucion-${r.id}`} className="etiqueta">Resolución (la ven las dos partes)</label>
                     <textarea id={`resolucion-${r.id}`} name="resolucion" rows={3} required className="campo" />
                     <div className="grid gap-2">
-                      <button name="resultado" value="devolver" className="btn-peligro">Devolver el pago al comprador</button>
-                      <button name="resultado" value="completar" className="btn">Completar la venta</button>
-                      <button name="resultado" value="sin_cambios" className="btn-sec">Cerrar sin cambios (sigue el retiro)</button>
+                      <BotonEnviar name="resultado" value="devolver" className="btn-peligro" pendiente="Resolviendo..." confirmar="¿Devolvés el pago al comprador? El lote queda pausado.">
+                        Devolver el pago al comprador
+                      </BotonEnviar>
+                      <BotonEnviar name="resultado" value="completar" className="btn" pendiente="Resolviendo..." confirmar="¿Completás la venta? El lote queda vendido.">
+                        Completar la venta
+                      </BotonEnviar>
+                      <BotonEnviar name="resultado" value="sin_cambios" className="btn-sec" pendiente="Resolviendo..." confirmar="¿Cerrás el reclamo sin cambios? La operación sigue esperando el retiro.">
+                        Cerrar sin cambios (sigue el retiro)
+                      </BotonEnviar>
                     </div>
                   </form>
                 </div>
@@ -186,12 +194,12 @@ export default async function Admin({ searchParams }: PageProps<"/admin">) {
                       <input type="hidden" name="precio_sugerido" value={sugerido ?? ""} />
                       <label htmlFor={`precio-${lote.id}`} className="etiqueta">Precio de publicación</label>
                       <input id={`precio-${lote.id}`} name="precio_publicado" type="number" min={1} defaultValue={lote.precio_pedido} className="campo" />
-                      <button name="decision" value="aprobar" className="btn w-full">Aprobar y publicar</button>
+                      <BotonEnviar name="decision" value="aprobar" className="btn w-full" pendiente="Publicando...">Aprobar y publicar</BotonEnviar>
                     </form>
                     <form action={revisarLote} className="space-y-2">
                       <input type="hidden" name="id" value={lote.id} />
                       <textarea name="nota" rows={2} className="campo" placeholder="Qué tiene que corregir (fotos, precio, datos...)" />
-                      <button name="decision" value="rechazar" className="btn-sec w-full">Devolver con observaciones</button>
+                      <BotonEnviar name="decision" value="rechazar" className="btn-sec w-full">Devolver con observaciones</BotonEnviar>
                     </form>
                   </div>
                 </div>
@@ -229,11 +237,19 @@ export default async function Admin({ searchParams }: PageProps<"/admin">) {
                     <input type="hidden" name="id" value={o.id} />
                     {o.estado === "aceptada" ? (
                       <>
-                        <button name="paso" value="pago" className="btn px-3 py-1.5">Confirmar pago</button>
-                        <button name="paso" value="cancelar" className="btn-peligro px-3 py-1.5">Cancelar</button>
+                        <BotonEnviar name="paso" value="pago" className="btn px-3 py-1.5" pendiente="..." confirmar={`¿Confirmás que recibiste ${pesos(o.monto)}? El comprador y el vendedor van a ver los datos del otro.`}>
+                          Confirmar pago
+                        </BotonEnviar>
+                        <BotonEnviar name="paso" value="cancelar" className="btn-peligro px-3 py-1.5" pendiente="..." confirmar="¿Cancelás la operación? El lote vuelve a publicarse.">
+                          Cancelar
+                        </BotonEnviar>
                       </>
+                    ) : conReclamo.has(o.id) ? (
+                      <span className="text-sm font-semibold text-red-700">Con reclamo abierto</span>
                     ) : (
-                      <button name="paso" value="completar" className="btn px-3 py-1.5">Confirmar retiro</button>
+                      <BotonEnviar name="paso" value="completar" className="btn-sec px-3 py-1.5" pendiente="..." confirmar="¿Confirmás el retiro sin el código? Usalo solo si el vendedor no pudo cargarlo.">
+                        Confirmar retiro
+                      </BotonEnviar>
                     )}
                   </form>
                 </div>
@@ -262,7 +278,9 @@ export default async function Admin({ searchParams }: PageProps<"/admin">) {
                   </div>
                   <form action={avanzarOperacion}>
                     <input type="hidden" name="id" value={o.id} />
-                    <button name="paso" value="liquidar" className="btn px-3 py-1.5">Marcar transferido</button>
+                    <BotonEnviar name="paso" value="liquidar" className="btn px-3 py-1.5" pendiente="..." confirmar={`¿Ya le transferiste ${pesos(o.monto - (o.comision ?? 0))} al vendedor?`}>
+                      Marcar transferido
+                    </BotonEnviar>
                   </form>
                 </div>
               );
@@ -306,9 +324,11 @@ export default async function Admin({ searchParams }: PageProps<"/admin">) {
                       <form action={verificarUsuario}>
                         <input type="hidden" name="id" value={p.id} />
                         {p.verificado ? (
-                          <button name="verificado" value="no" className="text-xs text-stone-500 underline">Quitar verificación</button>
+                          <BotonEnviar name="verificado" value="no" className="text-xs text-stone-500 underline" pendiente="..." confirmar={`¿Le quitás la verificación a ${p.nombre}?`}>
+                            Quitar verificación
+                          </BotonEnviar>
                         ) : (
-                          <button name="verificado" value="si" className="btn px-3 py-1.5">Verificar</button>
+                          <BotonEnviar name="verificado" value="si" className="btn px-3 py-1.5" pendiente="...">Verificar</BotonEnviar>
                         )}
                       </form>
                     )}

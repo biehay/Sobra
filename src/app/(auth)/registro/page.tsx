@@ -77,6 +77,11 @@ export default async function Registro({ searchParams }: PageProps<"/registro">)
           <input id="password" name="password" type="password" minLength={8} required autoComplete="new-password" className="campo" />
         </div>
         <BotonEnviar className="btn sm:col-span-2" pendiente="Creando cuenta...">Crear cuenta</BotonEnviar>
+        <p className="text-center text-xs text-stone-500 sm:col-span-2">
+          Al crear tu cuenta aceptás los{" "}
+          <Link href="/terminos" target="_blank" className="underline hover:text-marca">Términos y condiciones</Link> y la{" "}
+          <Link href="/privacidad" target="_blank" className="underline hover:text-marca">Política de privacidad</Link>.
+        </p>
       </form>
 
       <p className="mt-6 text-center text-sm text-stone-600">
