@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { obtenerPerfil } from "@/lib/sesion";
+import { notificar } from "@/lib/email/notificar";
 
 const esquemaOferta = z.object({
   loteId: z.uuid(),
@@ -24,19 +25,20 @@ export async function ofertar(formData: FormData) {
   if (!perfil) redirect(`/ingresar?volver=/lotes/${loteId}`);
 
   const supabase = await crearClienteServidor();
-  const { error } = await supabase.from("ofertas").insert({
+  const { data, error } = await supabase.from("ofertas").insert({
     lote_id: datos.data.loteId,
     comprador_id: perfil.id,
     monto: datos.data.monto,
     mensaje: datos.data.mensaje,
     retiro: datos.data.retiro,
-  });
+  }).select("id").single();
 
   if (error) {
     const mensaje = error.code === "23505" ? "Ya tenés una oferta pendiente para este lote" : error.message;
     redirect(`/lotes/${loteId}?error=${encodeURIComponent(mensaje)}`);
   }
 
+  notificar.nuevaOferta(data.id);
   revalidatePath("/panel/comprador");
   redirect(`/lotes/${loteId}?ok=${encodeURIComponent("¡Oferta enviada! Te avisamos cuando el vendedor responda.")}`);
 }

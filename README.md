@@ -41,14 +41,51 @@ Necesitás [Node.js 20 o más](https://nodejs.org) y una cuenta gratis en [Supab
    where id = (select id from auth.users where email = 'TU-EMAIL');
    ```
 
+## Emails: código de verificación y avisos
+
+La app manda dos tipos de email:
+
+- **Código de verificación** al registrarse (y el link para recuperar la contraseña). Los envía
+  **Supabase**: el usuario escribe el código de 6 dígitos en la página `/verificar`.
+- **Avisos** de cada paso de la operación (nueva oferta, oferta aceptada, pago acreditado, lote
+  publicado, etc.). Los envía la app con **Resend**.
+
+Las dos cosas usan una sola cuenta de [Resend](https://resend.com) (gratis hasta 3.000 emails por mes):
+
+1. **Creá la cuenta en Resend** y, en *Domains*, verificá tu dominio (por ejemplo `sobra.com.ar`).
+   Sin dominio propio podés probar con `onboarding@resend.dev`, pero solo te llegan a vos.
+2. **Avisos de la app**: en Resend creá una *API Key* y completá en `.env.local`:
+   `RESEND_API_KEY`, `EMAIL_REMITENTE` (por ejemplo `Sobrá <avisos@sobra.com.ar>`),
+   `ADMIN_EMAILS` (tu email) y `SUPABASE_SERVICE_ROLE_KEY` (en Supabase: *Project Settings > API*,
+   la clave `service_role`, que es secreta).
+3. **Emails de Supabase por Resend**: el servidor de email que trae Supabase solo manda unos pocos
+   por hora y solo a los miembros de tu equipo, así que no sirve para usuarios reales. En Supabase,
+   *Authentication > Emails > SMTP Settings*, activá *Custom SMTP* con:
+   host `smtp.resend.com`, puerto `465`, usuario `resend`, contraseña = tu API Key de Resend,
+   y como remitente el mismo email de `EMAIL_REMITENTE`.
+4. **Activá la confirmación por código**: en *Authentication > Sign In / Providers > Email*, dejá
+   prendido *Confirm email*.
+5. **Plantillas**: en *Authentication > Emails > Templates*:
+   - *Confirm signup*: asunto `Tu código de Sobrá: {{ .Token }}` y como cuerpo pegá
+     `supabase/templates/confirmar-cuenta.html`.
+   - *Reset password*: asunto `Creá una nueva contraseña en Sobrá` y como cuerpo pegá
+     `supabase/templates/recuperar-clave.html`.
+
+Sin `RESEND_API_KEY` o sin `SUPABASE_SERVICE_ROLE_KEY` la app funciona igual: los avisos no se
+envían y aparecen en la terminal donde corre `npm run dev`.
+
 Para que funcionen los links de los emails (confirmar cuenta y recuperar contraseña), en Supabase
 andá a *Authentication > URL Configuration* y agregá `http://localhost:3000/**` en *Redirect URLs*
 (y más adelante la dirección pública de la app).
 
-Mientras probás, podés desactivar la confirmación por email en Supabase
-(*Authentication > Sign In / Providers > Email > Confirm email*) para no tener que confirmar cada cuenta.
+Mientras no tengas configurado el email (paso 3 de arriba), podés apagar *Confirm email* para
+registrarte sin código.
 
-## Pruebas de la base de datos
+## Pruebas
+
+`npm test` corre las pruebas de la app (precio sugerido, formatos y plantillas de email).
+
+### Base de datos
 
 `supabase/tests/flujo_operacion.sql` recorre una operación completa y verifica que cada regla de
 seguridad bloquee lo que tiene que bloquear. Se corre contra un PostgreSQL local con
@@ -71,13 +108,15 @@ src/app/
   panel/comprador/         mis ofertas, pago y datos de retiro
   admin/                   revisión de lotes, operaciones, usuarios y métricas
 src/lib/datos.ts           tipos, categorías, zonas, precio sugerido y formatos
+src/lib/email/              envío con Resend, plantillas y a quién avisar en cada paso
 src/proxy.ts               mantiene la sesión y protege /panel y /admin
 supabase/migrations/       esquema, permisos y funciones de la base
+supabase/templates/        emails de Supabase: código de verificación y recuperar contraseña
 ```
 
 ## Pendiente para próximas versiones
 
 - Cobro online con Mercado Pago (hoy el pago es por transferencia y lo confirma el admin).
-- Avisos por email o WhatsApp cuando llega o cambia una oferta.
+- Avisos por WhatsApp además del email.
 - Cotización de fletes por zona.
 - Material recuperado de demolición y otros rubros.

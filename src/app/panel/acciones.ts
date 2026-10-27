@@ -6,6 +6,7 @@ import { z } from "zod";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { exigirRol } from "@/lib/sesion";
 import { CATEGORIAS, ZONAS } from "@/lib/datos";
+import { notificar } from "@/lib/email/notificar";
 
 const PANEL_VENDEDOR = "/panel/vendedor";
 const PANEL_COMPRADOR = "/panel/comprador";
@@ -64,6 +65,7 @@ export async function guardarLote(formData: FormData) {
 
   const supabase = await crearClienteServidor();
   let loteId = id;
+  let pasoARevision = false;
 
   if (id) {
     const { data: actual } = await supabase.from("lotes").select("estado").eq("id", id).single();
@@ -71,8 +73,10 @@ export async function guardarLote(formData: FormData) {
     if (enviar && actual && ["borrador", "rechazado", "pausado"].includes(actual.estado)) {
       cambios.estado = "en_revision";
     }
-    const { error } = await supabase.from("lotes").update(cambios).eq("id", id);
+    // Editar un lote publicado también lo vuelve a revisión (lo decide la base).
+    const { data, error } = await supabase.from("lotes").update(cambios).eq("id", id).select("estado").single();
     if (error) volverCon(rutaForm, "error", error.message);
+    pasoARevision = data.estado === "en_revision" && actual?.estado !== "en_revision";
   } else {
     const { data, error } = await supabase
       .from("lotes")
@@ -81,6 +85,7 @@ export async function guardarLote(formData: FormData) {
       .single();
     if (error) volverCon(rutaForm, "error", error.message);
     loteId = data.id;
+    pasoARevision = enviar;
   }
 
   const { error: errorRetiro } = await supabase
@@ -88,6 +93,7 @@ export async function guardarLote(formData: FormData) {
     .upsert({ lote_id: loteId, direccion, horarios, indicaciones });
   if (errorRetiro) volverCon(rutaForm, "error", errorRetiro.message);
 
+  if (pasoARevision) notificar.loteEnRevision(loteId);
   revalidatePath(PANEL_VENDEDOR);
   volverCon(
     PANEL_VENDEDOR,
@@ -106,6 +112,7 @@ export async function cambiarEstadoLote(formData: FormData) {
       ? await supabase.from("lotes").delete().eq("id", id)
       : await supabase.from("lotes").update({ estado }).eq("id", id);
   if (error) volverCon(PANEL_VENDEDOR, "error", error.message);
+  if (estado === "en_revision") notificar.loteEnRevision(id);
   revalidatePath(PANEL_VENDEDOR);
   revalidatePath("/lotes");
   volverCon(PANEL_VENDEDOR, "ok", "Lote actualizado.");
@@ -113,13 +120,27 @@ export async function cambiarEstadoLote(formData: FormData) {
 
 export async function responderOferta(formData: FormData) {
   await exigirRol("vendedor");
+  const ofertaId = String(formData.get("id"));
   const aceptar = formData.get("aceptar") === "si";
   const supabase = await crearClienteServidor();
-  const { error } = await supabase.rpc("responder_oferta", {
-    p_oferta: String(formData.get("id")),
-    p_aceptar: aceptar,
-  });
+
+  // Al aceptar, la base rechaza las demás ofertas pendientes del lote: se
+  // anotan antes para avisarles a esos compradores.
+  let otrosCompradores: string[] = [];
+  if (aceptar) {
+    const { data: oferta } = await supabase.from("ofertas").select("lote_id").eq("id", ofertaId).single();
+    const { data: otras } = await supabase
+      .from("ofertas")
+      .select("comprador_id")
+      .eq("lote_id", oferta?.lote_id ?? "")
+      .eq("estado", "pendiente")
+      .neq("id", ofertaId);
+    otrosCompradores = (otras ?? []).map((o) => o.comprador_id);
+  }
+
+  const { error } = await supabase.rpc("responder_oferta", { p_oferta: ofertaId, p_aceptar: aceptar });
   if (error) volverCon(PANEL_VENDEDOR, "error", error.message);
+  notificar.ofertaRespondida(ofertaId, aceptar, otrosCompradores);
   revalidatePath(PANEL_VENDEDOR);
   revalidatePath("/lotes");
   volverCon(
@@ -131,9 +152,13 @@ export async function responderOferta(formData: FormData) {
 
 export async function cancelarOferta(formData: FormData) {
   await exigirRol("comprador");
+  const ofertaId = String(formData.get("id"));
   const supabase = await crearClienteServidor();
-  const { error } = await supabase.rpc("cancelar_oferta", { p_oferta: String(formData.get("id")) });
+  const { data: oferta } = await supabase.from("ofertas").select("estado").eq("id", ofertaId).single();
+  const { error } = await supabase.rpc("cancelar_oferta", { p_oferta: ofertaId });
   if (error) volverCon(PANEL_COMPRADOR, "error", error.message);
+  // Si ya estaba aceptada, el lote estaba reservado: hay que avisarle al vendedor.
+  if (oferta?.estado === "aceptada") notificar.compraCancelada(ofertaId);
   revalidatePath(PANEL_COMPRADOR);
   volverCon(PANEL_COMPRADOR, "ok", "Oferta cancelada.");
 }
