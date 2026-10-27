@@ -12,9 +12,14 @@ Hecho con **Next.js 16** (App Router), **Supabase** (base de datos, login y foto
 3. Un **comprador verificado** hace una oferta por el lote completo.
 4. El vendedor la **acepta**: el lote queda reservado y las demás ofertas se rechazan.
 5. El comprador transfiere a Sobrá y el admin **confirma el pago**. Recién ahí ambos ven el contacto
-   del otro y la dirección de retiro.
-6. Cuando se retira el material, el admin **confirma el retiro**: el lote queda vendido.
-7. El admin le transfiere al vendedor el monto menos la comisión (12%) y lo **marca como transferido**.
+   del otro y la dirección de retiro, y el comprador recibe un **código de retiro** de 6 dígitos.
+6. En el retiro, el comprador revisa el material y, si está todo bien, le da el código al vendedor.
+   El vendedor lo **carga en su panel** y la venta queda completa (el lote pasa a vendido). Después de
+   5 intentos con un código incorrecto se bloquea, para que no se pueda adivinar.
+7. Si algo sale mal (el material no coincide, el comprador no se presenta), cualquiera de los dos
+   **abre un reclamo**. La operación queda en pausa y el admin decide: devolver el pago, completar la
+   venta o cerrar el reclamo sin cambios.
+8. El admin le transfiere al vendedor el monto menos la comisión (12%) y lo **marca como transferido**.
 
 Las reglas (quién puede ver y hacer qué) están en la base de datos, en
 `supabase/migrations/`, así que valen aunque alguien llame a la API directamente.
@@ -114,14 +119,16 @@ registrarte sin código.
 
 ### Base de datos
 
-`supabase/tests/flujo_operacion.sql` recorre una operación completa y verifica que cada regla de
-seguridad bloquee lo que tiene que bloquear. Se corre contra un PostgreSQL local con
-`supabase/tests/stub_supabase.sql` (simula lo mínimo de Supabase):
+`supabase/tests/flujo_operacion.sql` recorre una operación completa y `supabase/tests/retiro_y_reclamos.sql`
+el código de retiro y los reclamos. Verifican que cada regla de seguridad bloquee lo que tiene que
+bloquear. Se corren contra un PostgreSQL local con `supabase/tests/stub_supabase.sql` (simula lo mínimo
+de Supabase):
 
 ```bash
 createdb sobra_test
 psql -d sobra_test -f supabase/tests/stub_supabase.sql $(ls supabase/migrations/*.sql | sed 's/^/-f /')
-psql -d sobra_test -f supabase/tests/flujo_operacion.sql   # termina con "TODAS LAS PRUEBAS PASARON"
+psql -d sobra_test -f supabase/tests/flujo_operacion.sql     # termina con "TODAS LAS PRUEBAS PASARON"
+psql -d sobra_test -f supabase/tests/retiro_y_reclamos.sql   # ídem
 ```
 
 ## Estructura

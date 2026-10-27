@@ -55,6 +55,27 @@ export async function verificarUsuario(formData: FormData) {
   volver("ok", "Usuario actualizado.");
 }
 
+export async function resolverReclamo(formData: FormData) {
+  await exigirRol("admin");
+  const id = String(formData.get("id"));
+  const resultado = String(formData.get("resultado"));
+  if (!["devolver", "completar", "sin_cambios"].includes(resultado)) volver("error", "Acción inválida");
+  const supabase = await crearClienteServidor();
+  const { error } = await supabase.rpc("resolver_reclamo", {
+    p_reclamo: id,
+    p_resultado: resultado,
+    p_resolucion: String(formData.get("resolucion") ?? ""),
+  });
+  if (error) volver("error", error.message);
+  notificar.reclamoResuelto(id);
+  volver(
+    "ok",
+    resultado === "devolver"
+      ? "Reclamo resuelto. Recordá devolverle el pago al comprador."
+      : "Reclamo resuelto.",
+  );
+}
+
 const OPERACIONES = {
   pago: { rpc: "confirmar_pago", ok: "Pago confirmado. Comprador y vendedor ya ven los datos de retiro.", aviso: notificar.pagoConfirmado },
   completar: { rpc: "completar_operacion", ok: "Operación completada. Recordá liquidarle al vendedor.", aviso: notificar.retiroConfirmado },

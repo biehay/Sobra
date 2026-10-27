@@ -4,8 +4,8 @@ import { Aviso } from "@/components/aviso";
 import { EtiquetaEstado } from "@/components/etiqueta-estado";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { exigirRol } from "@/lib/sesion";
-import { CONDICIONES, linkWhatsapp, pesos, precioSugerido, urlFoto, type Lote, type Oferta, type Perfil } from "@/lib/datos";
-import { avanzarOperacion, revisarLote, verificarUsuario } from "./acciones";
+import { CONDICIONES, linkWhatsapp, pesos, precioSugerido, urlFoto, type Lote, type Oferta, type Perfil, MOTIVOS_RECLAMO, type Reclamo } from "@/lib/datos";
+import { avanzarOperacion, resolverReclamo, revisarLote, verificarUsuario } from "./acciones";
 
 export const metadata: Metadata = { title: "Admin" };
 
@@ -18,17 +18,22 @@ export default async function Admin({ searchParams }: PageProps<"/admin">) {
   const { ok, error } = await searchParams;
   const supabase = await crearClienteServidor();
 
-  const [{ data: lotesData }, { data: ofertasData }, { data: perfilesData }] = await Promise.all([
+  const [{ data: lotesData }, { data: ofertasData }, { data: perfilesData }, { data: reclamosData }] = await Promise.all([
     supabase.from("lotes").select("*, perfiles(nombre, empresa, telefono)").order("created_at", { ascending: false }),
     supabase
       .from("ofertas")
       .select("*, lotes(titulo), perfiles(nombre, empresa, telefono)")
       .order("updated_at", { ascending: false }),
     supabase.from("perfiles").select("*").order("created_at", { ascending: false }),
+    supabase.from("reclamos").select("*").eq("estado", "abierto").order("created_at"),
   ]);
   const lotes = (lotesData ?? []) as LoteConVendedor[];
   const ofertas = (ofertasData ?? []) as OfertaConDatos[];
   const perfiles = (perfilesData ?? []) as Perfil[];
+  const reclamos = (reclamosData ?? []) as Reclamo[];
+  const perfilPorId = new Map(perfiles.map((p) => [p.id, p]));
+  const ofertaPorId = new Map(ofertas.map((o) => [o.id, o]));
+  const vendedorDeLote = new Map(lotes.map((l) => [l.id, l.vendedor_id]));
 
   const enRevision = lotes.filter((l) => l.estado === "en_revision");
   const operaciones = ofertas.filter((o) => o.estado === "aceptada" || o.estado === "pagada");
@@ -68,6 +73,66 @@ export default async function Admin({ searchParams }: PageProps<"/admin">) {
           </div>
         ))}
       </section>
+
+      {reclamos.length > 0 && (
+        <section>
+          <h2 className="mb-4 text-xl font-bold text-red-700">Reclamos abiertos ({reclamos.length})</h2>
+          <div className="space-y-4">
+            {reclamos.map((r) => {
+              const o = ofertaPorId.get(r.oferta_id);
+              const comprador = o ? perfilPorId.get(o.comprador_id) : undefined;
+              const vendedor = o ? perfilPorId.get(vendedorDeLote.get(o.lote_id) ?? "") : undefined;
+              const autor = r.autor_id === o?.comprador_id ? "comprador" : "vendedor";
+              return (
+                <div key={r.id} className="tarjeta grid gap-5 border-red-200 p-5 lg:grid-cols-[3fr_2fr]">
+                  <div className="space-y-2 text-sm">
+                    <p className="text-lg font-semibold">{o?.lotes?.titulo}</p>
+                    <p>
+                      <strong>Abierto por el {autor}:</strong> {MOTIVOS_RECLAMO[r.motivo]} ·{" "}
+                      {new Date(r.created_at).toLocaleDateString("es-AR")}
+                    </p>
+                    <p className="whitespace-pre-line rounded-lg bg-stone-50 p-3 italic text-stone-700">{r.detalle}</p>
+                    <p>Operación: {pesos(o?.monto)} · comisión {pesos(o?.comision)}</p>
+                    <div className="flex flex-wrap gap-4">
+                      {[
+                        ["Comprador", comprador],
+                        ["Vendedor", vendedor],
+                      ].map(([rol, p]) => {
+                        const persona = p as Perfil | undefined;
+                        return (
+                          <p key={rol as string}>
+                            {rol as string}: {persona?.empresa || persona?.nombre}
+                            {persona?.telefono && (
+                              <a
+                                href={linkWhatsapp(`Hola, te escribo de Sobrá por el reclamo de "${o?.lotes?.titulo}".`, persona.telefono)}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="ml-2 font-semibold text-marca hover:underline"
+                              >
+                                WhatsApp
+                              </a>
+                            )}
+                          </p>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <form action={resolverReclamo} className="space-y-2">
+                    <input type="hidden" name="id" value={r.id} />
+                    <label htmlFor={`resolucion-${r.id}`} className="etiqueta">Resolución (la ven las dos partes)</label>
+                    <textarea id={`resolucion-${r.id}`} name="resolucion" rows={3} required className="campo" />
+                    <div className="grid gap-2">
+                      <button name="resultado" value="devolver" className="btn-peligro">Devolver el pago al comprador</button>
+                      <button name="resultado" value="completar" className="btn">Completar la venta</button>
+                      <button name="resultado" value="sin_cambios" className="btn-sec">Cerrar sin cambios (sigue el retiro)</button>
+                    </div>
+                  </form>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       <section>
         <h2 className="mb-4 text-xl font-bold">Lotes para revisar ({enRevision.length})</h2>

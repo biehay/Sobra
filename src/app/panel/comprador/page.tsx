@@ -5,7 +5,8 @@ import { EtiquetaEstado } from "@/components/etiqueta-estado";
 import { DatosOperacion } from "@/components/datos-operacion";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { exigirRol } from "@/lib/sesion";
-import { MODOS_RETIRO, linkWhatsapp, pesos, type Oferta } from "@/lib/datos";
+import { EstadoReclamo, FormReclamo } from "@/components/reclamo";
+import { MODOS_RETIRO, linkWhatsapp, pesos, type Oferta, type Reclamo } from "@/lib/datos";
 import { cancelarOferta } from "../acciones";
 
 export const metadata: Metadata = { title: "Mis compras" };
@@ -22,6 +23,16 @@ export default async function PanelComprador({ searchParams }: PageProps<"/panel
     .eq("comprador_id", perfil.id)
     .order("created_at", { ascending: false });
   const ofertas = (data ?? []) as OfertaConLote[];
+
+  const ids = ofertas.map((o) => o.id);
+  const [{ data: codigosData }, { data: reclamosData }] = await Promise.all([
+    supabase.from("codigos_retiro").select("oferta_id, codigo").in("oferta_id", ids),
+    supabase.from("reclamos").select("*").in("oferta_id", ids).order("created_at", { ascending: false }),
+  ]);
+  const codigos = new Map((codigosData ?? []).map((c) => [c.oferta_id as string, c.codigo as string]));
+  // El último reclamo de cada operación.
+  const reclamos = new Map<string, Reclamo>();
+  for (const r of (reclamosData ?? []) as Reclamo[]) if (!reclamos.has(r.oferta_id)) reclamos.set(r.oferta_id, r);
 
   return (
     <div className="contenedor py-10">
@@ -83,6 +94,22 @@ export default async function PanelComprador({ searchParams }: PageProps<"/panel
 
               {(oferta.estado === "pagada" || oferta.estado === "completada") && (
                 <DatosOperacion ofertaId={oferta.id} vista="comprador" />
+              )}
+
+              {reclamos.get(oferta.id) && <EstadoReclamo reclamo={reclamos.get(oferta.id)!} />}
+
+              {oferta.estado === "pagada" && reclamos.get(oferta.id)?.estado !== "abierto" && (
+                <>
+                  <div className="rounded-lg border-2 border-dashed border-marca/40 bg-marca-claro p-4 text-center">
+                    <p className="text-sm font-semibold text-marca-oscuro">Tu código de retiro</p>
+                    <p className="my-1 font-mono text-4xl font-bold tracking-[0.3em] text-marca-oscuro">{codigos.get(oferta.id) ?? "------"}</p>
+                    <p className="text-sm text-stone-700">
+                      Revisá el material y dáselo al vendedor <strong>solo si está todo bien</strong>: con este código se completa la
+                      compra. Si algo no coincide, no se lo des y reportalo acá abajo.
+                    </p>
+                  </div>
+                  <FormReclamo ofertaId={oferta.id} motivos={["no_coincide", "otro"]} />
+                </>
               )}
 
               {(oferta.estado === "pendiente" || oferta.estado === "aceptada") && (

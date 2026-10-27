@@ -3,6 +3,7 @@ import { after } from "next/server";
 import { crearClienteAdmin } from "@/lib/supabase/admin";
 import { enviarEmail } from "./enviar";
 import { plantillas } from "./plantillas";
+import { MOTIVOS_RECLAMO, RESULTADOS_RECLAMO, type MotivoReclamo, type ResultadoReclamo } from "@/lib/datos";
 
 type Admin = NonNullable<ReturnType<typeof crearClienteAdmin>>;
 
@@ -85,7 +86,11 @@ export const notificar = {
   pagoConfirmado(ofertaId: string) {
     enSegundoPlano("pago confirmado", async (admin) => {
       const o = await datosOferta(admin, ofertaId);
-      await enviarEmail({ para: await emailDe(admin, o.compradorId), ...plantillas.pagoConfirmadoComprador(o.titulo) });
+      const { data: codigo } = await admin.from("codigos_retiro").select("codigo").eq("oferta_id", ofertaId).single();
+      await enviarEmail({
+        para: await emailDe(admin, o.compradorId),
+        ...plantillas.pagoConfirmadoComprador(o.titulo, codigo?.codigo ?? "(lo ves en tu panel)"),
+      });
       await enviarEmail({ para: await emailDe(admin, o.vendedorId), ...plantillas.pagoConfirmadoVendedor(o.titulo, o.neto) });
     });
   },
@@ -129,6 +134,39 @@ export const notificar = {
         para: emailsAdmin(),
         ...plantillas.adminLoteEnRevision(data.titulo, vendedor?.empresa || vendedor?.nombre || "Un vendedor"),
       });
+    });
+  },
+
+  reclamoAbierto(reclamoId: string) {
+    enSegundoPlano("reclamo abierto", async (admin) => {
+      const { data: r, error } = await admin.from("reclamos").select("oferta_id, autor_id, motivo, detalle").eq("id", reclamoId).single();
+      if (error) throw error;
+      const o = await datosOferta(admin, r.oferta_id);
+      const motivo = MOTIVOS_RECLAMO[r.motivo as MotivoReclamo];
+      const autorEsComprador = r.autor_id === o.compradorId;
+      await enviarEmail({
+        para: emailsAdmin(),
+        ...plantillas.reclamoAbiertoAdmin(o.titulo, autorEsComprador ? "comprador" : "vendedor", motivo, r.detalle),
+      });
+      // A la otra parte de la operación.
+      const contraparte = autorEsComprador ? o.vendedorId : o.compradorId;
+      const panel = autorEsComprador ? "/panel/vendedor" : "/panel/comprador";
+      await enviarEmail({ para: await emailDe(admin, contraparte), ...plantillas.reclamoAbiertoContraparte(o.titulo, motivo, panel) });
+    });
+  },
+
+  reclamoResuelto(reclamoId: string) {
+    enSegundoPlano("reclamo resuelto", async (admin) => {
+      const { data: r, error } = await admin.from("reclamos").select("oferta_id, resultado, resolucion").eq("id", reclamoId).single();
+      if (error) throw error;
+      const o = await datosOferta(admin, r.oferta_id);
+      const resultado = RESULTADOS_RECLAMO[r.resultado as ResultadoReclamo];
+      for (const [usuario, panel] of [
+        [o.compradorId, "/panel/comprador"],
+        [o.vendedorId, "/panel/vendedor"],
+      ]) {
+        await enviarEmail({ para: await emailDe(admin, usuario), ...plantillas.reclamoResuelto(o.titulo, resultado, r.resolucion ?? "", panel) });
+      }
     });
   },
 

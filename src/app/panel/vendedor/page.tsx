@@ -5,8 +5,10 @@ import { EtiquetaEstado } from "@/components/etiqueta-estado";
 import { DatosOperacion } from "@/components/datos-operacion";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { exigirRol } from "@/lib/sesion";
-import { MODOS_RETIRO, pesos, type Lote, type Oferta } from "@/lib/datos";
-import { cambiarEstadoLote, responderOferta } from "../acciones";
+import { BotonEnviar } from "@/components/boton-enviar";
+import { EstadoReclamo, FormReclamo } from "@/components/reclamo";
+import { MODOS_RETIRO, pesos, type Lote, type Oferta, type Reclamo } from "@/lib/datos";
+import { cambiarEstadoLote, confirmarRetiro, responderOferta } from "../acciones";
 
 export const metadata: Metadata = { title: "Panel del vendedor" };
 
@@ -28,10 +30,16 @@ export default async function PanelVendedor({ searchParams }: PageProps<"/panel/
         .from("ofertas")
         .select("*")
         .in("lote_id", lotes.map((l) => l.id))
-        .in("estado", ["pendiente", "aceptada", "pagada", "completada"])
+        .in("estado", ["pendiente", "aceptada", "pagada", "completada", "reembolsada"])
         .order("created_at", { ascending: false })
     : { data: [] };
   const ofertas = (ofertasData ?? []) as Oferta[];
+
+  const { data: reclamosData } = ofertas.length
+    ? await supabase.from("reclamos").select("*").in("oferta_id", ofertas.map((o) => o.id)).order("created_at", { ascending: false })
+    : { data: [] };
+  const reclamos = new Map<string, Reclamo>();
+  for (const r of (reclamosData ?? []) as Reclamo[]) if (!reclamos.has(r.oferta_id)) reclamos.set(r.oferta_id, r);
 
   return (
     <div className="contenedor py-10">
@@ -77,6 +85,33 @@ export default async function PanelVendedor({ searchParams }: PageProps<"/panel/
                 )}
                 {(oferta.estado === "pagada" || oferta.estado === "completada") && (
                   <DatosOperacion ofertaId={oferta.id} vista="vendedor" />
+                )}
+                {reclamos.get(oferta.id) && <EstadoReclamo reclamo={reclamos.get(oferta.id)!} />}
+                {oferta.estado === "pagada" && reclamos.get(oferta.id)?.estado !== "abierto" && (
+                  <>
+                    <form action={confirmarRetiro} className="rounded-lg border border-stone-200 p-4">
+                      <input type="hidden" name="id" value={oferta.id} />
+                      <label htmlFor={`codigo-${oferta.id}`} className="etiqueta">Código de retiro</label>
+                      <p className="mb-2 text-sm text-stone-600">
+                        Cuando el comprador revise el material, te da un código de 6 dígitos. Cargalo para completar la venta.
+                      </p>
+                      <div className="flex gap-2">
+                        <input
+                          id={`codigo-${oferta.id}`}
+                          name="codigo"
+                          required
+                          inputMode="numeric"
+                          autoComplete="off"
+                          pattern="[0-9 ]{6,8}"
+                          maxLength={8}
+                          placeholder="123456"
+                          className="campo max-w-40 text-center font-mono text-lg tracking-widest"
+                        />
+                        <BotonEnviar className="btn" pendiente="Verificando...">Confirmar retiro</BotonEnviar>
+                      </div>
+                    </form>
+                    <FormReclamo ofertaId={oferta.id} motivos={["no_se_presento", "otro"]} />
+                  </>
                 )}
                 {oferta.estado === "completada" && (
                   <p className="text-sm text-stone-600">

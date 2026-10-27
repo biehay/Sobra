@@ -78,13 +78,14 @@ export const plantillas = {
     }),
   }),
 
-  pagoConfirmadoComprador: (lote: string): Plantilla => ({
+  pagoConfirmadoComprador: (lote: string, codigo: string): Plantilla => ({
     asunto: `Pago acreditado: ya podés retirar "${lote}"`,
     html: plantilla({
       titulo: "Acreditamos tu pago",
       parrafos: [
         `Ya podés coordinar el retiro de <strong>${escapar(lote)}</strong>. En tu panel están la dirección, los horarios y el WhatsApp del vendedor.`,
-        "El dinero queda retenido hasta que confirmemos el retiro.",
+        `Tu código de retiro es <strong style="font-family:'Courier New',monospace;font-size:20px;letter-spacing:3px">${escapar(codigo)}</strong>.`,
+        "Revisá el material en el retiro y dale el código al vendedor <strong>solo si está todo bien</strong>: con ese código se completa la venta. Si algo no coincide, no se lo des y abrí un reclamo desde tu panel.",
       ],
       boton: { texto: "Ver datos de retiro", ruta: "/panel/comprador" },
     }),
@@ -96,6 +97,7 @@ export const plantillas = {
       titulo: "El comprador ya pagó",
       parrafos: [
         `Acreditamos el pago por <strong>${escapar(lote)}</strong>. El comprador te va a contactar para retirarlo; en tu panel tenés sus datos.`,
+        "En el retiro, el comprador revisa el material y te da un <strong>código de 6 dígitos</strong>. Cargalo en tu panel para completar la venta.",
         `Cuando confirmemos el retiro te transferimos <strong>${pesos(neto)}</strong> (monto menos la comisión de Sobrá).`,
       ],
       boton: { texto: "Ver datos del comprador", ruta: "/panel/vendedor" },
@@ -176,6 +178,40 @@ export const plantillas = {
         `<strong>${escapar(nombre)}</strong> confirmó su email.${rol === "comprador" ? " Verificalo para que pueda ofertar." : ""}`,
       ],
       boton: { texto: "Ver usuarios", ruta: "/admin" },
+    }),
+  }),
+
+  reclamoAbiertoAdmin: (lote: string, quien: string, motivo: string, detalle: string): Plantilla => ({
+    asunto: `[Admin] Reclamo abierto: "${lote}"`,
+    html: plantilla({
+      titulo: "Se abrió un reclamo",
+      parrafos: [
+        `El ${escapar(quien)} abrió un reclamo por <strong>${escapar(lote)}</strong>: ${escapar(motivo)}.`,
+        `<em>${escapar(detalle)}</em>`,
+        "La operación queda en pausa hasta que lo resuelvas.",
+      ],
+      boton: { texto: "Resolver", ruta: "/admin" },
+    }),
+  }),
+
+  reclamoAbiertoContraparte: (lote: string, motivo: string, panel: string): Plantilla => ({
+    asunto: `Hay un reclamo sobre "${lote}"`,
+    html: plantilla({
+      titulo: "Se abrió un reclamo sobre tu operación",
+      parrafos: [
+        `La otra parte reportó un problema con <strong>${escapar(lote)}</strong>: ${escapar(motivo)}.`,
+        "Sobrá lo va a revisar y te va a contactar por WhatsApp. Mientras tanto la operación queda en pausa.",
+      ],
+      boton: { texto: "Ver la operación", ruta: panel },
+    }),
+  }),
+
+  reclamoResuelto: (lote: string, resultado: string, resolucion: string, panel: string): Plantilla => ({
+    asunto: `Resolvimos el reclamo sobre "${lote}"`,
+    html: plantilla({
+      titulo: "Reclamo resuelto",
+      parrafos: [`<strong>${escapar(resultado)}.</strong>`, escapar(resolucion)],
+      boton: { texto: "Ver la operación", ruta: panel },
     }),
   }),
 

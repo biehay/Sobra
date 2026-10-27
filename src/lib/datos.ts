@@ -11,7 +11,7 @@ export type EstadoLote =
   | "rechazado"
   | "pausado";
 export type Condicion = "nuevo" | "sin_uso" | "usado_buen_estado";
-export type EstadoOferta = "pendiente" | "aceptada" | "rechazada" | "cancelada" | "pagada" | "completada";
+export type EstadoOferta = "pendiente" | "aceptada" | "rechazada" | "cancelada" | "pagada" | "completada" | "reembolsada";
 export type ModoRetiro = "retira_comprador" | "flete_sobra";
 
 export type Perfil = {
@@ -104,6 +104,35 @@ export const ESTADOS_OFERTA: Record<EstadoOferta, string> = {
   cancelada: "Cancelada",
   pagada: "Pagada, coordinar retiro",
   completada: "Completada",
+  reembolsada: "Pago devuelto",
+};
+
+export type MotivoReclamo = "no_coincide" | "no_se_presento" | "otro";
+export type ResultadoReclamo = "devolver" | "completar" | "sin_cambios";
+
+export type Reclamo = {
+  id: string;
+  oferta_id: string;
+  autor_id: string;
+  motivo: MotivoReclamo;
+  detalle: string;
+  estado: "abierto" | "resuelto";
+  resultado: ResultadoReclamo | null;
+  resolucion: string | null;
+  created_at: string;
+  resuelto_at: string | null;
+};
+
+export const MOTIVOS_RECLAMO: Record<MotivoReclamo, string> = {
+  no_coincide: "El material no coincide con la publicación",
+  no_se_presento: "El comprador no se presentó a retirar",
+  otro: "Otro problema",
+};
+
+export const RESULTADOS_RECLAMO: Record<ResultadoReclamo, string> = {
+  devolver: "Se devolvió el pago al comprador",
+  completar: "Se completó la venta",
+  sin_cambios: "Se cerró sin cambios: el retiro sigue pendiente",
 };
 
 export const MODOS_RETIRO: Record<ModoRetiro, string> = {

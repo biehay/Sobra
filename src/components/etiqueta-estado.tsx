@@ -13,6 +13,7 @@ const COLORES: Record<string, string> = {
   cancelada: "bg-stone-100 text-stone-600",
   pagada: "bg-green-100 text-green-800",
   completada: "bg-stone-800 text-white",
+  reembolsada: "bg-red-100 text-red-800",
 };
 
 export function EtiquetaEstado({ estado, tipo }: { estado: EstadoLote | EstadoOferta; tipo: "lote" | "oferta" }) {

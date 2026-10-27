@@ -186,3 +186,44 @@ export async function actualizarPerfil(formData: FormData) {
   revalidatePath("/", "layout");
   volverCon("/panel/perfil", "ok", "Datos actualizados.");
 }
+
+export async function confirmarRetiro(formData: FormData) {
+  await exigirRol("vendedor");
+  const ofertaId = String(formData.get("id"));
+  const supabase = await crearClienteServidor();
+  const { data: correcto, error } = await supabase.rpc("confirmar_retiro", {
+    p_oferta: ofertaId,
+    p_codigo: String(formData.get("codigo") ?? ""),
+  });
+  if (error) volverCon(PANEL_VENDEDOR, "error", error.message);
+  if (!correcto) {
+    volverCon(PANEL_VENDEDOR, "error", "El código no es correcto. Pedile al comprador que lo revise en su panel de Sobrá.");
+  }
+  notificar.retiroConfirmado(ofertaId);
+  revalidatePath(PANEL_VENDEDOR);
+  volverCon(PANEL_VENDEDOR, "ok", "¡Retiro confirmado! La venta quedó completa.");
+}
+
+const esquemaReclamo = z.object({
+  oferta: z.uuid(),
+  motivo: z.enum(["no_coincide", "no_se_presento", "otro"]),
+  detalle: z.string().trim().min(10, "Contanos un poco más qué pasó (al menos 10 caracteres)").max(2000),
+});
+
+export async function abrirReclamo(formData: FormData) {
+  const perfil = await exigirRol("vendedor", "comprador");
+  const panel = perfil.rol === "vendedor" ? PANEL_VENDEDOR : PANEL_COMPRADOR;
+  const datos = esquemaReclamo.safeParse(Object.fromEntries(formData));
+  if (!datos.success) volverCon(panel, "error", datos.error.issues[0].message);
+
+  const supabase = await crearClienteServidor();
+  const { data: reclamoId, error } = await supabase.rpc("abrir_reclamo", {
+    p_oferta: datos.data.oferta,
+    p_motivo: datos.data.motivo,
+    p_detalle: datos.data.detalle,
+  });
+  if (error) volverCon(panel, "error", error.message);
+  notificar.reclamoAbierto(reclamoId as string);
+  revalidatePath(panel);
+  volverCon(panel, "ok", "Abrimos el reclamo. Te contactamos por WhatsApp para resolverlo.");
+}
