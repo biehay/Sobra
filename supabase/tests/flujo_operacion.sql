@@ -4,9 +4,12 @@
 \set ON_ERROR_STOP 1
 begin;
 
-create function pg_temp.como(usuario uuid) returns void language plpgsql as $$
+-- Simula la sesión de un usuario. Las cuentas de admin entran con verificación
+-- en dos pasos (aal2), salvo que se indique otra cosa.
+create function pg_temp.como(usuario uuid, aal text default 'aal2') returns void language plpgsql as $$
 begin
   perform set_config('request.jwt.claim.sub', coalesce(usuario::text, ''), true);
+  perform set_config('request.jwt.claims', json_build_object('sub', usuario, 'aal', aal)::text, true);
   if usuario is null then
     execute 'set local role anon';
   else
@@ -56,6 +59,18 @@ do $$ begin
 end $$;
 select pg_temp.debe_fallar($$insert into lotes (vendedor_id, titulo, categoria, condicion, zona, precio_pedido)
   values (auth.uid(), 'Lote del comprador', 'Otros', 'nuevo', 'CABA', 10)$$, 'comprador crea lote');
+
+-- Con solo la contraseña (sin el segundo paso) el admin no tiene permisos de admin.
+select pg_temp.como('00000000-0000-0000-0000-00000000000a', 'aal1');
+do $$ begin
+  assert (select count(*) from lotes) = 0, 'admin sin dos pasos ve lotes en revisión';
+  assert (select count(*) from perfiles) = 1, 'admin sin dos pasos ve perfiles ajenos';
+end $$;
+select pg_temp.debe_fallar($$select confirmar_pago('20000000-0000-0000-0000-000000000001')$$, 'admin sin dos pasos confirma pagos');
+update lotes set estado = 'publicado';
+do $$ begin
+  assert (select count(*) from lotes where estado = 'publicado') = 0, 'admin sin dos pasos publica';
+end $$;
 
 -- Admin publica con precio sugerido y verifica al comprador.
 select pg_temp.como('00000000-0000-0000-0000-00000000000a');

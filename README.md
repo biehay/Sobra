@@ -40,6 +40,9 @@ Necesitás [Node.js 20 o más](https://nodejs.org) y una cuenta gratis en [Supab
    update perfiles set rol = 'admin', verificado = true
    where id = (select id from auth.users where email = 'TU-EMAIL');
    ```
+6. **Activá la verificación en dos pasos**: al entrar a `/admin` la app te pide escanear un código
+   QR con una app autenticadora (Google Authenticator, Microsoft Authenticator, etc.). Es obligatoria
+   para el admin: sin ella la base no le da permisos de admin, aunque tenga la contraseña.
 
 ## Emails: código de verificación y avisos
 
@@ -96,6 +99,12 @@ registrarte sin código.
   celulares), para no revelar la ubicación del depósito.
 - **Claves secretas**: `SUPABASE_SERVICE_ROLE_KEY` y `RESEND_API_KEY` solo existen en el servidor
   (el código que las usa está marcado `server-only`). `.env.local` no se sube a GitHub.
+- **Verificación en dos pasos**: obligatoria para el admin y opcional para el resto (en *Mis datos*).
+  La exige la propia base: con solo la contraseña, una cuenta de admin no ve ni modifica nada ajeno.
+  Si perdés el celular, entrá a Supabase (*Authentication > Users*, tu usuario, *Remove MFA factor*)
+  o corré en el *SQL Editor*:
+  `delete from auth.mfa_factors where user_id = (select id from auth.users where email = 'TU-EMAIL');`
+  y volvé a activarla.
 - **Navegador**: la app envía encabezados de seguridad (CSP, HSTS, anti-clickjacking) definidos en
   `next.config.ts`.
 

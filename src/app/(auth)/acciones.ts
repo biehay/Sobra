@@ -39,6 +39,10 @@ export async function ingresar(formData: FormData) {
   if (error) {
     conError(`/ingresar?volver=${encodeURIComponent(volver)}`, "Email o contraseña incorrectos");
   }
+  const { data: nivel } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  if (nivel?.nextLevel === "aal2" && nivel.currentLevel !== "aal2") {
+    redirect(`/seguridad/verificar?volver=${encodeURIComponent(volver)}`);
+  }
   redirect(volver);
 }
 
