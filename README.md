@@ -81,6 +81,24 @@ andá a *Authentication > URL Configuration* y agregá `http://localhost:3000/**
 Mientras no tengas configurado el email (paso 3 de arriba), podés apagar *Confirm email* para
 registrarte sin código.
 
+## Seguridad y datos personales
+
+- **Contraseñas**: la app nunca las ve ni las guarda. Las maneja Supabase Auth, que guarda solo un
+  hash con bcrypt (no se puede revertir; ni Supabase ni nosotros podemos leerlas).
+- **Tarjetas**: la app nunca recibe ni guarda datos de tarjetas. Cuando se integre Mercado Pago, el
+  comprador las carga en el formulario de Mercado Pago (certificado PCI DSS) y a Sobrá solo le llega
+  el resultado del pago.
+- **Datos personales** (CUIT, WhatsApp, dirección de retiro, email): los permisos de la base (RLS)
+  hacen que cada usuario vea solo lo suyo. El contacto y la dirección de la contraparte se revelan
+  recién cuando el pago está confirmado. Supabase cifra la base y los backups en disco (AES-256) y
+  todo viaja por HTTPS.
+- **Fotos**: antes de subirlas se borran los metadatos (incluidas las coordenadas GPS que guardan los
+  celulares), para no revelar la ubicación del depósito.
+- **Claves secretas**: `SUPABASE_SERVICE_ROLE_KEY` y `RESEND_API_KEY` solo existen en el servidor
+  (el código que las usa está marcado `server-only`). `.env.local` no se sube a GitHub.
+- **Navegador**: la app envía encabezados de seguridad (CSP, HSTS, anti-clickjacking) definidos en
+  `next.config.ts`.
+
 ## Pruebas
 
 `npm test` corre las pruebas de la app (precio sugerido, formatos y plantillas de email).

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { crearClienteNavegador } from "@/lib/supabase/client";
+import { limpiarFoto } from "@/lib/limpiar-foto";
 import { CATEGORIAS, CONDICIONES, ZONAS, pesos, precioSugerido, urlFoto, type Condicion, type Item, type Lote } from "@/lib/datos";
 import { BotonEnviar } from "@/components/boton-enviar";
 import { guardarLote } from "../acciones";
@@ -9,7 +10,8 @@ import { guardarLote } from "../acciones";
 type Retiro = { direccion: string; horarios: string; indicaciones: string };
 
 const MAX_FOTOS = 10;
-const MAX_BYTES = 5 * 1024 * 1024;
+// Tope del archivo original; después de limpiarla la foto queda mucho más liviana.
+const MAX_BYTES = 25 * 1024 * 1024;
 
 export function FormLote({ usuarioId, lote, retiro }: { usuarioId: string; lote?: Lote; retiro?: Retiro | null }) {
   const [items, setItems] = useState<Item[]>(lote?.items.length ? lote.items : [{ nombre: "", cantidad: 1, unidad: "u" }]);
@@ -25,16 +27,22 @@ export function FormLote({ usuarioId, lote, retiro }: { usuarioId: string; lote?
     setErrorFotos("");
     const lista = Array.from(archivos).slice(0, MAX_FOTOS - fotos.length);
     if (lista.some((a) => a.size > MAX_BYTES)) {
-      setErrorFotos("Cada foto puede pesar hasta 5 MB.");
+      setErrorFotos("Cada foto puede pesar hasta 25 MB.");
       return;
     }
     setSubiendo(true);
     const supabase = crearClienteNavegador();
     const nuevas: string[] = [];
     for (const archivo of lista) {
-      const extension = archivo.name.split(".").pop()?.toLowerCase() || "jpg";
-      const ruta = `${usuarioId}/${crypto.randomUUID()}.${extension}`;
-      const { error } = await supabase.storage.from("lotes").upload(ruta, archivo, { contentType: archivo.type });
+      const ruta = `${usuarioId}/${crypto.randomUUID()}.jpg`;
+      let foto: Blob;
+      try {
+        foto = await limpiarFoto(archivo);
+      } catch {
+        setErrorFotos(`No pudimos leer ${archivo.name}. Probá con una foto JPG o PNG.`);
+        break;
+      }
+      const { error } = await supabase.storage.from("lotes").upload(ruta, foto, { contentType: "image/jpeg" });
       if (error) {
         setErrorFotos(`No se pudo subir ${archivo.name}: ${error.message}`);
         break;
