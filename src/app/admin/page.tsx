@@ -1,0 +1,229 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { Aviso } from "@/components/aviso";
+import { EtiquetaEstado } from "@/components/etiqueta-estado";
+import { crearClienteServidor } from "@/lib/supabase/server";
+import { exigirRol } from "@/lib/sesion";
+import { CONDICIONES, linkWhatsapp, pesos, precioSugerido, urlFoto, type Lote, type Oferta, type Perfil } from "@/lib/datos";
+import { avanzarOperacion, revisarLote, verificarUsuario } from "./acciones";
+
+export const metadata: Metadata = { title: "Admin" };
+
+type Contacto = Pick<Perfil, "nombre" | "empresa" | "telefono">;
+type LoteConVendedor = Lote & { perfiles: Contacto | null };
+type OfertaConDatos = Oferta & { lotes: { titulo: string } | null; perfiles: Contacto | null };
+
+export default async function Admin({ searchParams }: PageProps<"/admin">) {
+  await exigirRol("admin");
+  const { ok, error } = await searchParams;
+  const supabase = await crearClienteServidor();
+
+  const [{ data: lotesData }, { data: ofertasData }, { data: perfilesData }] = await Promise.all([
+    supabase.from("lotes").select("*, perfiles(nombre, empresa, telefono)").order("created_at", { ascending: false }),
+    supabase
+      .from("ofertas")
+      .select("*, lotes(titulo), perfiles(nombre, empresa, telefono)")
+      .order("updated_at", { ascending: false }),
+    supabase.from("perfiles").select("*").order("created_at", { ascending: false }),
+  ]);
+  const lotes = (lotesData ?? []) as LoteConVendedor[];
+  const ofertas = (ofertasData ?? []) as OfertaConDatos[];
+  const perfiles = (perfilesData ?? []) as Perfil[];
+
+  const enRevision = lotes.filter((l) => l.estado === "en_revision");
+  const operaciones = ofertas.filter((o) => o.estado === "aceptada" || o.estado === "pagada");
+  const sinVerificar = perfiles.filter((p) => p.rol !== "admin" && !p.verificado);
+
+  // Métricas clave del Lean Canvas.
+  const publicadosAlgunaVez = lotes.filter((l) => l.publicado_at).length;
+  const vendidos = lotes.filter((l) => l.estado === "vendido").length;
+  const completadas = ofertas.filter((o) => o.estado === "completada");
+  const volumen = completadas.reduce((total, o) => total + Number(o.monto), 0);
+  const comisiones = completadas.reduce((total, o) => total + Number(o.comision ?? 0), 0);
+  const metricas = [
+    ["Lotes publicados", publicadosAlgunaVez],
+    ["% vendidos", publicadosAlgunaVez ? `${Math.round((vendidos / publicadosAlgunaVez) * 100)}%` : "-"],
+    ["Volumen transaccionado", pesos(volumen)],
+    ["Comisiones", pesos(comisiones)],
+    ["Vendedores", perfiles.filter((p) => p.rol === "vendedor").length],
+    ["Compradores verificados", perfiles.filter((p) => p.rol === "comprador" && p.verificado).length],
+  ];
+
+  return (
+    <div className="contenedor space-y-10 py-10">
+      <div>
+        <h1 className="text-3xl font-bold">Administración</h1>
+        <div className="mt-4">
+          <Aviso ok={ok} error={error} />
+        </div>
+      </div>
+
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        {metricas.map(([titulo, valor]) => (
+          <div key={titulo} className="tarjeta p-4">
+            <p className="text-xs text-stone-500">{titulo}</p>
+            <p className="mt-1 text-xl font-bold">{valor}</p>
+          </div>
+        ))}
+      </section>
+
+      <section>
+        <h2 className="mb-4 text-xl font-bold">Lotes para revisar ({enRevision.length})</h2>
+        {enRevision.length ? (
+          <div className="space-y-4">
+            {enRevision.map((lote) => {
+              const sugerido = precioSugerido(lote.precio_lista, lote.condicion);
+              return (
+                <div key={lote.id} className="tarjeta grid gap-5 p-5 lg:grid-cols-[2fr_1fr]">
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-stone-500">{lote.categoria} · {lote.zona}{lote.localidad && `, ${lote.localidad}`}</p>
+                      <p className="text-lg font-semibold">{lote.titulo}</p>
+                      <p className="text-sm text-stone-600">
+                        {CONDICIONES[lote.condicion]} · {lote.perfiles?.empresa ?? lote.perfiles?.nombre}
+                        {lote.perfiles?.telefono && (
+                          <a href={linkWhatsapp(`Hola, te escribo de Sobrá por el lote "${lote.titulo}".`, lote.perfiles.telefono)} target="_blank" rel="noreferrer" className="ml-2 font-semibold text-marca hover:underline">
+                            WhatsApp
+                          </a>
+                        )}
+                      </p>
+                    </div>
+                    <div className="flex gap-2 overflow-x-auto">
+                      {lote.fotos.map((foto) => (
+                        <a key={foto} href={urlFoto(foto)} target="_blank" rel="noreferrer">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={urlFoto(foto)} alt="" className="h-24 w-24 rounded-lg border border-stone-200 object-cover" />
+                        </a>
+                      ))}
+                    </div>
+                    {lote.items.length > 0 && (
+                      <ul className="text-sm text-stone-700">
+                        {lote.items.map((item, i) => (
+                          <li key={i}>• {item.nombre}: {item.cantidad} {item.unidad}</li>
+                        ))}
+                      </ul>
+                    )}
+                    {lote.descripcion && <p className="whitespace-pre-line text-sm text-stone-600">{lote.descripcion}</p>}
+                  </div>
+                  <div className="space-y-3">
+                    <dl className="grid grid-cols-2 gap-2 text-sm">
+                      <dt className="text-stone-500">Precio de lista</dt>
+                      <dd className="text-right">{pesos(lote.precio_lista)}</dd>
+                      <dt className="text-stone-500">Pide</dt>
+                      <dd className="text-right font-semibold">{pesos(lote.precio_pedido)}</dd>
+                      <dt className="text-stone-500">Sugerido</dt>
+                      <dd className="text-right">{pesos(sugerido)}</dd>
+                    </dl>
+                    <form action={revisarLote} className="space-y-2">
+                      <input type="hidden" name="id" value={lote.id} />
+                      <input type="hidden" name="precio_sugerido" value={sugerido ?? ""} />
+                      <label htmlFor={`precio-${lote.id}`} className="etiqueta">Precio de publicación</label>
+                      <input id={`precio-${lote.id}`} name="precio_publicado" type="number" min={1} defaultValue={lote.precio_pedido} className="campo" />
+                      <button name="decision" value="aprobar" className="btn w-full">Aprobar y publicar</button>
+                    </form>
+                    <form action={revisarLote} className="space-y-2">
+                      <input type="hidden" name="id" value={lote.id} />
+                      <textarea name="nota" rows={2} className="campo" placeholder="Qué tiene que corregir (fotos, precio, datos...)" />
+                      <button name="decision" value="rechazar" className="btn-sec w-full">Devolver con observaciones</button>
+                    </form>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="tarjeta p-6 text-stone-500">No hay lotes pendientes de revisión.</p>
+        )}
+      </section>
+
+      <section>
+        <h2 className="mb-4 text-xl font-bold">Operaciones en curso ({operaciones.length})</h2>
+        {operaciones.length ? (
+          <div className="tarjeta divide-y divide-stone-100">
+            {operaciones.map((o) => (
+              <div key={o.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
+                <div>
+                  <Link href={`/lotes/${o.lote_id}`} className="font-semibold hover:text-marca">{o.lotes?.titulo}</Link>
+                  <p className="text-sm text-stone-600">
+                    {pesos(o.monto)} · comisión {pesos(o.comision)} · a liquidar {pesos(o.monto - (o.comision ?? 0))}
+                  </p>
+                  <p className="text-sm text-stone-500">
+                    Comprador: {o.perfiles?.nombre}
+                    {o.perfiles?.telefono && (
+                      <a href={linkWhatsapp(`Hola, te escribo de Sobrá por tu compra "${o.lotes?.titulo}".`, o.perfiles.telefono)} target="_blank" rel="noreferrer" className="ml-2 font-semibold text-marca hover:underline">
+                        WhatsApp
+                      </a>
+                    )}
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <EtiquetaEstado estado={o.estado} tipo="oferta" />
+                  <form action={avanzarOperacion} className="flex gap-2">
+                    <input type="hidden" name="id" value={o.id} />
+                    {o.estado === "aceptada" ? (
+                      <>
+                        <button name="paso" value="pago" className="btn px-3 py-1.5">Confirmar pago</button>
+                        <button name="paso" value="cancelar" className="btn-peligro px-3 py-1.5">Cancelar</button>
+                      </>
+                    ) : (
+                      <button name="paso" value="completar" className="btn px-3 py-1.5">Confirmar retiro</button>
+                    )}
+                  </form>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="tarjeta p-6 text-stone-500">No hay operaciones en curso.</p>
+        )}
+      </section>
+
+      <section>
+        <h2 className="mb-4 text-xl font-bold">Usuarios ({perfiles.length}) · {sinVerificar.length} sin verificar</h2>
+        <div className="tarjeta overflow-x-auto">
+          <table className="w-full min-w-[640px] text-sm">
+            <thead>
+              <tr className="border-b border-stone-200 text-left text-stone-500">
+                <th className="p-3 font-medium">Nombre</th>
+                <th className="p-3 font-medium">Rol</th>
+                <th className="p-3 font-medium">Empresa / CUIT</th>
+                <th className="p-3 font-medium">Zona</th>
+                <th className="p-3 font-medium">Contacto</th>
+                <th className="p-3" />
+              </tr>
+            </thead>
+            <tbody>
+              {perfiles.map((p) => (
+                <tr key={p.id} className="border-b border-stone-100 last:border-0">
+                  <td className="p-3 font-medium">{p.nombre}</td>
+                  <td className="p-3 capitalize">{p.rol}</td>
+                  <td className="p-3">{[p.empresa, p.cuit].filter(Boolean).join(" · ") || "-"}</td>
+                  <td className="p-3">{p.zona ?? "-"}</td>
+                  <td className="p-3">
+                    {p.telefono ? (
+                      <a href={linkWhatsapp("Hola, te escribo de Sobrá.", p.telefono)} target="_blank" rel="noreferrer" className="text-marca hover:underline">
+                        {p.telefono}
+                      </a>
+                    ) : "-"}
+                  </td>
+                  <td className="p-3 text-right">
+                    {p.rol !== "admin" && (
+                      <form action={verificarUsuario}>
+                        <input type="hidden" name="id" value={p.id} />
+                        {p.verificado ? (
+                          <button name="verificado" value="no" className="text-xs text-stone-500 underline">Quitar verificación</button>
+                        ) : (
+                          <button name="verificado" value="si" className="btn px-3 py-1.5">Verificar</button>
+                        )}
+                      </form>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  );
+}

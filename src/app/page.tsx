@@ -1,69 +1,125 @@
-import Image from "next/image";
+import Link from "next/link";
+import { TarjetaLote } from "@/components/tarjeta-lote";
+import { crearClienteServidor } from "@/lib/supabase/server";
+import type { Lote } from "@/lib/datos";
 
-export default function Home() {
+const PASOS_VENDEDOR = [
+  ["Cargás el lote", "Fotos, lista de materiales y cuánto querés recuperar. Te lleva 5 minutos."],
+  ["Lo verificamos", "Revisamos el estado y te sugerimos un precio para que se venda rápido."],
+  ["Recibís ofertas", "Solo de compradores verificados. Vos elegís cuál aceptar."],
+  ["Cobrás seguro", "El comprador paga antes del retiro y te transferimos al completarse."],
+];
+
+const PASOS_COMPRADOR = [
+  ["Encontrás el lote", "Materiales nuevos o sin uso, con descuento sobre el precio de lista."],
+  ["Hacés tu oferta", "Ofertás por el lote completo. Te avisamos cuando el vendedor responde."],
+  ["Pagás protegido", "Pagás a Sobrá y retenemos el dinero hasta que retirás el material."],
+  ["Retirás", "Te pasamos dirección y contacto, o coordinamos el flete por vos."],
+];
+
+export default async function Inicio() {
+  const supabase = await crearClienteServidor();
+  const { data } = await supabase
+    .from("lotes")
+    .select("*")
+    .eq("estado", "publicado")
+    .order("publicado_at", { ascending: false })
+    .limit(6);
+  const lotes = (data ?? []) as Lote[];
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <>
+      <section className="border-b border-stone-200 bg-white">
+        <div className="contenedor grid gap-10 py-16 sm:py-24 lg:grid-cols-2 lg:items-center">
+          <div>
+            <p className="mb-4 inline-block rounded-full bg-marca-claro px-3 py-1 text-sm font-semibold text-marca">
+              Sobrantes de obra · AMBA
+            </p>
+            <h1 className="text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl">
+              Vendé lo que te sobró en días, con el cobro asegurado.
+            </h1>
+            <p className="mt-5 max-w-xl text-lg text-stone-600">
+              Sobrá conecta constructoras, corralones y distribuidores que tienen materiales sin usar con
+              compradores verificados. Sin vender pieza por pieza, sin grupos de WhatsApp y sin riesgo de no
+              cobrar.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link href="/registro?rol=vendedor" className="btn px-6 py-3 text-base">
+                Publicar mi sobrante
+              </Link>
+              <Link href="/lotes" className="btn-sec px-6 py-3 text-base">
+                Comprar materiales
+              </Link>
+            </div>
+          </div>
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {[
+              ["Lotes verificados", "Revisamos fotos y estado antes de publicar."],
+              ["Precio sugerido", "Te orientamos según el precio de lista y el estado."],
+              ["Cobro protegido", "El comprador paga antes de retirar."],
+              ["Retiro coordinado", "Con fletes asociados por zona."],
+            ].map(([titulo, texto]) => (
+              <li key={titulo} className="tarjeta p-5">
+                <p className="font-semibold">{titulo}</p>
+                <p className="mt-1 text-sm text-stone-600">{texto}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      <section className="contenedor py-14">
+        <div className="mb-6 flex items-end justify-between">
+          <h2 className="text-2xl font-bold">Últimos lotes</h2>
+          <Link href="/lotes" className="text-sm font-semibold text-marca hover:underline">
+            Ver todos
+          </Link>
+        </div>
+        {lotes.length ? (
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {lotes.map((lote) => (
+              <TarjetaLote key={lote.id} lote={lote} />
+            ))}
+          </div>
+        ) : (
+          <p className="tarjeta p-8 text-center text-stone-500">
+            Todavía no hay lotes publicados. ¿Tenés un sobrante?{" "}
+            <Link href="/registro?rol=vendedor" className="font-semibold text-marca hover:underline">
+              Publicalo primero
+            </Link>
+            .
           </p>
+        )}
+      </section>
+
+      <section id="como-funciona" className="border-t border-stone-200 bg-white py-14">
+        <div className="contenedor grid gap-10 lg:grid-cols-2">
+          {[
+            ["Si vendés", PASOS_VENDEDOR],
+            ["Si comprás", PASOS_COMPRADOR],
+          ].map(([titulo, pasos]) => (
+            <div key={titulo as string}>
+              <h2 className="mb-5 text-2xl font-bold">{titulo as string}</h2>
+              <ol className="space-y-4">
+                {(pasos as string[][]).map(([paso, texto], i) => (
+                  <li key={paso} className="flex gap-4">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-marca-claro font-bold text-marca">
+                      {i + 1}
+                    </span>
+                    <div>
+                      <p className="font-semibold">{paso}</p>
+                      <p className="text-sm text-stone-600">{texto}</p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          ))}
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+        <p className="contenedor mt-10 text-sm text-stone-500">
+          Sobrá cobra una comisión del 12% al vendedor solo cuando vende. Publicar es gratis.
+        </p>
+      </section>
+    </>
   );
 }
