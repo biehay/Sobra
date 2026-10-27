@@ -13,8 +13,8 @@ Hecho con **Next.js 16** (App Router), **Supabase** (base de datos, login y foto
 4. El vendedor la **acepta**: el lote queda reservado y las demás ofertas se rechazan.
 5. El comprador transfiere a Sobrá y el admin **confirma el pago**. Recién ahí ambos ven el contacto
    del otro y la dirección de retiro.
-6. Cuando se retira el material, el admin **confirma el retiro**: el lote queda vendido y se le
-   liquida al vendedor el monto menos la comisión (12%).
+6. Cuando se retira el material, el admin **confirma el retiro**: el lote queda vendido.
+7. El admin le transfiere al vendedor el monto menos la comisión (12%) y lo **marca como transferido**.
 
 Las reglas (quién puede ver y hacer qué) están en la base de datos, en
 `supabase/migrations/`, así que valen aunque alguien llame a la API directamente.
@@ -24,8 +24,9 @@ Las reglas (quién puede ver y hacer qué) están en la base de datos, en
 Necesitás [Node.js 20 o más](https://nodejs.org) y una cuenta gratis en [Supabase](https://supabase.com).
 
 1. **Creá el proyecto en Supabase** (New project, región São Paulo).
-2. **Cargá la base de datos**: en Supabase, abrí *SQL Editor*, pegá el contenido de
-   `supabase/migrations/20261027000000_esquema_inicial.sql` y ejecutalo.
+2. **Cargá la base de datos**: en Supabase, abrí *SQL Editor* y ejecutá, **en orden**, cada archivo de
+   `supabase/migrations/` (pegás el contenido y le das *Run*). Cuando en el futuro aparezca un
+   archivo nuevo en esa carpeta, ejecutás solo ese.
 3. **Configurá las variables**: copiá `.env.example` como `.env.local` y completá
    `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY` (en Supabase: *Project Settings > API*).
 4. **Instalá y arrancá**:
@@ -40,6 +41,10 @@ Necesitás [Node.js 20 o más](https://nodejs.org) y una cuenta gratis en [Supab
    where id = (select id from auth.users where email = 'TU-EMAIL');
    ```
 
+Para que funcionen los links de los emails (confirmar cuenta y recuperar contraseña), en Supabase
+andá a *Authentication > URL Configuration* y agregá `http://localhost:3000/**` en *Redirect URLs*
+(y más adelante la dirección pública de la app).
+
 Mientras probás, podés desactivar la confirmación por email en Supabase
 (*Authentication > Sign In / Providers > Email > Confirm email*) para no tener que confirmar cada cuenta.
 
@@ -51,7 +56,7 @@ seguridad bloquee lo que tiene que bloquear. Se corre contra un PostgreSQL local
 
 ```bash
 createdb sobra_test
-psql -d sobra_test -f supabase/tests/stub_supabase.sql -f supabase/migrations/20261027000000_esquema_inicial.sql
+psql -d sobra_test -f supabase/tests/stub_supabase.sql $(ls supabase/migrations/*.sql | sed 's/^/-f /')
 psql -d sobra_test -f supabase/tests/flujo_operacion.sql   # termina con "TODAS LAS PRUEBAS PASARON"
 ```
 

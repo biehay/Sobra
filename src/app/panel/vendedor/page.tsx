@@ -78,6 +78,13 @@ export default async function PanelVendedor({ searchParams }: PageProps<"/panel/
                 {(oferta.estado === "pagada" || oferta.estado === "completada") && (
                   <DatosOperacion ofertaId={oferta.id} vista="vendedor" />
                 )}
+                {oferta.estado === "completada" && (
+                  <p className="text-sm text-stone-600">
+                    {oferta.liquidada_at
+                      ? `Te transferimos ${pesos(oferta.monto - (oferta.comision ?? 0))} el ${new Date(oferta.liquidada_at).toLocaleDateString("es-AR")}.`
+                      : `Retiro confirmado. Te transferimos ${pesos(oferta.monto - (oferta.comision ?? 0))} en los próximos días hábiles.`}
+                  </p>
+                )}
               </div>
             ))}
           </div>

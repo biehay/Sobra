@@ -1,6 +1,9 @@
 -- Simula lo mínimo de Supabase (roles, auth.users, auth.uid() y storage) para
 -- probar las migraciones en un PostgreSQL común. No se usa en producción.
-create role anon nologin; create role authenticated nologin;
+do $$ begin
+  if not exists (select from pg_roles where rolname = 'anon') then create role anon nologin; end if;
+  if not exists (select from pg_roles where rolname = 'authenticated') then create role authenticated nologin; end if;
+end $$;
 create schema auth; create schema storage;
 grant usage on schema public, auth, storage to anon, authenticated;
 create table auth.users (id uuid primary key default gen_random_uuid(), email text, raw_user_meta_data jsonb default '{}');

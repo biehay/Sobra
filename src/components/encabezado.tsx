@@ -24,6 +24,9 @@ export async function Encabezado() {
               <Link href="/panel" className="rounded-lg px-2 py-2 hover:bg-stone-100 sm:px-3">
                 Mi panel
               </Link>
+              <Link href="/panel/perfil" className="hidden rounded-lg px-2 py-2 hover:bg-stone-100 sm:block sm:px-3">
+                Mis datos
+              </Link>
               <form action="/salir" method="post">
                 <button className="rounded-lg px-2 py-2 text-stone-500 hover:bg-stone-100 sm:px-3">Salir</button>
               </form>

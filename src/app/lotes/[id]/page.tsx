@@ -12,6 +12,7 @@ import {
   urlFoto,
   type Lote,
 } from "@/lib/datos";
+import { BotonEnviar } from "@/components/boton-enviar";
 import { ofertar } from "./acciones";
 
 export default async function DetalleLote({ params, searchParams }: PageProps<"/lotes/[id]">) {
@@ -180,7 +181,7 @@ export default async function DetalleLote({ params, searchParams }: PageProps<"/
                 </label>
                 <textarea id="mensaje" name="mensaje" rows={3} maxLength={500} className="campo" placeholder="Ej.: puedo retirar esta semana" />
               </div>
-              <button className="btn w-full">Enviar oferta</button>
+              <BotonEnviar className="btn w-full">Enviar oferta</BotonEnviar>
               <p className="text-xs text-stone-500">
                 Si el vendedor acepta, te pasamos los datos de pago. Retenemos tu dinero hasta que retirás el material.
               </p>

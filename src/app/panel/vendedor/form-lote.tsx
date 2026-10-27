@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { crearClienteNavegador } from "@/lib/supabase/client";
 import { CATEGORIAS, CONDICIONES, ZONAS, pesos, precioSugerido, urlFoto, type Condicion, type Item, type Lote } from "@/lib/datos";
+import { BotonEnviar } from "@/components/boton-enviar";
 import { guardarLote } from "../acciones";
 
 type Retiro = { direccion: string; horarios: string; indicaciones: string };
@@ -187,12 +188,12 @@ export function FormLote({ usuarioId, lote, retiro }: { usuarioId: string; lote?
       </section>
 
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-        <button name="intencion" value="borrador" className="btn-sec" disabled={subiendo}>
+        <BotonEnviar name="intencion" value="borrador" className="btn-sec" disabled={subiendo} pendiente="Guardando...">
           Guardar borrador
-        </button>
-        <button name="intencion" value="revision" className="btn" disabled={subiendo}>
+        </BotonEnviar>
+        <BotonEnviar name="intencion" value="revision" className="btn" disabled={subiendo}>
           Enviar a revisión
-        </button>
+        </BotonEnviar>
       </div>
     </form>
   );

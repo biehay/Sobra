@@ -33,6 +33,8 @@ export default async function Admin({ searchParams }: PageProps<"/admin">) {
   const enRevision = lotes.filter((l) => l.estado === "en_revision");
   const operaciones = ofertas.filter((o) => o.estado === "aceptada" || o.estado === "pagada");
   const sinVerificar = perfiles.filter((p) => p.rol !== "admin" && !p.verificado);
+  const aLiquidar = ofertas.filter((o) => o.estado === "completada" && !o.liquidada_at);
+  const vendedorDe = new Map(lotes.map((l) => [l.id, l.perfiles]));
 
   // Métricas clave del Lean Canvas.
   const publicadosAlgunaVez = lotes.filter((l) => l.publicado_at).length;
@@ -175,6 +177,34 @@ export default async function Admin({ searchParams }: PageProps<"/admin">) {
           </div>
         ) : (
           <p className="tarjeta p-6 text-stone-500">No hay operaciones en curso.</p>
+        )}
+      </section>
+
+      <section>
+        <h2 className="mb-4 text-xl font-bold">Liquidaciones pendientes ({aLiquidar.length})</h2>
+        {aLiquidar.length ? (
+          <div className="tarjeta divide-y divide-stone-100">
+            {aLiquidar.map((o) => {
+              const vendedor = vendedorDe.get(o.lote_id);
+              return (
+                <div key={o.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
+                  <div>
+                    <p className="font-semibold">{o.lotes?.titulo}</p>
+                    <p className="text-sm text-stone-600">
+                      Transferir <strong>{pesos(o.monto - (o.comision ?? 0))}</strong> a {vendedor?.empresa ?? vendedor?.nombre}
+                      {o.completada_at && ` · retirado el ${new Date(o.completada_at).toLocaleDateString("es-AR")}`}
+                    </p>
+                  </div>
+                  <form action={avanzarOperacion}>
+                    <input type="hidden" name="id" value={o.id} />
+                    <button name="paso" value="liquidar" className="btn px-3 py-1.5">Marcar transferido</button>
+                  </form>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="tarjeta p-6 text-stone-500">No hay liquidaciones pendientes.</p>
         )}
       </section>
 

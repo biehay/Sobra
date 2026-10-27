@@ -73,3 +73,25 @@ export async function registrarse(formData: FormData) {
   }
   redirect(volver);
 }
+
+export async function recuperarClave(formData: FormData) {
+  const email = z.email().safeParse(formData.get("email"));
+  if (!email.success) conError("/recuperar", "Ingresá un email válido");
+  const origen = (await headers()).get("origin") ?? "";
+  const supabase = await crearClienteServidor();
+  await supabase.auth.resetPasswordForEmail(email.data, {
+    redirectTo: `${origen}/auth/confirmar?volver=/nueva-clave`,
+  });
+  // Mismo mensaje exista o no la cuenta, para no revelar qué emails están registrados.
+  redirect(`/ingresar?ok=${encodeURIComponent("Si el email está registrado, te enviamos un link para crear una nueva contraseña.")}`);
+}
+
+export async function cambiarClave(formData: FormData) {
+  const password = String(formData.get("password") ?? "");
+  if (password.length < 8) conError("/nueva-clave", "La contraseña debe tener al menos 8 caracteres");
+  if (password !== formData.get("confirmacion")) conError("/nueva-clave", "Las contraseñas no coinciden");
+  const supabase = await crearClienteServidor();
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) conError("/nueva-clave", "No pudimos cambiar la contraseña. Pedí un link nuevo.");
+  redirect(`/panel?ok=${encodeURIComponent("Contraseña actualizada.")}`);
+}

@@ -137,3 +137,27 @@ export async function cancelarOferta(formData: FormData) {
   revalidatePath(PANEL_COMPRADOR);
   volverCon(PANEL_COMPRADOR, "ok", "Oferta cancelada.");
 }
+
+const esquemaPerfil = z.object({
+  nombre: z.string().trim().min(2, "Ingresá tu nombre"),
+  empresa: z.string().trim().max(120).default(""),
+  cuit: z.string().trim().max(20).default(""),
+  telefono: z.string().trim().min(8, "Ingresá un teléfono de WhatsApp válido"),
+  zona: z.enum(ZONAS, "Elegí tu zona"),
+});
+
+export async function actualizarPerfil(formData: FormData) {
+  const perfil = await exigirRol("vendedor", "comprador", "admin");
+  const datos = esquemaPerfil.safeParse(Object.fromEntries(formData));
+  if (!datos.success) volverCon("/panel/perfil", "error", datos.error.issues[0].message);
+  if (perfil.rol === "vendedor" && !datos.data.empresa) volverCon("/panel/perfil", "error", "Ingresá el nombre de la empresa");
+
+  const supabase = await crearClienteServidor();
+  const { error } = await supabase
+    .from("perfiles")
+    .update({ ...datos.data, empresa: datos.data.empresa || null, cuit: datos.data.cuit || null })
+    .eq("id", perfil.id);
+  if (error) volverCon("/panel/perfil", "error", error.message);
+  revalidatePath("/", "layout");
+  volverCon("/panel/perfil", "ok", "Datos actualizados.");
+}

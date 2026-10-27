@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Aviso } from "@/components/aviso";
 import { ZONAS } from "@/lib/datos";
+import { BotonEnviar } from "@/components/boton-enviar";
 import { registrarse } from "../acciones";
 
 export const metadata: Metadata = { title: "Crear cuenta" };
@@ -75,7 +76,7 @@ export default async function Registro({ searchParams }: PageProps<"/registro">)
           <label htmlFor="password" className="etiqueta">Contraseña</label>
           <input id="password" name="password" type="password" minLength={8} required autoComplete="new-password" className="campo" />
         </div>
-        <button className="btn sm:col-span-2">Crear cuenta</button>
+        <BotonEnviar className="btn sm:col-span-2" pendiente="Creando cuenta...">Crear cuenta</BotonEnviar>
       </form>
 
       <p className="mt-6 text-center text-sm text-stone-600">

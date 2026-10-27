@@ -122,5 +122,15 @@ do $$ begin
   assert (select estado from ofertas) = 'completada';
 end $$;
 
+-- Solo el admin registra la liquidación al vendedor, y una sola vez.
+select pg_temp.como('00000000-0000-0000-0000-00000000000b');
+select pg_temp.debe_fallar($$select marcar_liquidada('20000000-0000-0000-0000-000000000001')$$, 'vendedor marca liquidada');
+select pg_temp.como('00000000-0000-0000-0000-00000000000a');
+select marcar_liquidada('20000000-0000-0000-0000-000000000001');
+do $$ begin
+  assert (select liquidada_at from ofertas) is not null;
+end $$;
+select pg_temp.debe_fallar($$select marcar_liquidada('20000000-0000-0000-0000-000000000001')$$, 'liquidar dos veces');
+
 select 'TODAS LAS PRUEBAS PASARON' as resultado;
 rollback;

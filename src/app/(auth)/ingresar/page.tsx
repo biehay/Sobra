@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Aviso } from "@/components/aviso";
+import { BotonEnviar } from "@/components/boton-enviar";
 import { ingresar } from "../acciones";
 
 export const metadata: Metadata = { title: "Ingresar" };
@@ -22,10 +23,13 @@ export default async function Ingresar({ searchParams }: PageProps<"/ingresar">)
           <input id="email" name="email" type="email" autoComplete="email" required className="campo" />
         </div>
         <div>
-          <label htmlFor="password" className="etiqueta">Contraseña</label>
+          <div className="flex items-baseline justify-between">
+            <label htmlFor="password" className="etiqueta">Contraseña</label>
+            <Link href="/recuperar" className="text-xs text-stone-500 hover:text-marca">¿La olvidaste?</Link>
+          </div>
           <input id="password" name="password" type="password" autoComplete="current-password" required className="campo" />
         </div>
-        <button className="btn w-full">Ingresar</button>
+        <BotonEnviar className="btn w-full" pendiente="Ingresando...">Ingresar</BotonEnviar>
       </form>
       <p className="mt-6 text-center text-sm text-stone-600">
         ¿No tenés cuenta?{" "}

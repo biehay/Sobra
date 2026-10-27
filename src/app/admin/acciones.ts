@@ -56,6 +56,7 @@ const OPERACIONES = {
   pago: { rpc: "confirmar_pago", ok: "Pago confirmado. Comprador y vendedor ya ven los datos de retiro." },
   completar: { rpc: "completar_operacion", ok: "Operación completada. Recordá liquidarle al vendedor." },
   cancelar: { rpc: "cancelar_oferta", ok: "Operación cancelada y lote republicado." },
+  liquidar: { rpc: "marcar_liquidada", ok: "Liquidación al vendedor registrada." },
 } as const;
 
 export async function avanzarOperacion(formData: FormData) {

@@ -60,6 +60,7 @@ export type Oferta = {
   comision: number | null;
   pagada_at: string | null;
   completada_at: string | null;
+  liquidada_at: string | null;
   created_at: string;
 };
 
