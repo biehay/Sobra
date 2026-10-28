@@ -15,7 +15,7 @@ export default async function VerificarIngreso({ searchParams }: PageProps<"/seg
   const volver = typeof volverParam === "string" && volverParam.startsWith("/") && !volverParam.startsWith("//") ? volverParam : "/panel";
   if (!(await obtenerPerfil())) redirect(`/ingresar?volver=${encodeURIComponent(volver)}`);
   if (await sesionVerificada()) redirect(volver);
-  const { email, hayCodigo } = await estadoCodigoAcceso();
+  const { email, hayCodigo, enTerminal } = await estadoCodigoAcceso();
 
   return (
     <div className="contenedor max-w-md py-16">
@@ -24,6 +24,13 @@ export default async function VerificarIngreso({ searchParams }: PageProps<"/seg
         {hayCodigo ? "Te mandamos un código de 6 números a " : "Para seguir, te vamos a mandar un código de 6 números a "}
         <strong className="text-stone-900">{email}</strong>.
       </p>
+      {enTerminal && (
+        <p className="mt-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+          <strong>Modo prueba:</strong> todavía no está configurado el envío de emails (Resend), así que el código no
+          llega al mail. Buscalo en la terminal donde corre <code>npm run dev</code>: dice
+          &quot;Código de acceso para {email}&quot;.
+        </p>
+      )}
       <div className="mt-6">
         <Aviso ok={ok} error={error} />
       </div>

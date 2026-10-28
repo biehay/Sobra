@@ -85,14 +85,16 @@ export async function enviarCodigoAcceso(): Promise<{ error?: string }> {
 export async function estadoCodigoAcceso() {
   const sesion = await sesionActual();
   const admin = crearClienteAdmin();
-  if (!sesion || !admin) return { email: sesion?.email ?? "", hayCodigo: false };
+  // Modo prueba: sin Resend, el código no viaja por email sino que sale en la terminal.
+  const enTerminal = !process.env.RESEND_API_KEY && mostrarEnConsola();
+  if (!sesion || !admin) return { email: sesion?.email ?? "", hayCodigo: false, enTerminal };
   const { count } = await admin
     .from("codigos_acceso")
     .select("id", { count: "exact", head: true })
     .eq("user_id", sesion.usuarioId)
     .eq("session_id", sesion.sesionId)
     .gt("expira_at", new Date().toISOString());
-  return { email: sesion.email, hayCodigo: (count ?? 0) > 0 };
+  return { email: sesion.email, hayCodigo: (count ?? 0) > 0, enTerminal };
 }
 
 // Cuando la sesión nace de confirmar el email con un código (registro con
