@@ -192,6 +192,26 @@ export function normalizarTelefono(telefono: string): string | null {
   return numero.length === 10 ? `549${numero}` : null;
 }
 
+// CUIT/CUIL: le pone los guiones mientras se escribe (20-12345678-6).
+// Acepta lo que sea y se queda con hasta 11 dígitos.
+export function formatearCuit(valor: string): string {
+  const d = valor.replace(/\D/g, "").slice(0, 11);
+  if (d.length <= 2) return d;
+  if (d.length <= 10) return `${d.slice(0, 2)}-${d.slice(2)}`;
+  return `${d.slice(0, 2)}-${d.slice(2, 10)}-${d.slice(10)}`;
+}
+
+// Valida el dígito verificador del CUIT/CUIL (módulo 11 con los pesos de AFIP/ARCA).
+export function cuitValido(valor: string): boolean {
+  const d = valor.replace(/\D/g, "");
+  if (d.length !== 11) return false;
+  const pesos = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
+  const suma = pesos.reduce((total, peso, i) => total + peso * Number(d[i]), 0);
+  const resto = 11 - (suma % 11);
+  const verificador = resto === 11 ? 0 : resto;
+  return verificador !== 10 && verificador === Number(d[10]);
+}
+
 export function linkWhatsapp(mensaje: string, telefono = process.env.NEXT_PUBLIC_WHATSAPP): string {
   const crudo = (telefono ?? "").replace(/\D/g, "");
   const numero = normalizarTelefono(crudo) ?? crudo;

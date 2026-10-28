@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Aviso } from "@/components/aviso";
+import { CampoCuit } from "@/components/campo-cuit";
 import { PestanasPanel } from "@/components/pestanas-panel";
 import { BotonEnviar } from "@/components/boton-enviar";
 import { dosPasos, exigirRol } from "@/lib/sesion";
@@ -44,10 +45,7 @@ export default async function Perfil({ searchParams }: PageProps<"/panel/perfil"
           <label htmlFor="empresa" className="etiqueta">Empresa (opcional)</label>
           <input id="empresa" name="empresa" defaultValue={perfil.empresa ?? ""} className="campo" />
         </div>
-        <div>
-          <label htmlFor="cuit" className="etiqueta">CUIT</label>
-          <input id="cuit" name="cuit" defaultValue={perfil.cuit ?? ""} className="campo" />
-        </div>
+        <CampoCuit defaultValue={perfil.cuit ?? ""} />
         <div>
           <label htmlFor="telefono" className="etiqueta">WhatsApp</label>
           <input id="telefono" name="telefono" type="tel" required defaultValue={perfil.telefono ?? ""} className="campo" />

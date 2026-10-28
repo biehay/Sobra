@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Aviso } from "@/components/aviso";
+import { CampoCuit } from "@/components/campo-cuit";
 import { ZONAS } from "@/lib/datos";
 import { BotonEnviar } from "@/components/boton-enviar";
 import { registrarse } from "../acciones";
@@ -41,10 +42,7 @@ export default async function Registro({ searchParams }: PageProps<"/registro">)
           <label htmlFor="empresa" className="etiqueta">Empresa (opcional)</label>
           <input id="empresa" name="empresa" autoComplete="organization" className="campo" />
         </div>
-        <div>
-          <label htmlFor="cuit" className="etiqueta">CUIT (opcional)</label>
-          <input id="cuit" name="cuit" inputMode="numeric" className="campo" placeholder="30-12345678-9" />
-        </div>
+        <CampoCuit />
         <div>
           <label htmlFor="telefono" className="etiqueta">WhatsApp</label>
           <input id="telefono" name="telefono" type="tel" required autoComplete="tel" className="campo" placeholder="11 2345 6789" />

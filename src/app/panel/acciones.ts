@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { exigirRol } from "@/lib/sesion";
-import { CATEGORIAS, ZONAS, normalizarTelefono } from "@/lib/datos";
+import { CATEGORIAS, ZONAS, normalizarTelefono, cuitValido, formatearCuit } from "@/lib/datos";
 import { notificar } from "@/lib/email/notificar";
 
 const PANEL_VENDEDOR = "/panel/vendedor";
@@ -167,7 +167,12 @@ export async function cancelarOferta(formData: FormData) {
 const esquemaPerfil = z.object({
   nombre: z.string().trim().min(2, "Ingresá tu nombre"),
   empresa: z.string().trim().max(120).default(""),
-  cuit: z.string().trim().max(20).default(""),
+  cuit: z
+    .string()
+    .trim()
+    .default("")
+    .refine((c) => c === "" || cuitValido(c), "Revisá el CUIT: el último número no coincide")
+    .transform((c) => (c ? formatearCuit(c) : "")),
   telefono: z
     .string()
     .trim()

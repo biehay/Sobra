@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { descuento, linkWhatsapp, normalizarTelefono, pesos, precioSugerido } from "./datos";
+import { cuitValido, descuento, formatearCuit, linkWhatsapp, normalizarTelefono, pesos, precioSugerido } from "./datos";
 
 describe("precioSugerido", () => {
   it("aplica el factor según la condición y redondea a miles", () => {
@@ -60,5 +60,32 @@ describe("normalizarTelefono", () => {
   it("rechaza lo que no es un celular argentino", () => {
     expect(normalizarTelefono("1234")).toBeNull();
     expect(normalizarTelefono("abc")).toBeNull();
+  });
+});
+
+describe("CUIT", () => {
+  it.each([
+    ["2", "2"],
+    ["20", "20"],
+    ["201", "20-1"],
+    ["2012345678", "20-12345678"],
+    ["20123456786", "20-12345678-6"],
+    ["20-12345678-6", "20-12345678-6"],
+    ["20 1234 5678 6", "20-12345678-6"],
+    ["201234567861111", "20-12345678-6"],
+  ])("formatea %s como %s", (entrada, esperado) => {
+    expect(formatearCuit(entrada)).toBe(esperado);
+  });
+
+  it("acepta CUITs con dígito verificador correcto", () => {
+    expect(cuitValido("20-12345678-6")).toBe(true);
+    expect(cuitValido("30-71234567-1")).toBe(true);
+    expect(cuitValido("20123456786")).toBe(true);
+  });
+
+  it("rechaza dígito verificador incorrecto o largo inválido", () => {
+    expect(cuitValido("20-12345678-5")).toBe(false);
+    expect(cuitValido("20-1234567-8")).toBe(false);
+    expect(cuitValido("")).toBe(false);
   });
 });

@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { z } from "zod";
 import { crearClienteServidor } from "@/lib/supabase/server";
-import { normalizarTelefono } from "@/lib/datos";
+import { normalizarTelefono, cuitValido, formatearCuit } from "@/lib/datos";
 import { notificar } from "@/lib/email/notificar";
 
 // Solo rutas internas, para no redirigir a sitios externos.
@@ -50,7 +50,12 @@ export async function ingresar(formData: FormData) {
 const esquemaRegistro = z.object({
   nombre: z.string().trim().min(2, "Ingresá tu nombre"),
   empresa: z.string().trim().default(""),
-  cuit: z.string().trim().default(""),
+  cuit: z
+    .string()
+    .trim()
+    .default("")
+    .refine((c) => c === "" || cuitValido(c), "Revisá el CUIT: el último número no coincide")
+    .transform((c) => (c ? formatearCuit(c) : "")),
   telefono: z
     .string()
     .trim()
