@@ -75,6 +75,12 @@ export async function enviarCodigoAcceso(): Promise<{ error?: string }> {
     await enviarEmail({ para: sesion.email, ...plantillas.codigoAcceso(codigo) });
   } catch (e) {
     console.error("[Sobrá] No se pudo enviar el código de acceso", e);
+    // Con el remitente de prueba de Resend solo se puede enviar al email de la
+    // cuenta de Resend: en desarrollo, el código sale igual en la terminal.
+    if (mostrarEnConsola()) {
+      console.info(`[Sobrá] Código de acceso para ${sesion.email}: ${codigo} (Resend no lo pudo enviar)`);
+      return {};
+    }
     return { error: "No pudimos enviarte el código por email. Probá de nuevo en un minuto." };
   }
   return {};
