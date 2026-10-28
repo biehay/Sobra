@@ -76,7 +76,22 @@ if (urlValida) {
 
     if (!ejemplo.test(servicio) && servicio !== anon) {
       const admin = await pedir("/auth/v1/admin/users?per_page=1", servicio);
-      if (admin.estado === 200) ok("La clave service_role es correcta");
+      if (admin.estado === 200) {
+        ok("La clave service_role es correcta");
+        // Cada migración deja algo que se puede revisar desde acá.
+        const migraciones = [
+          ["20261030000000_codigo_retiro_y_reclamos.sql", "/rest/v1/reclamos?select=id&limit=1"],
+          ["20261101000000_dos_pasos_para_todos.sql", "/rest/v1/codigos_acceso?select=id&limit=1"],
+        ];
+        for (const [archivo, ruta] of migraciones) {
+          const r = await pedir(ruta, servicio);
+          if (r.estado === 200) ok(`Migración ${archivo} aplicada`);
+          else mal(`Falta la migración ${archivo}`, "Ejecutala en Supabase > SQL Editor (copiar, pegar y Run)");
+        }
+        const rol = await pedir("/rest/v1/perfiles?select=rol&rol=eq.usuario&limit=1", servicio);
+        if (rol.estado === 200) ok("Migración 20261031000000_cuenta_unica.sql aplicada");
+        else mal("Falta la migración 20261031000000_cuenta_unica.sql", "Ejecutala en Supabase > SQL Editor (copiar, pegar y Run)");
+      }
       else mal(`Supabase rechazó la clave service_role (${admin.estado})`, "Volvé a copiar SUPABASE_SERVICE_ROLE_KEY completa (Reveal > Copy)");
     }
 

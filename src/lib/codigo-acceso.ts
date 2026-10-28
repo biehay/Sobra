@@ -56,7 +56,15 @@ export async function enviarCodigoAcceso(): Promise<{ error?: string }> {
     hash: createHash("sha256").update(id + codigo).digest("hex"),
     expira_at: new Date(Date.now() + VIGENCIA_MINUTOS * 60_000).toISOString(),
   });
-  if (error) return { error: "No pudimos generar el código. Probá de nuevo." };
+  if (error) {
+    console.error(
+      `[Sobrá] No se pudo guardar el código de acceso: ${error.message}. ` +
+        (error.code === "PGRST205" || /codigos_acceso/.test(error.message)
+          ? "Falta ejecutar en Supabase la migración supabase/migrations/20261101000000_dos_pasos_para_todos.sql."
+          : "Corré `npm run verificar` para revisar la conexión."),
+    );
+    return { error: "No pudimos generar el código. Probá de nuevo." };
+  }
 
   if (!process.env.RESEND_API_KEY) {
     if (!mostrarEnConsola()) return { error: "No pudimos enviarte el código por email. Escribinos." };
