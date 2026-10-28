@@ -33,9 +33,7 @@ export default async function Ingresar({ searchParams }: PageProps<"/ingresar">)
       </form>
       <p className="mt-6 text-center text-sm text-stone-600">
         ¿No tenés cuenta?{" "}
-        <Link href="/registro?rol=vendedor" className="font-semibold text-marca hover:underline">Quiero vender</Link>
-        {" · "}
-        <Link href="/registro?rol=comprador" className="font-semibold text-marca hover:underline">Quiero comprar</Link>
+        <Link href="/registro" className="font-semibold text-marca hover:underline">Creá una</Link>
       </p>
     </div>
   );

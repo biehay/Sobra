@@ -39,7 +39,7 @@ describe("plantillas de email", () => {
       plantillas.lotePublicado("L", 1, "id"),
       plantillas.compradorVerificado(),
       plantillas.adminLoteEnRevision("L", "V"),
-      plantillas.adminNuevoUsuario("N", "comprador"),
+      plantillas.adminNuevoUsuario("N"),
       plantillas.adminPagoInformado("L", 1),
     ];
     for (const { asunto, html } of casos) {

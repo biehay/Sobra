@@ -124,28 +124,29 @@ export default async function DetalleLote({ params, searchParams }: PageProps<"/
           ) : !perfil ? (
             <div className="tarjeta space-y-3 p-6">
               <p className="font-semibold">¿Te interesa este lote?</p>
-              <p className="text-sm text-stone-600">Creá tu cuenta de comprador para hacer una oferta.</p>
-              <Link href={`/registro?rol=comprador&volver=/lotes/${lote.id}`} className="btn w-full">
+              <p className="text-sm text-stone-600">Creá tu cuenta para hacer una oferta. Con la misma cuenta también podés vender.</p>
+              <Link href={`/registro?volver=/lotes/${lote.id}`} className="btn w-full">
                 Quiero ofertar
               </Link>
               <Link href={`/ingresar?volver=/lotes/${lote.id}`} className="btn-sec w-full">
                 Ya tengo cuenta
               </Link>
             </div>
-          ) : perfil.rol !== "comprador" ? (
+          ) : perfil.id === lote.vendedor_id ? (
             <p className="tarjeta p-6 text-sm text-stone-600">
-              {perfil.id === lote.vendedor_id
-                ? "Este es tu lote. Vas a ver las ofertas en tu panel."
-                : "Para ofertar necesitás una cuenta de comprador."}
+              Este es tu lote. Vas a ver las ofertas en{" "}
+              <Link href="/panel/vendedor" className="font-semibold text-marca hover:underline">Mis ventas</Link>.
             </p>
+          ) : perfil.rol === "admin" ? (
+            <p className="tarjeta p-6 text-sm text-stone-600">Las cuentas de administración no ofertan.</p>
           ) : !perfil.verificado ? (
             <div className="tarjeta space-y-3 p-6">
               <p className="font-semibold">Tu cuenta está en verificación</p>
               <p className="text-sm text-stone-600">
-                Verificamos a cada comprador para que los vendedores operen tranquilos. Si querés acelerar, escribinos.
+                Antes de tu primera compra verificamos tu cuenta, para que los vendedores operen tranquilos. Si querés acelerar, escribinos.
               </p>
               <a
-                href={linkWhatsapp(`Hola, soy ${perfil.nombre} y quiero verificar mi cuenta de comprador en Sobrá.`)}
+                href={linkWhatsapp(`Hola, soy ${perfil.nombre} y quiero verificar mi cuenta de Sobrá para comprar.`)}
                 target="_blank"
                 rel="noreferrer"
                 className="btn-sec w-full"

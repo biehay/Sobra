@@ -48,7 +48,6 @@ export async function ingresar(formData: FormData) {
 }
 
 const esquemaRegistro = z.object({
-  rol: z.enum(["vendedor", "comprador"]),
   nombre: z.string().trim().min(2, "Ingresá tu nombre"),
   empresa: z.string().trim().default(""),
   cuit: z.string().trim().default(""),
@@ -64,13 +63,8 @@ const esquemaRegistro = z.object({
 export async function registrarse(formData: FormData) {
   const volver = rutaSegura(formData.get("volver"));
   const datos = esquemaRegistro.safeParse(Object.fromEntries(formData));
-  const rol = formData.get("rol") === "comprador" ? "comprador" : "vendedor";
-  if (!datos.success) {
-    conError(`/registro?rol=${rol}&volver=${encodeURIComponent(volver)}`, datos.error.issues[0].message);
-  }
-  if (datos.data.rol === "vendedor" && !datos.data.empresa) {
-    conError(`/registro?rol=vendedor`, "Ingresá el nombre de la empresa");
-  }
+  const pantalla = `/registro?volver=${encodeURIComponent(volver)}`;
+  if (!datos.success) conError(pantalla, datos.error.issues[0].message);
 
   const { email, password, ...perfil } = datos.data;
   const origen = (await headers()).get("origin") ?? "";
@@ -85,12 +79,12 @@ export async function registrarse(formData: FormData) {
   });
   if (error) {
     const mensaje = error.code === "user_already_exists" ? "Ya existe una cuenta con ese email" : error.message;
-    conError(`/registro?rol=${rol}&volver=${encodeURIComponent(volver)}`, mensaje);
+    conError(pantalla, mensaje);
   }
 
   // Con la confirmación de email activada no hay sesión todavía: falta el código.
   if (!data.session) redirect(rutaVerificar(email, volver));
-  notificar.nuevoUsuario(perfil.nombre, perfil.rol);
+  notificar.nuevoUsuario(perfil.nombre);
   redirect(volver);
 }
 
@@ -108,8 +102,8 @@ export async function verificarCodigo(formData: FormData) {
     conError(pantalla, vencido ? "El código venció o no es correcto. Pedí uno nuevo." : "El código no es correcto");
   }
 
-  const meta = data.user.user_metadata as { nombre?: string; rol?: string };
-  notificar.nuevoUsuario(meta.nombre ?? email, meta.rol === "vendedor" ? "vendedor" : "comprador");
+  const meta = data.user.user_metadata as { nombre?: string };
+  notificar.nuevoUsuario(meta.nombre ?? email);
   redirect(volver);
 }
 

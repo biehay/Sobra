@@ -51,7 +51,7 @@ export async function verificarUsuario(formData: FormData) {
   const supabase = await crearClienteServidor();
   const { data, error } = await supabase.from("perfiles").update({ verificado }).eq("id", id).select("rol").single();
   if (error) volver("error", error.message);
-  if (verificado && data.rol === "comprador") notificar.compradorVerificado(id);
+  if (verificado && data.rol === "usuario") notificar.compradorVerificado(id);
   volver("ok", "Usuario actualizado.");
 }
 

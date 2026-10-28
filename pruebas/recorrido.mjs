@@ -109,8 +109,9 @@ async function crearFotos(browser) {
 }
 
 // --- Registro con código por email -------------------------------------------
-async function registrar(pg, { rol, nombre, empresa, email, zona = "GBA Sur", telefono }) {
-  await pg.goto(`${BASE}/registro?rol=${rol}`);
+async function registrar(pg, { nombre, empresa, email, zona = "GBA Sur", telefono, volver }) {
+  await pg.goto(`${BASE}/registro${volver ? `?volver=${encodeURIComponent(volver)}` : ""}`);
+  esperar(!(await pg.locator("text=Quiero comprar").count()), "el registro es un solo formulario (sin elegir comprador o vendedor)");
   await pg.fill("#nombre", nombre);
   if (empresa) await pg.fill("#empresa", empresa);
   await pg.fill("#telefono", telefono);
@@ -188,7 +189,7 @@ try {
 
   // 2. Registro del vendedor con código -------------------------------------
   const vend = await nuevaPagina(browser, "vendedor");
-  await vend.goto(`${BASE}/registro?rol=vendedor`);
+  await vend.goto(`${BASE}/registro`);
   await vend.fill("#nombre", "Marta Gómez");
   await vend.fill("#empresa", "Constructora del Sur");
   await vend.fill("#telefono", "1234 5678");
@@ -198,7 +199,8 @@ try {
   await tras(vend, "error=", () => vend.click("button:has-text('Crear cuenta')"));
   esperar((await aviso(vend)).includes("código de área"), "el registro rechaza un teléfono inválido");
   const codigoV = await registrar(vend, {
-    rol: "vendedor", nombre: "Marta Gómez", empresa: "Constructora del Sur", email: "marta@constructora.test", telefono: "11 2345 6789",
+    nombre: "Marta Gómez", empresa: "Constructora del Sur", email: "marta@constructora.test", telefono: "11 2345 6789",
+    volver: "/panel/vendedor/lotes/nuevo",
   });
   await captura(vend, "verificar-codigo");
   await vend.fill("#codigo", codigoV === "000000" ? "111111" : "000000");
@@ -212,28 +214,33 @@ try {
   const codigoV2 = (await ultimoEmail("marta@constructora.test", "Tu código de Sobrá", Date.now() - 5000)).Subject.match(/\d{6}/)[0];
   await vend.fill("#codigo", codigoV2);
   await vend.click("button:has-text('Confirmar')");
-  await vend.waitForURL("**/panel/vendedor**");
+  await vend.waitForURL("**/panel/vendedor/lotes/nuevo");
+  await vend.goto(`${BASE}/panel/vendedor`);
+  esperar(await vend.locator("nav a:has-text('Mis compras')").isVisible(), "el panel tiene pestañas de ventas y compras");
   await captura(vend, "panel-vendedor-vacio");
   paso("Vendedor: registro, código incorrecto, reenvío de código y confirmación");
 
   // 3. Compradores ---------------------------------------------------------
   const comp = await nuevaPagina(browser, "comprador", 390);
-  const codigoC = await registrar(comp, { rol: "comprador", nombre: "Juan Pérez", email: "juan@contratista.test", telefono: "11 3456 7890", zona: "CABA" });
+  const codigoC = await registrar(comp, { nombre: "Juan Pérez", email: "juan@contratista.test", telefono: "11 3456 7890", zona: "CABA" });
   await comp.fill("#codigo", codigoC);
   await comp.click("button:has-text('Confirmar')");
   await comp.waitForURL("**/panel/comprador**");
   await captura(comp, "panel-comprador-sin-verificar-celular");
 
   const comp2 = await nuevaPagina(browser, "comprador2");
-  const codigoC2 = await registrar(comp2, { rol: "comprador", nombre: "Lucía Díaz", email: "lucia@arquitecta.test", telefono: "11 4567 8901" });
+  const codigoC2 = await registrar(comp2, { nombre: "Lucía Díaz", email: "lucia@arquitecta.test", telefono: "11 4567 8901" });
   await comp2.fill("#codigo", codigoC2);
   await comp2.click("button:has-text('Confirmar')");
   await comp2.waitForURL("**/panel/comprador**");
-  paso("Dos compradores registrados y confirmados (uno desde celular)");
+  await comp.click("nav a:has-text('Mis ventas')");
+  await comp.waitForURL("**/panel/vendedor");
+  esperar(await comp.locator("a:has-text('Publicar lote')").first().isVisible(), "un comprador también puede publicar con la misma cuenta");
+  paso("Dos usuarios más registrados (uno desde celular); la misma cuenta sirve para comprar y vender");
 
   // 4. Admin con verificación en dos pasos ----------------------------------
   const adm = await nuevaPagina(browser, "admin");
-  const codigoA = await registrar(adm, { rol: "comprador", nombre: "Admin Sobrá", email: "admin@sobra.test", telefono: "11 0000 0000" });
+  const codigoA = await registrar(adm, { nombre: "Admin Sobrá", email: "admin@sobra.test", telefono: "11 0000 0000" });
   await adm.fill("#codigo", codigoA);
   await adm.click("button:has-text('Confirmar')");
   await adm.waitForURL("**/panel/**");

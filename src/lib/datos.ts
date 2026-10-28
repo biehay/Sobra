@@ -1,7 +1,8 @@
 // Tipos y catálogos compartidos. Reflejan el esquema de
 // supabase/migrations/20261027000000_esquema_inicial.sql.
 
-export type Rol = "vendedor" | "comprador" | "admin";
+// Una sola cuenta para comprar y vender ("usuario"); el admin va aparte.
+export type Rol = "usuario" | "admin";
 export type EstadoLote =
   | "borrador"
   | "en_revision"

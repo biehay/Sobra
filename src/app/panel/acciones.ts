@@ -50,7 +50,7 @@ const esquemaLote = z.object({
 });
 
 export async function guardarLote(formData: FormData) {
-  const perfil = await exigirRol("vendedor");
+  const perfil = await exigirRol("usuario");
   const id = String(formData.get("id") ?? "");
   const enviar = formData.get("intencion") === "revision";
   const rutaForm = id ? `${PANEL_VENDEDOR}/lotes/${id}` : `${PANEL_VENDEDOR}/lotes/nuevo`;
@@ -104,7 +104,7 @@ export async function guardarLote(formData: FormData) {
 }
 
 export async function cambiarEstadoLote(formData: FormData) {
-  await exigirRol("vendedor");
+  await exigirRol("usuario");
   const id = String(formData.get("id"));
   const estado = String(formData.get("estado"));
   const supabase = await crearClienteServidor();
@@ -120,7 +120,7 @@ export async function cambiarEstadoLote(formData: FormData) {
 }
 
 export async function responderOferta(formData: FormData) {
-  await exigirRol("vendedor");
+  await exigirRol("usuario");
   const ofertaId = String(formData.get("id"));
   const aceptar = formData.get("aceptar") === "si";
   const supabase = await crearClienteServidor();
@@ -152,7 +152,7 @@ export async function responderOferta(formData: FormData) {
 }
 
 export async function cancelarOferta(formData: FormData) {
-  await exigirRol("comprador");
+  await exigirRol("usuario");
   const ofertaId = String(formData.get("id"));
   const supabase = await crearClienteServidor();
   const { data: oferta } = await supabase.from("ofertas").select("estado").eq("id", ofertaId).single();
@@ -176,10 +176,9 @@ const esquemaPerfil = z.object({
 });
 
 export async function actualizarPerfil(formData: FormData) {
-  const perfil = await exigirRol("vendedor", "comprador", "admin");
+  const perfil = await exigirRol("usuario", "admin");
   const datos = esquemaPerfil.safeParse(Object.fromEntries(formData));
   if (!datos.success) volverCon("/panel/perfil", "error", datos.error.issues[0].message);
-  if (perfil.rol === "vendedor" && !datos.data.empresa) volverCon("/panel/perfil", "error", "Ingresá el nombre de la empresa");
 
   const supabase = await crearClienteServidor();
   const { error } = await supabase
@@ -192,7 +191,7 @@ export async function actualizarPerfil(formData: FormData) {
 }
 
 export async function confirmarRetiro(formData: FormData) {
-  await exigirRol("vendedor");
+  await exigirRol("usuario");
   const ofertaId = String(formData.get("id"));
   const supabase = await crearClienteServidor();
   const { data: correcto, error } = await supabase.rpc("confirmar_retiro", {
@@ -215,8 +214,9 @@ const esquemaReclamo = z.object({
 });
 
 export async function abrirReclamo(formData: FormData) {
-  const perfil = await exigirRol("vendedor", "comprador");
-  const panel = perfil.rol === "vendedor" ? PANEL_VENDEDOR : PANEL_COMPRADOR;
+  await exigirRol("usuario");
+  // Desde qué panel se abrió (solo decide a dónde volver; los permisos los controla la base).
+  const panel = formData.get("desde") === "ventas" ? PANEL_VENDEDOR : PANEL_COMPRADOR;
   const datos = esquemaReclamo.safeParse(Object.fromEntries(formData));
   if (!datos.success) volverCon(panel, "error", datos.error.issues[0].message);
 

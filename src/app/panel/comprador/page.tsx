@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Aviso } from "@/components/aviso";
+import { PestanasPanel } from "@/components/pestanas-panel";
 import { BotonEnviar } from "@/components/boton-enviar";
 import { EtiquetaEstado } from "@/components/etiqueta-estado";
 import { DatosOperacion } from "@/components/datos-operacion";
@@ -15,7 +16,7 @@ export const metadata: Metadata = { title: "Mis compras" };
 type OfertaConLote = Oferta & { lotes: { titulo: string } | null };
 
 export default async function PanelComprador({ searchParams }: PageProps<"/panel/comprador">) {
-  const perfil = await exigirRol("comprador");
+  const perfil = await exigirRol("usuario");
   const { ok, error } = await searchParams;
   const supabase = await crearClienteServidor();
   const { data } = await supabase
@@ -37,11 +38,9 @@ export default async function PanelComprador({ searchParams }: PageProps<"/panel
 
   return (
     <div className="contenedor py-10">
+      <PestanasPanel activa="compras" />
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Mis compras</h1>
-          <Link href="/panel/perfil" className="text-sm font-medium text-marca hover:underline">Mis datos</Link>
-        </div>
+        <h1 className="text-3xl font-bold">Mis compras</h1>
         <Link href="/lotes" className="btn">Buscar lotes</Link>
       </div>
 
@@ -49,9 +48,9 @@ export default async function PanelComprador({ searchParams }: PageProps<"/panel
         <Aviso ok={ok} error={error} />
         {!perfil.verificado && (
           <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            <strong>Tu cuenta está en verificación.</strong> Cuando esté lista vas a poder ofertar.{" "}
+            <strong>Tu cuenta está en verificación.</strong> Ya podés publicar tus sobrantes; para ofertar te tenemos que verificar.{" "}
             <a
-              href={linkWhatsapp(`Hola, soy ${perfil.nombre} y quiero verificar mi cuenta de comprador en Sobrá.`)}
+              href={linkWhatsapp(`Hola, soy ${perfil.nombre} y quiero verificar mi cuenta de Sobrá para comprar.`)}
               target="_blank"
               rel="noreferrer"
               className="font-semibold underline"
@@ -114,7 +113,7 @@ export default async function PanelComprador({ searchParams }: PageProps<"/panel
                       compra. Si algo no coincide, no se lo des y reportalo acá abajo.
                     </p>
                   </div>
-                  <FormReclamo ofertaId={oferta.id} motivos={["no_coincide", "otro"]} />
+                  <FormReclamo ofertaId={oferta.id} motivos={["no_coincide", "otro"]} desde="compras" />
                 </>
               )}
 

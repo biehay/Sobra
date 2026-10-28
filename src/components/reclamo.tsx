@@ -21,12 +21,13 @@ export function EstadoReclamo({ reclamo }: { reclamo: Reclamo }) {
 }
 
 // Formulario plegado para reportar un problema con una operación paga.
-export function FormReclamo({ ofertaId, motivos }: { ofertaId: string; motivos: MotivoReclamo[] }) {
+export function FormReclamo({ ofertaId, motivos, desde }: { ofertaId: string; motivos: MotivoReclamo[]; desde: "ventas" | "compras" }) {
   return (
     <details className="text-sm">
       <summary className="cursor-pointer text-stone-500 hover:text-red-700">Tuve un problema con esta operación</summary>
       <form action={abrirReclamo} className="mt-3 space-y-3 rounded-lg border border-stone-200 p-4">
         <input type="hidden" name="oferta" value={ofertaId} />
+        <input type="hidden" name="desde" value={desde} />
         <div>
           <label htmlFor={`motivo-${ofertaId}`} className="etiqueta">Qué pasó</label>
           <select id={`motivo-${ofertaId}`} name="motivo" className="campo">

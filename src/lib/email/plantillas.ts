@@ -165,7 +165,7 @@ export const plantillas = {
   }),
 
   compradorVerificado: (): Plantilla => ({
-    asunto: "Tu cuenta de comprador está verificada",
+    asunto: "Tu cuenta está verificada: ya podés comprar",
     html: plantilla({
       titulo: "¡Ya podés ofertar!",
       parrafos: ["Verificamos tu cuenta. Ya podés hacer ofertas por los lotes publicados."],
@@ -182,12 +182,12 @@ export const plantillas = {
     }),
   }),
 
-  adminNuevoUsuario: (nombre: string, rol: string): Plantilla => ({
-    asunto: `[Admin] Nuevo ${rol}: ${nombre}`,
+  adminNuevoUsuario: (nombre: string): Plantilla => ({
+    asunto: `[Admin] Nuevo usuario: ${nombre}`,
     html: plantilla({
-      titulo: `Se registró un ${rol}`,
+      titulo: "Se registró un usuario",
       parrafos: [
-        `<strong>${escapar(nombre)}</strong> confirmó su email.${rol === "comprador" ? " Verificalo para que pueda ofertar." : ""}`,
+        `<strong>${escapar(nombre)}</strong> se registró. Ya puede publicar lotes; verificá su cuenta para que también pueda ofertar.`,
       ],
       boton: { texto: "Ver usuarios", ruta: "/admin" },
     }),

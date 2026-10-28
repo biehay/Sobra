@@ -54,8 +54,8 @@ export default async function Admin({ searchParams }: PageProps<"/admin">) {
     ["% vendidos", publicadosAlgunaVez ? `${Math.round((vendidos / publicadosAlgunaVez) * 100)}%` : "-"],
     ["Volumen transaccionado", pesos(volumen)],
     ["Comisiones", pesos(comisiones)],
-    ["Vendedores", perfiles.filter((p) => p.rol === "vendedor").length],
-    ["Compradores verificados", perfiles.filter((p) => p.rol === "comprador" && p.verificado).length],
+    ["Usuarios que publicaron", new Set(lotes.map((l) => l.vendedor_id)).size],
+    ["Usuarios verificados", perfiles.filter((p) => p.rol === "usuario" && p.verificado).length],
   ];
 
   return (

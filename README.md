@@ -7,6 +7,9 @@ Hecho con **Next.js 16** (App Router), **Supabase** (base de datos, login y foto
 
 ## Cómo funciona una operación
 
+Hay una sola cuenta para comprar y vender. Cualquier usuario puede publicar (cada lote lo revisa el
+admin); para ofertar, el admin tiene que haber verificado la cuenta. Nadie puede ofertar por su propio lote.
+
 1. El **vendedor** carga un lote (fotos, materiales, precio, retiro) y lo envía a revisión.
 2. El **admin** lo revisa y lo publica con un precio de publicación (o lo devuelve con observaciones).
 3. Un **comprador verificado** hace una oferta por el lote completo.
@@ -164,8 +167,8 @@ src/app/
   page.tsx                 portada
   lotes/                   catálogo y detalle del lote (con el formulario de oferta)
   (auth)/                  ingresar y registro
-  panel/vendedor/          mis lotes, cargar/editar lote, ofertas recibidas
-  panel/comprador/         mis ofertas, pago y datos de retiro
+  panel/vendedor/          "Mis ventas": mis lotes, cargar/editar lote, ofertas recibidas
+  panel/comprador/         "Mis compras": mis ofertas, pago, código y datos de retiro
   admin/                   revisión de lotes, operaciones, usuarios y métricas
 src/lib/datos.ts           tipos, categorías, zonas, precio sugerido y formatos
 src/lib/email/              envío con Resend, plantillas y a quién avisar en cada paso

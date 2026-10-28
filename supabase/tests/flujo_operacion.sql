@@ -33,9 +33,10 @@ insert into auth.users (id, raw_user_meta_data) values
   ('00000000-0000-0000-0000-00000000000c', '{"rol":"comprador","nombre":"Juan Contratista","telefono":"2222"}'),
   ('00000000-0000-0000-0000-00000000000d', '{"rol":"comprador","nombre":"Sin verificar"}');
 
--- Registrarse como admin no da el rol de admin.
+-- Registrarse pidiendo ser admin no da el rol de admin: todos quedan como usuario.
 do $$ begin
-  assert (select rol from perfiles where id = '00000000-0000-0000-0000-00000000000a') = 'comprador';
+  assert (select rol from perfiles where id = '00000000-0000-0000-0000-00000000000a') = 'usuario';
+  assert (select count(*) from perfiles where rol = 'usuario') = 4;
 end $$;
 update perfiles set rol = 'admin', verificado = true where id = '00000000-0000-0000-0000-00000000000a';
 
@@ -57,8 +58,19 @@ do $$ begin
   assert (select count(*) from lotes) = 0, 'lote en revisión visible';
   assert (select count(*) from lote_retiro) = 0, 'retiro visible';
 end $$;
+-- Con una sola cuenta, el comprador también puede publicar (y borrar su borrador),
+-- pero nunca a nombre de otro.
+insert into lotes (id, vendedor_id, titulo, categoria, condicion, zona, precio_pedido)
+values ('10000000-0000-0000-0000-000000000099', auth.uid(), 'Lote del comprador', 'Otros', 'nuevo', 'CABA', 10);
+delete from lotes where id = '10000000-0000-0000-0000-000000000099';
+do $$ begin
+  assert (select count(*) from lotes) = 0, 'no pudo borrar su borrador';
+end $$;
 select pg_temp.debe_fallar($$insert into lotes (vendedor_id, titulo, categoria, condicion, zona, precio_pedido)
-  values (auth.uid(), 'Lote del comprador', 'Otros', 'nuevo', 'CABA', 10)$$, 'comprador crea lote');
+  values ('00000000-0000-0000-0000-00000000000b', 'Lote a nombre de otro', 'Otros', 'nuevo', 'CABA', 10)$$, 'crea lote a nombre de otro');
+select pg_temp.como(null);
+select pg_temp.debe_fallar($$insert into lotes (vendedor_id, titulo, categoria, condicion, zona, precio_pedido)
+  values ('00000000-0000-0000-0000-00000000000b', 'Lote anónimo', 'Otros', 'nuevo', 'CABA', 10)$$, 'anónimo crea lote');
 
 -- Con solo la contraseña (sin el segundo paso) el admin no tiene permisos de admin.
 select pg_temp.como('00000000-0000-0000-0000-00000000000a', 'aal1');
@@ -75,7 +87,7 @@ end $$;
 -- Admin publica con precio sugerido y verifica al comprador.
 select pg_temp.como('00000000-0000-0000-0000-00000000000a');
 update lotes set estado = 'publicado', precio_sugerido = 480000, precio_publicado = 480000;
-update perfiles set verificado = true where id = '00000000-0000-0000-0000-00000000000c';
+update perfiles set verificado = true where id in ('00000000-0000-0000-0000-00000000000c', '00000000-0000-0000-0000-00000000000b');
 do $$ begin
   assert (select publicado_at from lotes) is not null;
 end $$;
@@ -85,6 +97,15 @@ select pg_temp.como(null);
 do $$ begin
   assert (select count(*) from lotes) = 1, 'anónimo no ve lote publicado';
   assert (select count(*) from perfiles) = 0, 'anónimo ve perfiles';
+end $$;
+
+-- El vendedor, aunque esté verificado, no puede ofertar por su propio lote.
+select pg_temp.como('00000000-0000-0000-0000-00000000000b');
+do $$ begin
+  insert into ofertas (lote_id, comprador_id, monto) values ('10000000-0000-0000-0000-000000000001', auth.uid(), 1);
+  raise exception 'NO FALLÓ: ofertó por su propio lote';
+exception when raise_exception then
+  if sqlerrm like 'NO FALLÓ%' or sqlerrm not like '%propio lote%' then raise; end if;
 end $$;
 
 -- Comprador sin verificar no puede ofertar.

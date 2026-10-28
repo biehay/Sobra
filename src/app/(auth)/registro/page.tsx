@@ -8,48 +8,38 @@ import { registrarse } from "../acciones";
 export const metadata: Metadata = { title: "Crear cuenta" };
 
 export default async function Registro({ searchParams }: PageProps<"/registro">) {
-  const { rol: rolParam, volver, error } = await searchParams;
-  const rol = rolParam === "comprador" ? "comprador" : "vendedor";
-  const esVendedor = rol === "vendedor";
+  const { volver, error } = await searchParams;
 
   return (
     <div className="contenedor max-w-lg py-16">
-      <div className="mb-6 grid grid-cols-2 rounded-lg border border-stone-200 bg-white p-1 text-center text-sm font-semibold">
-        <Link
-          href="/registro?rol=vendedor"
-          className={`rounded-md py-2 ${esVendedor ? "bg-marca text-white" : "text-stone-600"}`}
-        >
-          Quiero vender
-        </Link>
-        <Link
-          href="/registro?rol=comprador"
-          className={`rounded-md py-2 ${!esVendedor ? "bg-marca text-white" : "text-stone-600"}`}
-        >
-          Quiero comprar
-        </Link>
-      </div>
-
-      <h1 className="text-3xl font-bold">{esVendedor ? "Publicá tu sobrante" : "Comprá materiales con descuento"}</h1>
+      <h1 className="text-3xl font-bold">Creá tu cuenta</h1>
       <p className="mt-1 text-stone-600">
-        {esVendedor
-          ? "Para constructoras, corralones, distribuidores y empresas con stock sin uso. Publicar es gratis."
-          : "Para contratistas, arquitectos, cooperativas y particulares. Verificamos tu cuenta antes de tu primera oferta."}
+        Con una sola cuenta podés vender lo que te sobró y comprar materiales con descuento.
       </p>
+      <ul className="mt-4 grid gap-2 text-sm text-stone-600 sm:grid-cols-2">
+        <li className="tarjeta p-3">
+          <strong className="text-stone-900">Para vender:</strong> publicás gratis y el pago está protegido. Cada lote lo
+          revisamos antes de publicarlo.
+        </li>
+        <li className="tarjeta p-3">
+          <strong className="text-stone-900">Para comprar:</strong> verificamos tu cuenta antes de tu primera oferta, para
+          que los vendedores operen tranquilos.
+        </li>
+      </ul>
 
       <div className="mt-6">
         <Aviso error={error} />
       </div>
 
       <form action={registrarse} className="tarjeta mt-4 grid gap-4 p-6 sm:grid-cols-2">
-        <input type="hidden" name="rol" value={rol} />
         <input type="hidden" name="volver" value={typeof volver === "string" ? volver : "/panel"} />
         <div className="sm:col-span-2">
           <label htmlFor="nombre" className="etiqueta">Nombre y apellido</label>
           <input id="nombre" name="nombre" required autoComplete="name" className="campo" />
         </div>
         <div>
-          <label htmlFor="empresa" className="etiqueta">Empresa {esVendedor ? "" : "(opcional)"}</label>
-          <input id="empresa" name="empresa" required={esVendedor} autoComplete="organization" className="campo" />
+          <label htmlFor="empresa" className="etiqueta">Empresa (opcional)</label>
+          <input id="empresa" name="empresa" autoComplete="organization" className="campo" />
         </div>
         <div>
           <label htmlFor="cuit" className="etiqueta">CUIT (opcional)</label>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Aviso } from "@/components/aviso";
+import { PestanasPanel } from "@/components/pestanas-panel";
 import { EtiquetaEstado } from "@/components/etiqueta-estado";
 import { DatosOperacion } from "@/components/datos-operacion";
 import { crearClienteServidor } from "@/lib/supabase/server";
@@ -10,10 +11,10 @@ import { EstadoReclamo, FormReclamo } from "@/components/reclamo";
 import { MODOS_RETIRO, pesos, type Lote, type Oferta, type Reclamo } from "@/lib/datos";
 import { cambiarEstadoLote, confirmarRetiro, responderOferta } from "../acciones";
 
-export const metadata: Metadata = { title: "Panel del vendedor" };
+export const metadata: Metadata = { title: "Mis ventas" };
 
 export default async function PanelVendedor({ searchParams }: PageProps<"/panel/vendedor">) {
-  const perfil = await exigirRol("vendedor");
+  const perfil = await exigirRol("usuario");
   const { ok, error } = await searchParams;
   const supabase = await crearClienteServidor();
 
@@ -43,12 +44,13 @@ export default async function PanelVendedor({ searchParams }: PageProps<"/panel/
 
   return (
     <div className="contenedor py-10">
+      <PestanasPanel activa="ventas" />
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Hola, {perfil.nombre.split(" ")[0]}</h1>
+          <h1 className="text-3xl font-bold">Mis ventas</h1>
           <p className="text-stone-600">
-            {perfil.empresa} ·{" "}
-            <Link href="/panel/perfil" className="text-sm font-medium text-marca hover:underline">Mis datos</Link>
+            Hola, {perfil.nombre.split(" ")[0]}
+            {perfil.empresa && ` · ${perfil.empresa}`}
           </p>
         </div>
         <Link href="/panel/vendedor/lotes/nuevo" className="btn">+ Publicar lote</Link>
@@ -123,7 +125,7 @@ export default async function PanelVendedor({ searchParams }: PageProps<"/panel/
                         <BotonEnviar className="btn" pendiente="Verificando...">Confirmar retiro</BotonEnviar>
                       </div>
                     </form>
-                    <FormReclamo ofertaId={oferta.id} motivos={["no_se_presento", "otro"]} />
+                    <FormReclamo ofertaId={oferta.id} motivos={["no_se_presento", "otro"]} desde="ventas" />
                   </>
                 )}
                 {oferta.estado === "completada" && (

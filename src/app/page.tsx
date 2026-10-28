@@ -44,7 +44,7 @@ export default async function Inicio() {
               cobrar.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/registro?rol=vendedor" className="btn px-6 py-3 text-base">
+              <Link href="/registro?volver=/panel/vendedor/lotes/nuevo" className="btn px-6 py-3 text-base">
                 Publicar mi sobrante
               </Link>
               <Link href="/lotes" className="btn-sec px-6 py-3 text-base">
@@ -84,7 +84,7 @@ export default async function Inicio() {
         ) : (
           <p className="tarjeta p-8 text-center text-stone-500">
             Todavía no hay lotes publicados. ¿Tenés un sobrante?{" "}
-            <Link href="/registro?rol=vendedor" className="font-semibold text-marca hover:underline">
+            <Link href="/registro?volver=/panel/vendedor/lotes/nuevo" className="font-semibold text-marca hover:underline">
               Publicalo primero
             </Link>
             .

@@ -177,9 +177,9 @@ export const notificar = {
     });
   },
 
-  nuevoUsuario(nombre: string, rol: string) {
+  nuevoUsuario(nombre: string) {
     enSegundoPlano("nuevo usuario", async () => {
-      await enviarEmail({ para: emailsAdmin(), ...plantillas.adminNuevoUsuario(nombre, rol) });
+      await enviarEmail({ para: emailsAdmin(), ...plantillas.adminNuevoUsuario(nombre) });
     });
   },
 };

@@ -24,7 +24,7 @@ export default function Terminos() {
       <ul>
         <li>Tenés que ser mayor de edad y dar datos reales. Confirmamos tu email con un código.</li>
         <li>Sos responsable de cuidar tu contraseña. Te recomendamos activar la verificación en dos pasos.</li>
-        <li>Los compradores tienen que estar verificados por Sobrá para poder ofertar.</li>
+        <li>Con una misma cuenta podés vender y comprar. Para ofertar, Sobrá tiene que haber verificado tu cuenta.</li>
         <li>Podemos suspender cuentas que den datos falsos, incumplan estas reglas o intenten estafar.</li>
       </ul>
 

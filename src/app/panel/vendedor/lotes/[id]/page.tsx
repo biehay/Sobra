@@ -10,7 +10,7 @@ import { FormLote } from "../../form-lote";
 export const metadata: Metadata = { title: "Editar lote" };
 
 export default async function EditarLote({ params, searchParams }: PageProps<"/panel/vendedor/lotes/[id]">) {
-  const perfil = await exigirRol("vendedor");
+  const perfil = await exigirRol("usuario");
   const { id } = await params;
   const { error } = await searchParams;
 
@@ -23,7 +23,7 @@ export default async function EditarLote({ params, searchParams }: PageProps<"/p
 
   return (
     <div className="contenedor max-w-3xl py-10">
-      <Link href="/panel/vendedor" className="text-sm text-stone-500 hover:text-stone-800">← Mi panel</Link>
+      <Link href="/panel/vendedor" className="text-sm text-stone-500 hover:text-stone-800">← Mis ventas</Link>
       <h1 className="mt-2 text-3xl font-bold">Editar lote</h1>
       <div className="my-4 space-y-3">
         <Aviso error={error} />

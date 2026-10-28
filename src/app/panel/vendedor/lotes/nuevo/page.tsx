@@ -6,7 +6,7 @@ import { FormLote } from "../../form-lote";
 export const metadata: Metadata = { title: "Publicar lote" };
 
 export default async function NuevoLote({ searchParams }: PageProps<"/panel/vendedor/lotes/nuevo">) {
-  const perfil = await exigirRol("vendedor");
+  const perfil = await exigirRol("usuario");
   const { error } = await searchParams;
 
   return (
