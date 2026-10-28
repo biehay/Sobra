@@ -30,6 +30,18 @@ function plantilla({ titulo, parrafos, boton }: { titulo: string; parrafos: stri
 }
 
 export const plantillas = {
+  codigoAcceso: (codigo: string): Plantilla => ({
+    asunto: `Tu código de Sobrá: ${codigo}`,
+    html: plantilla({
+      titulo: "Tu código para ingresar",
+      parrafos: [
+        "Escribí este código en Sobrá para confirmar que sos vos:",
+        `<span style="display:block;padding:16px;background:#fff1e8;border-radius:8px;text-align:center;font-family:'Courier New',monospace;font-size:32px;font-weight:700;letter-spacing:8px;color:#9a3412">${escapar(codigo)}</span>`,
+        "Vence en 10 minutos. Si no fuiste vos, ignorá este email y cambiá tu contraseña: alguien la está usando.",
+      ],
+    }),
+  }),
+
   nuevaOferta: (lote: string, monto: number): Plantilla => ({
     asunto: `Nueva oferta por "${lote}"`,
     html: plantilla({

@@ -23,7 +23,7 @@ export default function Terminos() {
       <h2>2. Cuentas</h2>
       <ul>
         <li>Tenés que ser mayor de edad y dar datos reales. Confirmamos tu email con un código.</li>
-        <li>Sos responsable de cuidar tu contraseña. Te recomendamos activar la verificación en dos pasos.</li>
+        <li>Sos responsable de cuidar tu contraseña y tu email: cada vez que ingresás desde un dispositivo nuevo te mandamos un código a ese email para confirmar que sos vos.</li>
         <li>Con una misma cuenta podés vender y comprar. Para ofertar, Sobrá tiene que haber verificado tu cuenta.</li>
         <li>Podemos suspender cuentas que den datos falsos, incumplan estas reglas o intenten estafar.</li>
       </ul>

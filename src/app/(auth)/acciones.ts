@@ -5,6 +5,7 @@ import { headers } from "next/headers";
 import { z } from "zod";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { mensajeParaUsuario } from "@/lib/errores";
+import { enviarCodigoAcceso, marcarSesionVerificada } from "@/lib/codigo-acceso";
 import { problemaClave } from "@/lib/clave";
 import { normalizarTelefono, cuitValido, formatearCuit } from "@/lib/datos";
 import { notificar } from "@/lib/email/notificar";
@@ -19,6 +20,15 @@ function rutaVerificar(email: string, volver: string, aviso?: string) {
   const params = new URLSearchParams({ email, volver });
   if (aviso) params.set("ok", aviso);
   return `/verificar?${params}`;
+}
+
+// Segundo paso: se manda el código al email y se pasa a la pantalla de los 6
+// casilleros. Si no se pudo mandar, la pantalla muestra el error y el botón para reintentar.
+async function pedirSegundoPaso(volver: string): Promise<never> {
+  const { error } = await enviarCodigoAcceso();
+  const params = new URLSearchParams({ volver });
+  if (error) params.set("error", error);
+  redirect(`/seguridad/verificar?${params}`);
 }
 
 function conError(ruta: string, mensaje: string): never {
@@ -43,11 +53,7 @@ export async function ingresar(formData: FormData) {
     const sinConexion = error.status === 0 || /fetch/i.test(error.message);
     conError(`/ingresar?volver=${encodeURIComponent(volver)}`, sinConexion ? error.message : "Email o contraseña incorrectos");
   }
-  const { data: nivel } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-  if (nivel?.nextLevel === "aal2" && nivel.currentLevel !== "aal2") {
-    redirect(`/seguridad/verificar?volver=${encodeURIComponent(volver)}`);
-  }
-  redirect(volver);
+  await pedirSegundoPaso(volver);
 }
 
 const esquemaRegistro = z.object({
@@ -96,7 +102,7 @@ export async function registrarse(formData: FormData) {
   // Con la confirmación de email activada no hay sesión todavía: falta el código.
   if (!data.session) redirect(rutaVerificar(email, volver));
   notificar.nuevoUsuario(perfil.nombre);
-  redirect(volver);
+  await pedirSegundoPaso(volver);
 }
 
 export async function verificarCodigo(formData: FormData) {
@@ -113,6 +119,8 @@ export async function verificarCodigo(formData: FormData) {
     conError(pantalla, vencido ? "El código venció o no es correcto. Pedí uno nuevo." : "El código no es correcto");
   }
 
+  // Con este código el usuario ya probó que el email es suyo: la sesión queda verificada.
+  await marcarSesionVerificada();
   const meta = data.user.user_metadata as { nombre?: string };
   notificar.nuevoUsuario(meta.nombre ?? email);
   redirect(volver);

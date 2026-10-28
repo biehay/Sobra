@@ -4,12 +4,18 @@
 \set ON_ERROR_STOP 1
 begin;
 
--- Simula la sesión de un usuario. Las cuentas de admin entran con verificación
--- en dos pasos (aal2), salvo que se indique otra cosa.
-create function pg_temp.como(usuario uuid, aal text default 'aal2') returns void language plpgsql as $$
+-- Simula la sesión de un usuario. Por defecto la sesión ya ingresó el código
+-- del email (verificada); con segura = false, solo la contraseña.
+create function pg_temp.como(usuario uuid, segura boolean default true) returns void language plpgsql as $$
+declare
+  sesion uuid := md5(coalesce(usuario::text, '') || segura::text)::uuid;
 begin
+  reset role;
+  if usuario is not null and segura then
+    insert into sesiones_verificadas (session_id, user_id) values (sesion, usuario) on conflict do nothing;
+  end if;
   perform set_config('request.jwt.claim.sub', coalesce(usuario::text, ''), true);
-  perform set_config('request.jwt.claims', json_build_object('sub', usuario, 'aal', aal)::text, true);
+  perform set_config('request.jwt.claims', json_build_object('sub', usuario, 'session_id', sesion)::text, true);
   if usuario is null then
     execute 'set local role anon';
   else
@@ -32,6 +38,36 @@ insert into auth.users (id, raw_user_meta_data) values
   ('00000000-0000-0000-0000-00000000000b', '{"rol":"vendedor","nombre":"Constructora Sur","telefono":"1111"}'),
   ('00000000-0000-0000-0000-00000000000c', '{"rol":"comprador","nombre":"Juan Contratista","telefono":"2222"}'),
   ('00000000-0000-0000-0000-00000000000d', '{"rol":"comprador","nombre":"Sin verificar"}');
+
+-- Código por email: solo sirve para la sesión a la que se le mandó, con 5 intentos.
+reset role;
+insert into codigos_acceso (id, user_id, session_id, hash, expira_at) values (
+  '30000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-00000000000c',
+  md5('00000000-0000-0000-0000-00000000000c' || 'false')::uuid,
+  encode(sha256(convert_to('30000000-0000-0000-0000-000000000001' || '482915', 'UTF8')), 'hex'),
+  now() + interval '10 minutes');
+select pg_temp.como('00000000-0000-0000-0000-00000000000d', false);
+do $$ begin
+  -- Otro usuario no puede usar ese código.
+  begin
+    perform verificar_codigo_acceso('482915');
+    raise exception 'NO FALLÓ: otro usuario usó el código';
+  exception when raise_exception then
+    if sqlerrm like 'NO FALLÓ%' then raise; end if;
+  end;
+end $$;
+select pg_temp.como('00000000-0000-0000-0000-00000000000c', false);
+do $$ begin
+  assert not sesion_segura(), 'la sesión arranca sin verificar';
+  assert not verificar_codigo_acceso('111111'), 'acepta un código incorrecto';
+  assert verificar_codigo_acceso('482 915'), 'rechaza el código correcto';
+  assert sesion_segura(), 'la sesión no quedó verificada';
+end $$;
+select pg_temp.debe_fallar($$select count(*) from codigos_acceso$$, 'un usuario lee los códigos');
+select pg_temp.debe_fallar($$insert into sesiones_verificadas values (gen_random_uuid(), auth.uid(), now())$$, 'un usuario se autoverifica');
+reset role;
+delete from sesiones_verificadas;
+select set_config('request.jwt.claim.sub', '', true), set_config('request.jwt.claims', '', true);
 
 -- Registrarse pidiendo ser admin no da el rol de admin: todos quedan como usuario.
 do $$ begin
@@ -58,6 +94,16 @@ do $$ begin
   assert (select count(*) from lotes) = 0, 'lote en revisión visible';
   assert (select count(*) from lote_retiro) = 0, 'retiro visible';
 end $$;
+-- Sin el código del email (sesión no verificada) un usuario no puede operar: ni publicar, ni editar su perfil.
+select pg_temp.como('00000000-0000-0000-0000-00000000000c', false);
+select pg_temp.debe_fallar($$insert into lotes (vendedor_id, titulo, categoria, condicion, zona, precio_pedido)
+  values (auth.uid(), 'Lote sin dos pasos', 'Otros', 'nuevo', 'CABA', 10)$$, 'publica sin dos pasos');
+select pg_temp.debe_fallar($$update perfiles set nombre = 'Otro nombre' where id = auth.uid()$$, 'edita perfil sin dos pasos');
+do $$ begin
+  assert (select count(*) from perfiles) = 1, 'sin dos pasos igual puede ver su propio perfil';
+end $$;
+select pg_temp.como('00000000-0000-0000-0000-00000000000c');
+
 -- Con una sola cuenta, el comprador también puede publicar (y borrar su borrador),
 -- pero nunca a nombre de otro.
 insert into lotes (id, vendedor_id, titulo, categoria, condicion, zona, precio_pedido)
@@ -73,7 +119,7 @@ select pg_temp.debe_fallar($$insert into lotes (vendedor_id, titulo, categoria, 
   values ('00000000-0000-0000-0000-00000000000b', 'Lote anónimo', 'Otros', 'nuevo', 'CABA', 10)$$, 'anónimo crea lote');
 
 -- Con solo la contraseña (sin el segundo paso) el admin no tiene permisos de admin.
-select pg_temp.como('00000000-0000-0000-0000-00000000000a', 'aal1');
+select pg_temp.como('00000000-0000-0000-0000-00000000000a', false);
 do $$ begin
   assert (select count(*) from lotes) = 0, 'admin sin dos pasos ve lotes en revisión';
   assert (select count(*) from perfiles) = 1, 'admin sin dos pasos ve perfiles ajenos';
@@ -113,6 +159,11 @@ select pg_temp.como('00000000-0000-0000-0000-00000000000d');
 select pg_temp.debe_fallar($$insert into ofertas (lote_id, comprador_id, monto)
   values ('10000000-0000-0000-0000-000000000001', auth.uid(), 400000)$$, 'comprador sin verificar oferta');
 
+-- Comprador verificado pero sin el segundo paso: no puede ofertar.
+select pg_temp.como('00000000-0000-0000-0000-00000000000c', false);
+select pg_temp.debe_fallar($$insert into ofertas (lote_id, comprador_id, monto)
+  values ('10000000-0000-0000-0000-000000000001', auth.uid(), 450000)$$, 'oferta sin dos pasos');
+
 -- Comprador verificado oferta; no puede autoaceptarse.
 select pg_temp.como('00000000-0000-0000-0000-00000000000c');
 insert into ofertas (id, lote_id, comprador_id, monto, estado)
@@ -121,6 +172,11 @@ do $$ begin
   assert (select estado from ofertas) = 'pendiente', 'la oferta debe nacer pendiente';
 end $$;
 select pg_temp.debe_fallar($$select responder_oferta('20000000-0000-0000-0000-000000000001', true)$$, 'comprador acepta su oferta');
+
+-- Sin el segundo paso, el vendedor tampoco puede aceptar la oferta.
+select pg_temp.como('00000000-0000-0000-0000-00000000000b', false);
+select pg_temp.debe_fallar($$select responder_oferta('20000000-0000-0000-0000-000000000001', true)$$, 'acepta sin dos pasos');
+select pg_temp.como('00000000-0000-0000-0000-00000000000c');
 select pg_temp.debe_fallar($$update ofertas set estado = 'aceptada'$$, 'comprador edita la oferta');
 
 -- Vendedor ve la oferta y la acepta: el lote queda reservado.

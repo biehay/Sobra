@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Aviso } from "@/components/aviso";
 import { crearClienteServidor } from "@/lib/supabase/server";
-import { obtenerPerfil } from "@/lib/sesion";
+import { obtenerPerfil, sesionVerificada } from "@/lib/sesion";
 import {
   CONDICIONES,
   MODOS_RETIRO,
@@ -139,6 +139,12 @@ export default async function DetalleLote({ params, searchParams }: PageProps<"/
             </p>
           ) : perfil.rol === "admin" ? (
             <p className="tarjeta p-6 text-sm text-stone-600">Las cuentas de administración no ofertan.</p>
+          ) : !(await sesionVerificada()) ? (
+            <div className="tarjeta space-y-3 p-6">
+              <p className="font-semibold">Confirmá que sos vos</p>
+              <p className="text-sm text-stone-600">Para ofertar, ingresá el código que te mandamos por email.</p>
+              <Link href={`/seguridad/verificar?volver=/lotes/${lote.id}`} className="btn w-full">Ingresar el código</Link>
+            </div>
           ) : !perfil.verificado ? (
             <div className="tarjeta space-y-3 p-6">
               <p className="font-semibold">Tu cuenta está en verificación</p>

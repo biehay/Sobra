@@ -51,9 +51,9 @@ Necesitás [Node.js 20 o más](https://nodejs.org) y una cuenta gratis en [Supab
    update perfiles set rol = 'admin', verificado = true
    where id = (select id from auth.users where email = 'TU-EMAIL');
    ```
-7. **Activá la verificación en dos pasos**: al entrar a `/admin` la app te pide escanear un código
-   QR con una app autenticadora (Google Authenticator, Microsoft Authenticator, etc.). Es obligatoria
-   para el admin: sin ella la base no le da permisos de admin, aunque tenga la contraseña.
+7. **Código por email en cada ingreso**: al registrarse y al ingresar desde un dispositivo nuevo, la
+   app manda un código de 6 dígitos al email de la cuenta. Sin `RESEND_API_KEY`, mientras desarrollás,
+   el código aparece en la terminal donde corre `npm run dev`.
 
 ## Emails: código de verificación y avisos
 
@@ -112,12 +112,11 @@ registrarte sin código.
   celulares), para no revelar la ubicación del depósito.
 - **Claves secretas**: `SUPABASE_SERVICE_ROLE_KEY` y `RESEND_API_KEY` solo existen en el servidor
   (el código que las usa está marcado `server-only`). `.env.local` no se sube a GitHub.
-- **Verificación en dos pasos**: obligatoria para el admin y opcional para el resto (en *Mis datos*).
-  La exige la propia base: con solo la contraseña, una cuenta de admin no ve ni modifica nada ajeno.
-  Si perdés el celular, entrá a Supabase (*Authentication > Users*, tu usuario, *Remove MFA factor*)
-  o corré en el *SQL Editor*:
-  `delete from auth.mfa_factors where user_id = (select id from auth.users where email = 'TU-EMAIL');`
-  y volvé a activarla.
+- **Verificación en dos pasos por email**: obligatoria para todas las cuentas. Después de la
+  contraseña, la app manda un código de 6 dígitos al email (vence en 10 minutos, 5 intentos, como
+  máximo uno por minuto y cinco por hora). La base guarda solo un hash del código y exige una sesión
+  verificada para cualquier cambio: con la contraseña sola se puede mirar lo propio, pero no operar,
+  y el admin no tiene permisos de admin. La verificación dura 30 días por dispositivo.
 - **Cookies**: solo las necesarias para la sesión; no hay cookies de publicidad ni de análisis. Un
   aviso lo informa la primera vez y las páginas `/privacidad` y `/terminos` lo detallan. **Hacé
   revisar esos dos textos por un abogado antes de lanzar** (y consultá la inscripción de la base de
@@ -133,7 +132,7 @@ registrarte sin código.
 ### Recorrido completo en el navegador
 
 `pruebas/recorrido.mjs` usa la app como lo haría una persona, en un navegador real y contra un Supabase
-local: aviso de cookies, registro con código por email, admin con dos pasos, carga de un lote con fotos,
+local: aviso de cookies, registro e ingreso con código por email, carga de un lote con fotos,
 revisión, ofertas, pago, código de retiro, reclamo, liquidación, perfil y recuperación de contraseña.
 Termina con la lista de problemas encontrados (errores de JavaScript, errores del servidor o pasos
 que no funcionaron) y guarda capturas de cada pantalla en `pruebas/capturas/`.
@@ -145,8 +144,8 @@ npx supabase start          # la primera vez descarga todo; al final muestra las
 npx supabase db reset       # base limpia con todas las migraciones
 npx playwright install chromium
 # en .env.local: NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321 y las claves de "supabase status"
-npm run build && npm start  # en otra terminal
-SUPABASE_SERVICE_ROLE_KEY=<clave service_role local> npm run test:recorrido
+SOBRA_CODIGOS_EN_CONSOLA=1 npm run build && npm start > servidor.log  # en otra terminal
+SOBRA_LOG=servidor.log SUPABASE_SERVICE_ROLE_KEY=<clave service_role local> npm run test:recorrido
 ```
 
 Los emails del Supabase local (por ejemplo, los códigos de verificación) se ven en http://127.0.0.1:54324.

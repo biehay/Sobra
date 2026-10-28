@@ -51,7 +51,7 @@ export default function Privacidad() {
       <h2>Cómo los protegemos</h2>
       <p>
         Toda la información viaja cifrada (HTTPS) y se guarda cifrada. Cada usuario accede solo a lo suyo; esa regla está
-        en la propia base de datos. Las cuentas de administración usan verificación en dos pasos.
+        en la propia base de datos. Todas las cuentas confirman cada ingreso con un código que mandamos por email.
       </p>
 
       <h2>Cuánto tiempo los guardamos</h2>

@@ -13,13 +13,11 @@ export const obtenerPerfil = cache(async (): Promise<Perfil | null> => {
   return perfil as Perfil | null;
 });
 
-// Verificación en dos pasos de la sesión actual:
-// - `activa`: el usuario tiene una app autenticadora registrada.
-// - `verificada`: en esta sesión ya ingresó el código (nivel aal2).
-export const dosPasos = cache(async () => {
+// Si la sesión actual ya ingresó el código que mandamos por email (segundo paso).
+export const sesionVerificada = cache(async (): Promise<boolean> => {
   const supabase = await crearClienteServidor();
-  const { data } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-  return { activa: data?.nextLevel === "aal2", verificada: data?.currentLevel === "aal2" };
+  const { data } = await supabase.rpc("sesion_segura");
+  return data === true;
 });
 
 export async function exigirRol(...roles: Rol[]): Promise<Perfil> {
@@ -27,12 +25,10 @@ export async function exigirRol(...roles: Rol[]): Promise<Perfil> {
   if (!perfil) redirect("/ingresar");
   if (!roles.includes(perfil.rol)) redirect("/panel");
 
-  // El admin está obligado a usar dos pasos. La base tampoco le da permisos
-  // de admin sin ellos (ver es_admin()), esto solo lo lleva a la pantalla correcta.
-  if (perfil.rol === "admin") {
-    const { activa, verificada } = await dosPasos();
-    if (!activa) redirect("/seguridad/activar?volver=/admin");
-    if (!verificada) redirect("/seguridad/verificar?volver=/admin");
+  // Todas las cuentas confirman el ingreso con el código del email. La base
+  // tampoco deja operar sin eso (ver exigir_dos_pasos()); esto solo lleva a la pantalla.
+  if (!(await sesionVerificada())) {
+    redirect(`/seguridad/verificar?volver=${perfil.rol === "admin" ? "/admin" : "/panel"}`);
   }
   return perfil;
 }

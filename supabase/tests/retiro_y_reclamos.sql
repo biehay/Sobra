@@ -3,10 +3,18 @@
 \set ON_ERROR_STOP 1
 begin;
 
-create function pg_temp.como(usuario uuid, aal text default 'aal2') returns void language plpgsql as $$
+-- Simula la sesión de un usuario. Por defecto la sesión ya ingresó el código
+-- del email (verificada); con segura = false, solo la contraseña.
+create function pg_temp.como(usuario uuid, segura boolean default true) returns void language plpgsql as $$
+declare
+  sesion uuid := md5(coalesce(usuario::text, '') || segura::text)::uuid;
 begin
+  reset role;
+  if usuario is not null and segura then
+    insert into sesiones_verificadas (session_id, user_id) values (sesion, usuario) on conflict do nothing;
+  end if;
   perform set_config('request.jwt.claim.sub', coalesce(usuario::text, ''), true);
-  perform set_config('request.jwt.claims', json_build_object('sub', usuario, 'aal', aal)::text, true);
+  perform set_config('request.jwt.claims', json_build_object('sub', usuario, 'session_id', sesion)::text, true);
   if usuario is null then
     execute 'set local role anon';
   else
@@ -135,7 +143,7 @@ end $$;
 select pg_temp.debe_fallar($$select resolver_reclamo((select id from reclamos limit 1), 'completar', 'Me lo resuelvo yo')$$, 'el vendedor resuelve el reclamo');
 
 -- El admin sin dos pasos tampoco puede resolver.
-select pg_temp.como('00000000-0000-0000-0000-00000000000a', 'aal1');
+select pg_temp.como('00000000-0000-0000-0000-00000000000a', false);
 select pg_temp.debe_fallar($$select resolver_reclamo((select id from reclamos limit 1), 'devolver', 'x')$$, 'admin sin dos pasos resuelve');
 select pg_temp.como('00000000-0000-0000-0000-00000000000a');
 select pg_temp.debe_fallar($$select completar_operacion((select oferta from ops where n = 3))$$, 'admin completa con reclamo abierto');

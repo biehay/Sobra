@@ -5,7 +5,6 @@
 //
 // Uso: npm run test:recorrido  (con `npx supabase start` y `npm run dev` corriendo)
 import { chromium } from "playwright-core";
-import crypto from "node:crypto";
 import fs from "node:fs";
 
 const BASE = "http://localhost:3000";
@@ -75,27 +74,28 @@ async function ultimoEmail(para, asuntoContiene, despuesDe = 0) {
   throw new Error(`No llegó el email "${asuntoContiene}" a ${para}`);
 }
 
-// --- TOTP (RFC 6238) para la app autenticadora ------------------------------
-function base32(secreto) {
-  const alfabeto = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
-  let bits = "";
-  for (const c of secreto.replace(/=+$/, "").toUpperCase()) bits += alfabeto.indexOf(c).toString(2).padStart(5, "0");
-  return Buffer.from(bits.match(/.{8}/g).map((b) => parseInt(b, 2)));
+// --- Código de acceso (segundo paso) -----------------------------------------
+// Sin Resend, el servidor muestra el código en su log (SOBRA_CODIGOS_EN_CONSOLA=1);
+// SOBRA_LOG es el archivo donde se guarda la salida de `npm start`.
+const LOG = process.env.SOBRA_LOG;
+if (!LOG) throw new Error("Falta SOBRA_LOG: el archivo con la salida del servidor (ver README)");
+function marcaLog() {
+  return fs.existsSync(LOG) ? fs.statSync(LOG).size : 0;
 }
-// Si faltan menos de 5 segundos para que cambie el código, espera al siguiente
-// (igual que una persona que ve que el código está por vencer).
-async function totpFresco(secreto) {
-  const restante = 30 - (Math.floor(Date.now() / 1000) % 30);
-  if (restante < 5) await new Promise((r) => setTimeout(r, (restante + 1) * 1000));
-  return totp(secreto);
+async function codigoDeAcceso(email, desde) {
+  for (let i = 0; i < 40; i++) {
+    const nuevo = fs.readFileSync(LOG).subarray(desde).toString();
+    const encontrados = [...nuevo.matchAll(new RegExp(`Código de acceso para ${email.replace(".", "\\.")}: (\\d{6})`, "g"))];
+    if (encontrados.length) return encontrados.at(-1)[1];
+    await new Promise((r) => setTimeout(r, 250));
+  }
+  throw new Error(`No apareció el código de acceso de ${email} en el log`);
 }
 
-function totp(secreto) {
-  const contador = Buffer.alloc(8);
-  contador.writeBigUInt64BE(BigInt(Math.floor(Date.now() / 1000 / 30)));
-  const h = crypto.createHmac("sha1", base32(secreto)).update(contador).digest();
-  const o = h[h.length - 1] & 0xf;
-  return String((h.readUInt32BE(o) & 0x7fffffff) % 1000000).padStart(6, "0");
+// Escribe el código en los 6 casilleros (se envía solo al completarse).
+async function escribirCodigo(pg, codigo) {
+  await pg.locator("input[aria-label='Dígito 1']").click();
+  await pg.keyboard.type(codigo, { delay: 30 });
 }
 
 // --- Fotos de prueba (con un bloque EXIF con "GPS" para verificar que se borra)
@@ -219,8 +219,7 @@ try {
     volver: "/panel/vendedor/lotes/nuevo",
   });
   await captura(vend, "verificar-codigo");
-  await vend.fill("#codigo", codigoV === "000000" ? "111111" : "000000");
-  await tras(vend, "error=", () => vend.click("button:has-text('Confirmar')"));
+  await tras(vend, "error=", () => escribirCodigo(vend, codigoV === "000000" ? "111111" : "000000"));
   esperar((await aviso(vend)).includes("no es correcto"), "código incorrecto muestra error");
   // Pedir otro código enseguida: Supabase pide esperar un minuto y la app lo avisa.
   await tras(vend, "error=", () => vend.click("button:has-text('pedí otro código')"));
@@ -228,8 +227,7 @@ try {
   await vend.waitForTimeout(61000);
   await tras(vend, "ok=", () => vend.click("button:has-text('pedí otro código')"));
   const codigoV2 = (await ultimoEmail("marta@constructora.test", "Tu código de Sobrá", Date.now() - 5000)).Subject.match(/\d{6}/)[0];
-  await vend.fill("#codigo", codigoV2);
-  await vend.click("button:has-text('Confirmar')");
+  await escribirCodigo(vend, codigoV2);
   await vend.waitForURL("**/panel/vendedor/lotes/nuevo");
   await vend.goto(`${BASE}/panel/vendedor`);
   esperar(await vend.locator("nav a:has-text('Mis compras')").isVisible(), "el panel tiene pestañas de ventas y compras");
@@ -239,47 +237,31 @@ try {
   // 3. Compradores ---------------------------------------------------------
   const comp = await nuevaPagina(browser, "comprador", 390);
   const codigoC = await registrar(comp, { nombre: "Juan Pérez", email: "juan@contratista.test", telefono: "11 3456 7890", zona: "CABA" });
-  await comp.fill("#codigo", codigoC);
-  await comp.click("button:has-text('Confirmar')");
+  await escribirCodigo(comp, codigoC);
   await comp.waitForURL("**/panel/comprador**");
   await captura(comp, "panel-comprador-sin-verificar-celular");
 
   const comp2 = await nuevaPagina(browser, "comprador2");
   const codigoC2 = await registrar(comp2, { nombre: "Lucía Díaz", email: "lucia@arquitecta.test", telefono: "11 4567 8901" });
-  await comp2.fill("#codigo", codigoC2);
-  await comp2.click("button:has-text('Confirmar')");
+  await escribirCodigo(comp2, codigoC2);
   await comp2.waitForURL("**/panel/comprador**");
   await comp.click("nav a:has-text('Mis ventas')");
   await comp.waitForURL("**/panel/vendedor");
   esperar(await comp.locator("a:has-text('Publicar lote')").first().isVisible(), "un comprador también puede publicar con la misma cuenta");
   paso("Dos usuarios más registrados (uno desde celular); la misma cuenta sirve para comprar y vender");
 
-  // 4. Admin con verificación en dos pasos ----------------------------------
+  // 4. Admin --------------------------------------------------------------
   const adm = await nuevaPagina(browser, "admin");
   const codigoA = await registrar(adm, { nombre: "Admin Sobrá", email: "admin@sobra.test", telefono: "11 0000 0000" });
-  await adm.fill("#codigo", codigoA);
-  await adm.click("button:has-text('Confirmar')");
+  await escribirCodigo(adm, codigoA);
   await adm.waitForURL("**/panel/**");
   const { users } = await api("/auth/v1/admin/users?per_page=100");
   const idAdmin = users.find((u) => u.email === "admin@sobra.test").id;
   await api(`/rest/v1/perfiles?id=eq.${idAdmin}`, { method: "PATCH", body: JSON.stringify({ rol: "admin", verificado: true }) });
   await adm.goto(`${BASE}/admin`);
-  await adm.waitForURL("**/seguridad/activar**");
-  await captura(adm, "activar-dos-pasos");
-  await adm.click("button:has-text('Generar código QR')");
-  await adm.waitForSelector("img[alt^='Código QR']");
-  await adm.click("summary:has-text('No podés escanearlo')");
-  const secreto = (await adm.locator("details code").textContent()).trim();
-  await captura(adm, "qr-dos-pasos");
-  await adm.fill("#codigo", "000000");
-  await adm.click("button:has-text('Activar')");
-  await adm.waitForSelector("text=El código no es correcto");
-  await adm.fill("#codigo", await totpFresco(secreto));
-  await adm.click("button:has-text('Activar')");
-  await adm.waitForURL("**/admin");
   await adm.waitForSelector("h1:has-text('Administración')");
   await captura(adm, "admin-inicial");
-  paso("Admin: obligado a activar dos pasos; código incorrecto rechazado; activado con QR");
+  paso("Admin: la sesión confirmada con el código del email ya entra al panel de admin");
 
   // 5. Vendedor carga un lote con fotos ------------------------------------
   const fotos = await crearFotos(browser);
@@ -479,7 +461,11 @@ try {
   const rec = await ultimoEmail("lucia@arquitecta.test", "nueva contraseña", antesRec);
   const link = rec.HTML.match(/href="([^"]+)"/)[1].replace(/&amp;/g, "&");
   await comp2.goto(link);
-  await comp2.waitForURL("**/nueva-clave**");
+  await comp2.waitForURL((u) => u.pathname === "/seguridad/verificar" && u.searchParams.get("volver") === "/nueva-clave");
+  let marca = marcaLog();
+  await tras(comp2, "ok=", () => comp2.click("button:has-text('Enviarme el código')"));
+  await escribirCodigo(comp2, await codigoDeAcceso("lucia@arquitecta.test", marca));
+  await comp2.waitForURL("**/nueva-clave");
   await comp2.fill("#password", "otra-clave-456");
   await comp2.fill("#confirmacion", "otra-clave-456");
   await comp2.click("button:has-text('Guardar contraseña')");
@@ -488,21 +474,30 @@ try {
   await comp2.goto(`${BASE}/ingresar`);
   await comp2.fill("#email", "lucia@arquitecta.test");
   await comp2.fill("#password", "otra-clave-456");
+  marca = marcaLog();
   await comp2.click("button:has-text('Ingresar')");
+  await comp2.waitForURL("**/seguridad/verificar**");
+  await escribirCodigo(comp2, await codigoDeAcceso("lucia@arquitecta.test", marca));
   await comp2.waitForURL("**/panel/comprador**");
-  paso("Perfil editado; recuperación de contraseña por email y login con la nueva");
+  paso("Perfil editado; recuperación de contraseña con código por email y login con la nueva y su código");
 
   // 14. Admin vuelve a entrar: le pide el código ----------------------------
   await adm.context().clearCookies();
+  marca = marcaLog();
   await ingresar(adm, "admin@sobra.test", "/admin");
   await adm.waitForURL("**/seguridad/verificar**");
-  await captura(adm, "admin-pide-codigo");
-  await adm.fill("#codigo", await totpFresco(secreto));
-  await adm.click("button:has-text('Continuar')");
+  await captura(adm, "pide-codigo-email");
+  const codigoAdm = await codigoDeAcceso("admin@sobra.test", marca);
+  // Con la contraseña sola no entra al panel de admin.
+  await adm.goto(`${BASE}/admin`);
+  esperar(adm.url().includes("/seguridad/verificar"), "sin el código no entra al panel de admin");
+  await tras(adm, "error=", () => escribirCodigo(adm, codigoAdm === "000000" ? "111111" : "000000"));
+  esperar((await aviso(adm)).includes("no es correcto"), "rechaza un código de acceso incorrecto");
+  await escribirCodigo(adm, codigoAdm);
   await adm.waitForURL("**/admin");
   await adm.waitForSelector("text=Volumen transaccionado");
   await captura(adm, "admin-final");
-  paso("Admin: al volver a ingresar se le pide el código de la app autenticadora");
+  paso("Admin: al volver a ingresar se le pide el código del email; uno incorrecto se rechaza");
 
   // 15. Cerrar sesión ------------------------------------------------------
   await vend.click("button:has-text('Salir')");

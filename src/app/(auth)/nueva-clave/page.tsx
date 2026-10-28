@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { Aviso } from "@/components/aviso";
 import { CampoClave } from "@/components/campo-clave";
 import { BotonEnviar } from "@/components/boton-enviar";
-import { obtenerPerfil } from "@/lib/sesion";
+import { obtenerPerfil, sesionVerificada } from "@/lib/sesion";
 import { cambiarClave } from "../acciones";
 
 export const metadata: Metadata = { title: "Nueva contraseña" };
@@ -11,6 +11,8 @@ export const metadata: Metadata = { title: "Nueva contraseña" };
 // Se llega desde el link del email de recuperación, que ya inició la sesión.
 export default async function NuevaClave({ searchParams }: PageProps<"/nueva-clave">) {
   if (!(await obtenerPerfil())) redirect("/recuperar");
+  // Para cambiar la contraseña, la sesión tiene que haber confirmado el código del email.
+  if (!(await sesionVerificada())) redirect("/seguridad/verificar?volver=/nueva-clave");
   const { error } = await searchParams;
 
   return (

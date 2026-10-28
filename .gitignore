@@ -43,3 +43,5 @@ next-env.d.ts
 
 # capturas del recorrido completo
 /pruebas/capturas
+
+servidor.log

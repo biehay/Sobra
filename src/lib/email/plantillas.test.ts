@@ -16,6 +16,12 @@ describe("plantillas de email", () => {
     expect(html).toContain(urlSitio("/panel/vendedor"));
   });
 
+  it("manda el código de acceso en el asunto y en el cuerpo", () => {
+    const { asunto, html } = plantillas.codigoAcceso("048215");
+    expect(asunto).toContain("048215");
+    expect(html).toContain("048215");
+  });
+
   it("le manda el código de retiro al comprador", () => {
     expect(plantillas.pagoConfirmadoComprador("Lote", "482915").html).toContain("482915");
   });

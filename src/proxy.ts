@@ -35,19 +35,6 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Quien activó la verificación en dos pasos tiene que ingresar el código
-  // antes de entrar a su panel.
-  if (privada) {
-    const { data: nivel } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-    if (nivel?.nextLevel === "aal2" && nivel.currentLevel !== "aal2") {
-      const url = request.nextUrl.clone();
-      url.pathname = "/seguridad/verificar";
-      url.search = "";
-      url.searchParams.set("volver", request.nextUrl.pathname);
-      return NextResponse.redirect(url);
-    }
-  }
-
   return response;
 }
 

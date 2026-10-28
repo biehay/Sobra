@@ -4,7 +4,7 @@ import { Aviso } from "@/components/aviso";
 import { CampoCuit } from "@/components/campo-cuit";
 import { PestanasPanel } from "@/components/pestanas-panel";
 import { BotonEnviar } from "@/components/boton-enviar";
-import { dosPasos, exigirRol } from "@/lib/sesion";
+import { exigirRol } from "@/lib/sesion";
 import { ZONAS } from "@/lib/datos";
 import { actualizarPerfil } from "../acciones";
 
@@ -13,7 +13,6 @@ export const metadata: Metadata = { title: "Mis datos" };
 export default async function Perfil({ searchParams }: PageProps<"/panel/perfil">) {
   const perfil = await exigirRol("usuario", "admin");
   const { ok, error } = await searchParams;
-  const { activa } = await dosPasos();
 
   return (
     <div className="contenedor max-w-lg py-10">
@@ -64,16 +63,11 @@ export default async function Perfil({ searchParams }: PageProps<"/panel/perfil"
 
       <section className="tarjeta mt-6 space-y-3 p-6">
         <h2 className="font-bold">Seguridad</h2>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="text-sm font-medium">Verificación en dos pasos</p>
-            <p className={`text-sm ${activa ? "text-green-700" : "text-stone-500"}`}>
-              {activa ? "Activada" : "Desactivada: tu cuenta depende solo de la contraseña"}
-            </p>
-          </div>
-          <Link href="/seguridad/activar?volver=/panel/perfil" className="btn-sec px-3 py-1.5">
-            {activa ? "Administrar" : "Activar"}
-          </Link>
+        <div>
+          <p className="text-sm font-medium">Verificación en dos pasos: <span className="text-green-700">activada</span></p>
+          <p className="text-sm text-stone-500">
+            Cada vez que ingresás desde un dispositivo nuevo te mandamos un código a tu email para confirmar que sos vos.
+          </p>
         </div>
         <Link href="/nueva-clave" className="inline-block text-sm text-stone-500 hover:text-marca">Cambiar contraseña</Link>
       </section>
