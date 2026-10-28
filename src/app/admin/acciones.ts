@@ -3,13 +3,14 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { crearClienteServidor } from "@/lib/supabase/server";
+import { mensajeParaUsuario } from "@/lib/errores";
 import { exigirRol } from "@/lib/sesion";
 import { notificar } from "@/lib/email/notificar";
 
 function volver(tipo: "ok" | "error", mensaje: string): never {
   revalidatePath("/admin");
   revalidatePath("/lotes");
-  redirect(`/admin?${tipo}=${encodeURIComponent(mensaje)}`);
+  redirect(`/admin?${tipo}=${encodeURIComponent(tipo === "error" ? mensajeParaUsuario(mensaje) : mensaje)}`);
 }
 
 export async function revisarLote(formData: FormData) {

@@ -82,6 +82,14 @@ function base32(secreto) {
   for (const c of secreto.replace(/=+$/, "").toUpperCase()) bits += alfabeto.indexOf(c).toString(2).padStart(5, "0");
   return Buffer.from(bits.match(/.{8}/g).map((b) => parseInt(b, 2)));
 }
+// Si faltan menos de 5 segundos para que cambie el código, espera al siguiente
+// (igual que una persona que ve que el código está por vencer).
+async function totpFresco(secreto) {
+  const restante = 30 - (Math.floor(Date.now() / 1000) % 30);
+  if (restante < 5) await new Promise((r) => setTimeout(r, (restante + 1) * 1000));
+  return totp(secreto);
+}
+
 function totp(secreto) {
   const contador = Buffer.alloc(8);
   contador.writeBigUInt64BE(BigInt(Math.floor(Date.now() / 1000 / 30)));
@@ -198,6 +206,14 @@ try {
   await vend.fill("#password", CLAVE);
   await tras(vend, "error=", () => vend.click("button:has-text('Crear cuenta')"));
   esperar((await aviso(vend)).includes("código de área"), "el registro rechaza un teléfono inválido");
+  await vend.fill("#nombre", "Marta Gómez");
+  await vend.fill("#telefono", "11 2345 6789");
+  await vend.selectOption("#zona", "GBA Sur");
+  await vend.fill("#email", "marta@constructora.test");
+  await vend.fill("#password", "clave1234");
+  esperar((await vend.locator("#password-reglas li", { hasText: "Un signo" }).getAttribute("class")).includes("stone"), "la lista marca que falta el signo");
+  await tras(vend, "error=", () => vend.click("button:has-text('Crear cuenta')"));
+  esperar((await aviso(vend)).includes("un signo"), "el registro rechaza una contraseña sin signo");
   const codigoV = await registrar(vend, {
     nombre: "Marta Gómez", empresa: "Constructora del Sur", email: "marta@constructora.test", telefono: "11 2345 6789",
     volver: "/panel/vendedor/lotes/nuevo",
@@ -258,7 +274,7 @@ try {
   await adm.fill("#codigo", "000000");
   await adm.click("button:has-text('Activar')");
   await adm.waitForSelector("text=El código no es correcto");
-  await adm.fill("#codigo", totp(secreto));
+  await adm.fill("#codigo", await totpFresco(secreto));
   await adm.click("button:has-text('Activar')");
   await adm.waitForURL("**/admin");
   await adm.waitForSelector("h1:has-text('Administración')");
@@ -481,7 +497,7 @@ try {
   await ingresar(adm, "admin@sobra.test", "/admin");
   await adm.waitForURL("**/seguridad/verificar**");
   await captura(adm, "admin-pide-codigo");
-  await adm.fill("#codigo", totp(secreto));
+  await adm.fill("#codigo", await totpFresco(secreto));
   await adm.click("button:has-text('Continuar')");
   await adm.waitForURL("**/admin");
   await adm.waitForSelector("text=Volumen transaccionado");

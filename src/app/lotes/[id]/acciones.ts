@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { crearClienteServidor } from "@/lib/supabase/server";
+import { mensajeParaUsuario } from "@/lib/errores";
 import { obtenerPerfil } from "@/lib/sesion";
 import { notificar } from "@/lib/email/notificar";
 
@@ -35,7 +36,7 @@ export async function ofertar(formData: FormData) {
 
   if (error) {
     const mensaje = error.code === "23505" ? "Ya tenés una oferta pendiente para este lote" : error.message;
-    redirect(`/lotes/${loteId}?error=${encodeURIComponent(mensaje)}`);
+    redirect(`/lotes/${loteId}?error=${encodeURIComponent(mensajeParaUsuario(mensaje))}`);
   }
 
   notificar.nuevaOferta(data.id);

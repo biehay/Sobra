@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Aviso } from "@/components/aviso";
+import { CampoClave } from "@/components/campo-clave";
 import { CampoCuit } from "@/components/campo-cuit";
 import { ZONAS } from "@/lib/datos";
 import { BotonEnviar } from "@/components/boton-enviar";
@@ -60,10 +61,7 @@ export default async function Registro({ searchParams }: PageProps<"/registro">)
           <label htmlFor="email" className="etiqueta">Email</label>
           <input id="email" name="email" type="email" required autoComplete="email" className="campo" />
         </div>
-        <div>
-          <label htmlFor="password" className="etiqueta">Contraseña</label>
-          <input id="password" name="password" type="password" minLength={8} required autoComplete="new-password" className="campo" />
-        </div>
+        <CampoClave />
         <BotonEnviar className="btn sm:col-span-2" pendiente="Creando cuenta...">Crear cuenta</BotonEnviar>
         <p className="text-center text-xs text-stone-500 sm:col-span-2">
           Al crear tu cuenta aceptás los{" "}

@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { z } from "zod";
 import { crearClienteServidor } from "@/lib/supabase/server";
+import { mensajeParaUsuario } from "@/lib/errores";
+import { problemaClave } from "@/lib/clave";
 import { normalizarTelefono, cuitValido, formatearCuit } from "@/lib/datos";
 import { notificar } from "@/lib/email/notificar";
 
@@ -21,7 +23,7 @@ function rutaVerificar(email: string, volver: string, aviso?: string) {
 
 function conError(ruta: string, mensaje: string): never {
   const separador = ruta.includes("?") ? "&" : "?";
-  redirect(`${ruta}${separador}error=${encodeURIComponent(mensaje)}`);
+  redirect(`${ruta}${separador}error=${encodeURIComponent(mensajeParaUsuario(mensaje))}`);
 }
 
 export async function ingresar(formData: FormData) {
@@ -38,7 +40,8 @@ export async function ingresar(formData: FormData) {
     redirect(rutaVerificar(email, volver, "Tu email no está confirmado. Te enviamos un código nuevo."));
   }
   if (error) {
-    conError(`/ingresar?volver=${encodeURIComponent(volver)}`, "Email o contraseña incorrectos");
+    const sinConexion = error.status === 0 || /fetch/i.test(error.message);
+    conError(`/ingresar?volver=${encodeURIComponent(volver)}`, sinConexion ? error.message : "Email o contraseña incorrectos");
   }
   const { data: nivel } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
   if (nivel?.nextLevel === "aal2" && nivel.currentLevel !== "aal2") {
@@ -62,7 +65,10 @@ const esquemaRegistro = z.object({
     .refine((t) => normalizarTelefono(t) !== null, "Ingresá un celular con código de área, por ejemplo 11 2345 6789"),
   zona: z.string().trim().min(1, "Elegí tu zona"),
   email: z.email("Ingresá un email válido"),
-  password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
+  password: z.string().superRefine((clave, ctx) => {
+    const problema = problemaClave(clave);
+    if (problema) ctx.addIssue({ code: "custom", message: problema });
+  }),
 });
 
 export async function registrarse(formData: FormData) {
@@ -138,7 +144,8 @@ export async function recuperarClave(formData: FormData) {
 
 export async function cambiarClave(formData: FormData) {
   const password = String(formData.get("password") ?? "");
-  if (password.length < 8) conError("/nueva-clave", "La contraseña debe tener al menos 8 caracteres");
+  const problema = problemaClave(password);
+  if (problema) conError("/nueva-clave", problema);
   if (password !== formData.get("confirmacion")) conError("/nueva-clave", "Las contraseñas no coinciden");
   const supabase = await crearClienteServidor();
   const { error } = await supabase.auth.updateUser({ password });

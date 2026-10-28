@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "test:recorrido": "node pruebas/recorrido.mjs"
+    "test:recorrido": "node pruebas/recorrido.mjs",
+    "verificar": "node pruebas/verificar-conexion.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

@@ -37,18 +37,21 @@ Necesitás [Node.js 20 o más](https://nodejs.org) y una cuenta gratis en [Supab
    archivo nuevo en esa carpeta, ejecutás solo ese.
 3. **Configurá las variables**: copiá `.env.example` como `.env.local` y completá
    `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY` (en Supabase: *Project Settings > API*).
-4. **Instalá y arrancá**:
+4. **Revisá la conexión**: `npm run verificar` revisa `.env.local` y la conexión con Supabase (y con
+   Resend, si lo configuraste) y te dice qué corregir. Si en la app aparece "No pudimos conectarnos con
+   el servidor", corré este comando.
+5. **Instalá y arrancá**:
    ```bash
    npm install
    npm run dev
    ```
    Abrí http://localhost:3000.
-5. **Hacete admin**: registrate en la app y después corré en el *SQL Editor* de Supabase:
+6. **Hacete admin**: registrate en la app y después corré en el *SQL Editor* de Supabase:
    ```sql
    update perfiles set rol = 'admin', verificado = true
    where id = (select id from auth.users where email = 'TU-EMAIL');
    ```
-6. **Activá la verificación en dos pasos**: al entrar a `/admin` la app te pide escanear un código
+7. **Activá la verificación en dos pasos**: al entrar a `/admin` la app te pide escanear un código
    QR con una app autenticadora (Google Authenticator, Microsoft Authenticator, etc.). Es obligatoria
    para el admin: sin ella la base no le da permisos de admin, aunque tenga la contraseña.
 
@@ -99,6 +102,8 @@ registrarte sin código.
 - **Tarjetas**: la app nunca recibe ni guarda datos de tarjetas. Cuando se integre Mercado Pago, el
   comprador las carga en el formulario de Mercado Pago (certificado PCI DSS) y a Sobrá solo le llega
   el resultado del pago.
+- **Contraseñas nuevas**: mínimo 8 caracteres, con al menos una letra, un número y un signo. La app
+  lo valida al registrarse y al cambiar la contraseña, y muestra los requisitos mientras se escribe.
 - **Datos personales** (CUIT, WhatsApp, dirección de retiro, email): los permisos de la base (RLS)
   hacen que cada usuario vea solo lo suyo. El contacto y la dirección de la contraparte se revelan
   recién cuando el pago está confirmado. Supabase cifra la base y los backups en disco (AES-256) y

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { crearClienteServidor } from "@/lib/supabase/server";
+import { mensajeParaUsuario } from "@/lib/errores";
 import { exigirRol } from "@/lib/sesion";
 import { CATEGORIAS, ZONAS, normalizarTelefono, cuitValido, formatearCuit } from "@/lib/datos";
 import { notificar } from "@/lib/email/notificar";
@@ -12,7 +13,7 @@ const PANEL_VENDEDOR = "/panel/vendedor";
 const PANEL_COMPRADOR = "/panel/comprador";
 
 function volverCon(ruta: string, tipo: "ok" | "error", mensaje: string): never {
-  redirect(`${ruta}?${tipo}=${encodeURIComponent(mensaje)}`);
+  redirect(`${ruta}?${tipo}=${encodeURIComponent(tipo === "error" ? mensajeParaUsuario(mensaje) : mensaje)}`);
 }
 
 // Lee un campo JSON del formulario; si no es JSON válido, la validación falla.

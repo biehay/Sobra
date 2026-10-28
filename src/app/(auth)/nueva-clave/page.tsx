@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Aviso } from "@/components/aviso";
+import { CampoClave } from "@/components/campo-clave";
 import { BotonEnviar } from "@/components/boton-enviar";
 import { obtenerPerfil } from "@/lib/sesion";
 import { cambiarClave } from "../acciones";
@@ -19,10 +20,7 @@ export default async function NuevaClave({ searchParams }: PageProps<"/nueva-cla
         <Aviso error={error} />
       </div>
       <form action={cambiarClave} className="tarjeta mt-4 space-y-4 p-6">
-        <div>
-          <label htmlFor="password" className="etiqueta">Nueva contraseña</label>
-          <input id="password" name="password" type="password" minLength={8} required autoComplete="new-password" className="campo" />
-        </div>
+        <CampoClave etiqueta="Nueva contraseña" />
         <div>
           <label htmlFor="confirmacion" className="etiqueta">Repetila</label>
           <input id="confirmacion" name="confirmacion" type="password" minLength={8} required autoComplete="new-password" className="campo" />
