@@ -181,11 +181,21 @@ try {
   await anon.reload();
   esperar(!(await anon.locator("text=Usamos solo las cookies necesarias").isVisible()), "el aviso no vuelve después de Entendido");
   await anon.setViewportSize({ width: 1280, height: 900 });
-  for (const ruta of ["/privacidad", "/terminos"]) {
+  for (const ruta of ["/privacidad", "/devoluciones", "/ayuda", "/terminos"]) {
     const r = await anon.goto(BASE + ruta);
     esperar(r.status() === 200, ruta + " responde");
   }
   await captura(anon, "terminos");
+  // Botón de arrepentimiento: desde el pie de página y sin cuenta.
+  await anon.click("footer a:has-text('Botón de arrepentimiento')");
+  await anon.waitForURL("**/arrepentimiento");
+  await anon.fill("#nombre", "Carla Consumidora");
+  await anon.fill("#email", "carla@consumidora.test");
+  await anon.fill("#operacion", "Porcelanato pagado ayer");
+  const marcaArr = marcaLog();
+  await tras(anon, "ok=", () => anon.click("button:has-text('Revocar mi compra')"));
+  esperar(/ARR-\d{6}/.test(await aviso(anon)), "el botón de arrepentimiento da un código de trámite");
+  esperar(await enLog("Para: carla@consumidora.test · Recibimos tu pedido de arrepentimiento", marcaArr), "le llega el código por email al consumidor");
   await anon.goto(BASE + "/privacidad#cookies");
   await captura(anon, "privacidad");
   await anon.goto(BASE + "/salir");
@@ -205,7 +215,7 @@ try {
   await anon.fill("#password", "incorrecta");
   await tras(anon, "error=", () => anon.click("button:has-text('Ingresar')"));
   esperar((await aviso(anon)).includes("incorrectos"), "login con datos incorrectos muestra error");
-  paso("Visitante: portada, catálogo, 404, protección de /panel y login incorrecto");
+  paso("Visitante: portada, catálogo, páginas legales y de ayuda, botón de arrepentimiento, 404, protección de /panel y login incorrecto");
 
   // 2. Registro del vendedor con código -------------------------------------
   const vend = await nuevaPagina(browser, "vendedor");

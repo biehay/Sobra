@@ -207,6 +207,32 @@ export const plantillas = {
     }),
   }),
 
+  arrepentimientoRecibido: (nombre: string, codigo: string): Plantilla => ({
+    asunto: `Recibimos tu pedido de arrepentimiento (${codigo})`,
+    html: plantilla({
+      titulo: "Recibimos tu pedido",
+      parrafos: [
+        `Hola, ${escapar(nombre)}. Recibimos tu pedido para revocar la compra.`,
+        `Tu código de trámite es <strong>${escapar(codigo)}</strong>. Guardalo por cualquier consulta.`,
+        "Te contactamos dentro de las 24 horas hábiles para coordinar la devolución del material y del dinero.",
+      ],
+    }),
+  }),
+
+  adminArrepentimiento: (codigo: string, nombre: string, email: string, telefono: string, operacion: string, detalle: string): Plantilla => ({
+    asunto: `[Admin] Pedido de arrepentimiento ${codigo}`,
+    html: plantilla({
+      titulo: "Pedido de arrepentimiento",
+      parrafos: [
+        `Código: <strong>${escapar(codigo)}</strong>`,
+        `${escapar(nombre)} · ${escapar(email)}${telefono ? ` · ${escapar(telefono)}` : ""}`,
+        `Compra: ${escapar(operacion)}`,
+        ...(detalle ? [`Comentarios: ${escapar(detalle)}`] : []),
+        "La ley pide responder dentro de las 24 horas con el código de trámite (ya se lo mandamos) y coordinar la devolución.",
+      ],
+    }),
+  }),
+
   adminNuevoUsuario: (nombre: string): Plantilla => ({
     asunto: `[Admin] Nuevo usuario: ${nombre}`,
     html: plantilla({

@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { Encabezado } from "@/components/encabezado";
+import { Logo } from "@/components/logo";
 import { AvisoCookies } from "@/components/aviso-cookies";
 import { COOKIE_AVISO } from "@/lib/cookies";
 import "./globals.css";
@@ -17,6 +18,12 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const COLUMNAS_PIE: [string, [string, string][]][] = [
+  ["Sobrá", [["Ver lotes", "/lotes"], ["Publicar un sobrante", "/panel/vendedor/lotes/nuevo"], ["Cómo funciona", "/como-funciona"]]],
+  ["Ayuda", [["Centro de ayuda", "/ayuda"], ["Devoluciones y reclamos", "/devoluciones"], ["Botón de arrepentimiento", "/arrepentimiento"]]],
+  ["Legal", [["Términos y condiciones", "/terminos"], ["Privacidad y cookies", "/privacidad"]]],
+];
+
 export const metadata: Metadata = {
   title: { default: "Sobrá · Vendé lo que te sobró", template: "%s · Sobrá" },
   description:
@@ -30,15 +37,30 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       <body className="flex min-h-full flex-col font-sans">
         <Encabezado />
         <main className="flex-1">{children}</main>
-        <footer className="border-t border-stone-200 bg-white py-8 text-sm text-stone-500">
-          <div className="contenedor flex flex-col gap-2 sm:flex-row sm:justify-between">
-            <p>Sobrá · Marketplace de sobrantes de obra del AMBA</p>
-            <nav className="flex flex-wrap gap-x-4 gap-y-1">
-              <Link href="/lotes" className="hover:text-stone-800">Lotes</Link>
-              <Link href="/como-funciona" className="hover:text-stone-800">Cómo funciona</Link>
-              <Link href="/terminos" className="hover:text-stone-800">Términos</Link>
-              <Link href="/privacidad" className="hover:text-stone-800">Privacidad y cookies</Link>
-            </nav>
+        <footer className="bg-petroleo pb-24 pt-12 text-sm text-white/70 sm:pb-10">
+          <div className="contenedor grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <Logo className="h-8 w-auto text-white" />
+              <p className="mt-3">Marketplace de sobrantes de obra del AMBA.</p>
+            </div>
+            {COLUMNAS_PIE.map(([titulo, links]) => (
+              <nav key={titulo} aria-label={titulo}>
+                <p className="mb-3 font-semibold text-white">{titulo}</p>
+                <ul className="space-y-2">
+                  {links.map(([texto, href]) => (
+                    <li key={href}>
+                      <Link href={href} className="hover:text-celeste">{texto}</Link>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            ))}
+          </div>
+          <div className="contenedor mt-10 flex flex-col gap-3 border-t border-white/10 pt-6 sm:flex-row sm:items-center sm:justify-between">
+            <p>© {new Date().getFullYear()} Sobrá</p>
+            <Link href="/arrepentimiento" className="self-start rounded-lg border border-white/30 px-3 py-1.5 font-semibold text-white hover:bg-white/10">
+              Botón de arrepentimiento
+            </Link>
           </div>
         </footer>
         {!vioAvisoCookies && <AvisoCookies />}

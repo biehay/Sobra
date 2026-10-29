@@ -2,6 +2,13 @@ import type { ReactNode } from "react";
 
 export const EMAIL_CONTACTO = process.env.NEXT_PUBLIC_EMAIL_CONTACTO ?? "hola@sobra.com.ar";
 
+// Datos del titular de Sobrá que exige la ley (se completan en .env.local).
+export const TITULAR = {
+  nombre: process.env.NEXT_PUBLIC_TITULAR_NOMBRE || "[nombre o razón social a completar]",
+  cuit: process.env.NEXT_PUBLIC_TITULAR_CUIT || "[CUIT a completar]",
+  domicilio: process.env.NEXT_PUBLIC_TITULAR_DOMICILIO || "[domicilio a completar]",
+};
+
 export function PaginaLegal({ titulo, actualizada, children }: { titulo: string; actualizada: string; children: ReactNode }) {
   return (
     <article className="contenedor max-w-3xl py-12">
