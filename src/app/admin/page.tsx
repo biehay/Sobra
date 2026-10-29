@@ -195,6 +195,8 @@ export default async function Admin({ searchParams }: PageProps<"/admin">) {
                       <input type="hidden" name="precio_sugerido" value={sugerido ?? ""} />
                       <label htmlFor={`precio-${lote.id}`} className="etiqueta">Precio de publicación</label>
                       <input id={`precio-${lote.id}`} name="precio_publicado" type="number" min={1} defaultValue={lote.precio_pedido} className="campo" />
+                      <label htmlFor={`peso-${lote.id}`} className="etiqueta">Peso aproximado (kg)</label>
+                      <input id={`peso-${lote.id}`} name="peso_kg" type="number" min={1} step="any" required defaultValue={lote.peso_kg ?? ""} placeholder="Revisalo con las fotos" className="campo" />
                       <BotonEnviar name="decision" value="aprobar" className="btn w-full" pendiente="Publicando...">Aprobar y publicar</BotonEnviar>
                     </form>
                     <form action={revisarLote} className="space-y-2">

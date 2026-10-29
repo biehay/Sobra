@@ -39,6 +39,11 @@ Además:
   y lo que tiene para hacer.
 - **Visitas**: cada vendedor ve cuántas personas miraron cada lote en los últimos 7 días. Si lo miran y
   nadie oferta, la app le sugiere revisar el precio. No se guarda la IP ni quién visitó (ver Seguridad).
+- **Impacto**: cada operación suma los kilos que no fueron a residuos (vendedor) y los reutilizados con el CO₂
+  evitado (comprador). Desde **Mi impacto** se emite una **constancia** en PDF con código de verificación, que
+  cualquiera valida en `/impacto`. El cálculo y los factores están explicados en esa página.
+- **Reputación con hechos**: ventas sin reclamos por el material, compras retiradas y tiempo de respuesta, con
+  sellos ("Material igual a las fotos", "Responde rápido", "Cumple con el retiro"). Nadie la puede escribir.
 - **Favoritos**: el comprador guarda lotes con el corazón y, si el lote se republica más barato, le llega
   un email y lo ve en su panel.
 
@@ -189,6 +194,7 @@ psql -d sobra_test -f supabase/tests/stub_supabase.sql $(ls supabase/migrations/
 psql -d sobra_test -f supabase/tests/flujo_operacion.sql     # termina con "TODAS LAS PRUEBAS PASARON"
 psql -d sobra_test -f supabase/tests/retiro_y_reclamos.sql   # ídem
 psql -d sobra_test -f supabase/tests/visitas_favoritos_comprobantes.sql   # ídem
+psql -d sobra_test -f supabase/tests/impacto_y_reputacion.sql   # ídem
 ```
 
 ## Estructura
@@ -219,7 +225,8 @@ Cosas que quedaron a propósito sin definir y hay que completar antes de tener u
       soporte (`NEXT_PUBLIC_HORARIO_SOPORTE`). Mientras estén vacíos, las páginas muestran "[a definir]".
 - [ ] **Titular de Sobrá** en los términos: nombre o razón social, CUIT y domicilio (`NEXT_PUBLIC_TITULAR_*`).
 - [ ] **WhatsApp de soporte** real (`NEXT_PUBLIC_WHATSAPP`) y email de contacto (`NEXT_PUBLIC_EMAIL_CONTACTO`).
-- [ ] **Revisión de un abogado**: términos, privacidad, devoluciones, arrepentimiento y retención de pagos.
+- [ ] **Revisión de un abogado**: términos, privacidad, devoluciones, arrepentimiento, retención de pagos y el
+      texto de las constancias de material recuperado.
 - [ ] **Contador**: inscripción para facturar la comisión y tratamiento del dinero retenido.
 - [ ] **Dominio** `sobra.com.ar`, verificado en Resend, y Resend como servidor de mail de Supabase con las
       plantillas de `supabase/templates/`.

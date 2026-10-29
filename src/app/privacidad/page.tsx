@@ -23,6 +23,11 @@ export default function Privacidad() {
         </li>
         <li><strong>Favoritos:</strong> los lotes que guardás, para avisarte si bajan de precio.</li>
         <li>
+          <strong>Reputación y constancias:</strong> tu reputación (cuántas operaciones completaste y si cumpliste) se calcula
+          con tus operaciones y la ven otros usuarios sin tu nombre. Si emitís una constancia de material recuperado, quien
+          tenga su código ve el nombre de tu empresa (o el tuyo) y los números de la constancia.
+        </li>
+        <li>
           <strong>Visitas a los lotes:</strong> contamos cuántas personas ven cada lote para mostrárselo a su vendedor.
           No guardamos tu IP ni quién sos: solo un código irreversible que cambia todos los días.
         </li>

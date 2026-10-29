@@ -126,12 +126,30 @@ export default function Terminos() {
         <li>Cada parte es responsable de sus obligaciones impositivas por la operación.</li>
       </ul>
 
-      <h2>10. Información de la actividad</h2>
+      <h2>10. Información de la actividad, reputación e impacto</h2>
       <p>
         Al usar Sobrá se genera información sobre la actividad: lotes publicados, precios, ofertas, ventas y visitas.
         Podemos usarla para que la plataforma funcione, para mejorar el precio sugerido y para estadísticas, siempre de forma
         agregada cuando se trate de otros usuarios. Nunca vendemos tus datos personales.
       </p>
+      <ul>
+        <li>
+          <strong>Reputación:</strong> se calcula automáticamente con los hechos de tus operaciones (ventas completadas sin
+          reclamos por el material, compras retiradas, tiempo de respuesta a las ofertas). No se puede escribir, editar ni
+          comprar. Se muestra a otros usuarios en tus lotes y tus ofertas, sin tu nombre ni tus datos de contacto.
+        </li>
+        <li>
+          <strong>Peso de los lotes:</strong> el vendedor declara el peso aproximado y Sobrá lo revisa antes de publicar. Declarar
+          un peso falso a propósito es un incumplimiento de estos términos.
+        </li>
+        <li>
+          <strong>Constancias de material recuperado:</strong> podés emitir una constancia con el material que vendiste o
+          compraste y el CO₂ evitado. El CO₂ es una estimación hecha con factores de referencia públicos, explicada en{" "}
+          <Link href="/impacto" className={enlace}>Cómo calculamos el impacto</Link>. La constancia la emite Sobrá con sus propios
+          datos: no es una certificación de un organismo acreditado ni reemplaza la documentación que exija la normativa de
+          residuos. Quien tenga su código puede verificarla y ver a nombre de quién está y sus números.
+        </li>
+      </ul>
 
       <h2>11. Sanciones</h2>
       <p>

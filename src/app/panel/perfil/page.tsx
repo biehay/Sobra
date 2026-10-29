@@ -6,6 +6,8 @@ import { PestanasPanel } from "@/components/pestanas-panel";
 import { BotonEnviar } from "@/components/boton-enviar";
 import { exigirRol } from "@/lib/sesion";
 import { ZONAS } from "@/lib/datos";
+import { reputacionDe } from "@/lib/reputacion";
+import { TarjetaReputacion } from "@/components/reputacion";
 import { actualizarPerfil } from "../acciones";
 
 export const metadata: Metadata = { title: "Mis datos" };
@@ -13,6 +15,7 @@ export const metadata: Metadata = { title: "Mis datos" };
 export default async function Perfil({ searchParams }: PageProps<"/panel/perfil">) {
   const perfil = await exigirRol("usuario", "admin");
   const { ok, error } = await searchParams;
+  const reputacion = perfil.rol === "usuario" ? await reputacionDe(perfil.id) : null;
 
   return (
     <div className="contenedor max-w-lg py-10">
@@ -60,6 +63,26 @@ export default async function Perfil({ searchParams }: PageProps<"/panel/perfil"
         </div>
         <BotonEnviar className="btn sm:col-span-2" pendiente="Guardando...">Guardar cambios</BotonEnviar>
       </form>
+
+      {reputacion && (
+        <section className="tarjeta mt-6 space-y-5 p-6">
+          <div>
+            <h2 className="font-bold">Tu reputación</h2>
+            <p className="text-sm text-stone-500">
+              Se calcula sola con lo que cumplís en cada operación. Los compradores ven la de vendedor en tus lotes; los
+              vendedores, la de comprador en tus ofertas.
+            </p>
+          </div>
+          <div>
+            <p className="mb-2 text-sm font-semibold text-stone-500">Como vendedor</p>
+            <TarjetaReputacion r={reputacion} como="vendedor" />
+          </div>
+          <div>
+            <p className="mb-2 text-sm font-semibold text-stone-500">Como comprador</p>
+            <TarjetaReputacion r={reputacion} como="comprador" />
+          </div>
+        </section>
+      )}
 
       <section className="tarjeta mt-6 space-y-3 p-6">
         <h2 className="font-bold">Seguridad</h2>

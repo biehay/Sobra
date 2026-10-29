@@ -303,6 +303,7 @@ try {
   await vend.waitForFunction(() => document.querySelectorAll("img[alt^='Foto']").length === 2, null, { timeout: 30000 });
   await vend.fill("#precio_lista", "900000");
   await vend.fill("#precio_pedido", "500000");
+  await vend.fill("#peso_kg", "900");
   await vend.waitForSelector("text=sugerimos alrededor de");
   await vend.selectOption("#zona", "GBA Sur");
   await vend.fill("#localidad", "Lanús");
@@ -464,6 +465,27 @@ try {
   esperar((await anon.textContent("body")).includes("vendido"), "el lote figura vendido");
   paso("Liquidación con comprobante: el vendedor lo ve en Cobros, lo descarga y baja la planilla; el comprador no puede abrirlo");
 
+  // Impacto y constancia verificable --------------------------------------
+  await vend.goto(`${BASE}/panel/impacto`);
+  esperar((await vend.textContent("main")).includes("900 kg"), "el vendedor ve los kilos que no fueron a residuos");
+  await comp.goto(`${BASE}/panel/impacto`);
+  esperar((await comp.textContent("main")).includes("702 kg"), "el comprador ve el CO₂ evitado (900 kg × 0,78)");
+  await comp.click("button:has-text('Emitir constancia')");
+  await comp.waitForURL("**/constancia/**");
+  const codigoConstancia = comp.url().split("/constancia/")[1];
+  esperar((await comp.textContent("main")).includes("Juan Pérez"), "la constancia está a nombre del comprador");
+  await captura(comp, "constancia-celular");
+  await anon.goto(`${BASE}/impacto?codigo=${codigoConstancia.toLowerCase()}`);
+  await anon.waitForURL(`**/constancia/${codigoConstancia}`);
+  esperar((await anon.textContent("main")).includes("Constancia válida"), "cualquiera puede verificar la constancia con el código");
+  await anon.goto(`${BASE}/impacto?codigo=NOEXISTE123`);
+  esperar((await aviso(anon)).includes("No encontramos"), "un código inventado no se valida");
+  await anon.goto(BASE);
+  esperar((await anon.textContent("main")).includes("de material ya no fue a residuos"), "la portada muestra el impacto de Sobrá");
+  await anon.goto(loteUrl);
+  esperar((await anon.textContent("main")).includes("Sobre el vendedor"), "el lote muestra la reputación del vendedor");
+  paso("Impacto: kilos y CO₂ por operación, constancia emitida y verificada por un tercero, reputación del vendedor en el lote");
+
   // 12. Segundo lote con reclamo -----------------------------------------
   await vend.goto(`${BASE}/panel/vendedor/lotes/nuevo`);
   await vend.fill("#titulo", "Inodoros Ferrum blancos x 4");
@@ -473,6 +495,7 @@ try {
   await vend.setInputFiles("input[type=file]", fotos[0]);
   await vend.waitForSelector("img[alt='Foto 1']", { timeout: 30000 });
   await vend.fill("#precio_pedido", "200000");
+  await vend.fill("#peso_kg", "100");
   await vend.selectOption("#zona", "GBA Sur");
   await tras(vend, "ok=", () => vend.click("button:has-text('Guardar borrador')"));
   await vend.locator("div.p-4", { hasText: "Inodoros Ferrum" }).locator("a:has-text('Editar')").click();

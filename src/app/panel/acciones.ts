@@ -43,6 +43,10 @@ const esquemaLote = z.object({
     z.number("Precio de lista inválido").positive("Precio de lista inválido").nullable(),
   ),
   precio_pedido: z.coerce.number().positive("Ingresá cuánto querés recuperar"),
+  peso_kg: z.preprocess(
+    (v) => (v === "" || v == null ? null : Number(v)),
+    z.number("Peso inválido").positive("Peso inválido").max(1_000_000, "Revisá el peso").nullable(),
+  ),
   items: z.preprocess(json, z.array(esquemaItem).max(100)),
   fotos: z.preprocess(json, z.array(z.string()).max(10)),
   direccion: z.string().trim().max(200).default(""),

@@ -43,6 +43,7 @@ export type Lote = {
   precio_pedido: number;
   precio_sugerido: number | null;
   precio_publicado: number | null;
+  peso_kg: number | null; // lo declara el vendedor y lo confirma el admin
   fotos: string[];
   estado: EstadoLote;
   nota_admin: string | null;

@@ -37,7 +37,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       <body className="flex min-h-full flex-col font-sans">
         <Encabezado />
         <main className="flex-1">{children}</main>
-        <footer className="bg-petroleo pb-24 pt-12 text-sm text-white/70 sm:pb-10">
+        <footer className="print:hidden bg-petroleo pb-24 pt-12 text-sm text-white/70 sm:pb-10">
           <div className="contenedor grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
             <div>
               <Logo className="h-8 w-auto text-white" />

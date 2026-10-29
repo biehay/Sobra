@@ -20,7 +20,7 @@ export function AvisoCookies() {
   }
 
   return (
-    <div role="region" aria-label="Aviso de cookies" className="fixed inset-x-0 bottom-0 z-30 p-3 sm:p-4">
+    <div role="region" aria-label="Aviso de cookies" className="fixed inset-x-0 bottom-0 z-30 p-3 print:hidden sm:p-4">
       <form
         action="/aviso-cookies"
         method="post"

@@ -29,7 +29,7 @@ export async function Encabezado() {
 
   return (
     <>
-      <header className="sticky top-0 z-20 border-b border-stone-200 bg-white/95 backdrop-blur">
+      <header className="sticky top-0 z-20 print:hidden border-b border-stone-200 bg-white/95 backdrop-blur">
         <div className="contenedor flex h-16 items-center gap-2 sm:gap-4">
           <Link href="/" aria-label="Sobrá, inicio" className="mr-1 shrink-0 text-petroleo sm:mr-3">
             {/* En el celular no entra el logo completo: queda la etiqueta. */}
@@ -185,6 +185,7 @@ async function MenuUsuario({ perfil }: { perfil: Perfil }) {
               <Link href="/panel/comprador" className="block rounded-lg px-3 py-2 hover:bg-stone-100">Mis compras</Link>
               <Link href="/panel/favoritos" className="block rounded-lg px-3 py-2 hover:bg-stone-100">Favoritos</Link>
               <Link href="/panel/cobros" className="block rounded-lg px-3 py-2 hover:bg-stone-100">Cobros y comprobantes</Link>
+            <Link href="/panel/impacto" className="block rounded-lg px-3 py-2 hover:bg-stone-100">Mi impacto y constancias</Link>
               <Link href="/panel/perfil" className="block rounded-lg px-3 py-2 hover:bg-stone-100">Mis datos</Link>
           </>
         )}

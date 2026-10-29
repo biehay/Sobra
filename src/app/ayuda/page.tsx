@@ -30,6 +30,15 @@ const TEMAS: { titulo: string; preguntas: [string, React.ReactNode][] }[] = [
     ],
   },
   {
+    titulo: "Impacto y reputación",
+    preguntas: [
+      ["¿Qué es la constancia de material recuperado?", <>Un documento con los kilos de material que vendiste o compraste en Sobrá y el CO₂ que se evitó. La emitís desde <Link href="/panel/impacto" className={enlace}>Mi impacto</Link>, la guardás en PDF y lleva un código para que cualquiera la verifique.</>],
+      ["¿Cómo se calcula el CO₂?", <>Multiplicamos los kilos reutilizados por un factor según el tipo de material. Es una estimación: lo explicamos en <Link href="/impacto" className={enlace}>Cómo calculamos el impacto</Link>.</>],
+      ["¿Sirve como certificado oficial?", "No: es una constancia que emite Sobrá con los datos de sus operaciones, verificable con su código. Sirve como respaldo para informes de sustentabilidad, licitaciones o clientes, pero no reemplaza una certificación de un organismo acreditado."],
+      ["¿Cómo se calcula mi reputación?", "Sola, con lo que cumplís: cuántas ventas completaste sin reclamos por el material, cuántas compras retiraste y qué tan rápido respondés ofertas. No se puede escribir ni editar, y con muy buenos números ganás sellos como “Material igual a las fotos”."],
+    ],
+  },
+  {
     titulo: "Cuenta y seguridad",
     preguntas: [
       ["No me llega el código por email", "Revisá la carpeta de spam y esperá un minuto antes de pedir otro. Si sigue sin llegar, escribinos."],

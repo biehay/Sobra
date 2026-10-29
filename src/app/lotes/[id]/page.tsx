@@ -5,6 +5,8 @@ import { after } from "next/server";
 import { BotonFavorito } from "@/components/boton-favorito";
 import { estadoFavorito, idsFavoritos } from "@/lib/favoritos";
 import { registrarVisita, visitasDeMisLotes } from "@/lib/visitas";
+import { reputacionDe } from "@/lib/reputacion";
+import { TarjetaReputacion } from "@/components/reputacion";
 import { Aviso } from "@/components/aviso";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { obtenerPerfil, sesionVerificada } from "@/lib/sesion";
@@ -49,6 +51,7 @@ export default async function DetalleLote({ params, searchParams }: PageProps<"/
     after(() => registrarVisita(lote.id, visitante));
   }
   const visitas = esMio ? (await visitasDeMisLotes([lote.id])).get(lote.id) : undefined;
+  const reputacionVendedor = await reputacionDe(lote.vendedor_id);
 
   return (
     <div className="contenedor py-10">
@@ -147,6 +150,11 @@ export default async function DetalleLote({ params, searchParams }: PageProps<"/
                 Tu lote tuvo <strong>{visitas.semana}</strong> {visitas.semana === 1 ? "visita" : "visitas"} en los últimos 7 días ({visitas.total} en total).
               </p>
             )}
+          </div>
+
+          <div className="tarjeta p-6">
+            <p className="mb-3 text-sm font-semibold text-stone-500">Sobre el vendedor</p>
+            <TarjetaReputacion r={reputacionVendedor} como="vendedor" />
           </div>
 
           <Aviso ok={ok} error={error} />

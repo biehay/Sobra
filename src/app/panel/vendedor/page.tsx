@@ -7,6 +7,8 @@ import { DatosOperacion } from "@/components/datos-operacion";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { exigirRol } from "@/lib/sesion";
 import { visitasDeMisLotes } from "@/lib/visitas";
+import { reputacionDe } from "@/lib/reputacion";
+import { TarjetaReputacion } from "@/components/reputacion";
 import { BotonEnviar } from "@/components/boton-enviar";
 import { EstadoReclamo, FormReclamo } from "@/components/reclamo";
 import { MODOS_RETIRO, pesos, type Lote, type Oferta, type Reclamo } from "@/lib/datos";
@@ -41,6 +43,8 @@ export default async function PanelVendedor({ searchParams }: PageProps<"/panel/
     ? await supabase.from("reclamos").select("*").in("oferta_id", ofertas.map((o) => o.id)).order("created_at", { ascending: false })
     : { data: [] };
   const visitas = await visitasDeMisLotes(lotes.map((l) => l.id));
+  const compradores = [...new Set(ofertas.filter((o) => o.estado === "pendiente").map((o) => o.comprador_id))];
+  const reputaciones = new Map(await Promise.all(compradores.map(async (id) => [id, await reputacionDe(id)] as const)));
   const lotesConOfertas = new Set(ofertas.map((o) => o.lote_id));
   const reclamos = new Map<string, Reclamo>();
   for (const r of (reclamosData ?? []) as Reclamo[]) if (!reclamos.has(r.oferta_id)) reclamos.set(r.oferta_id, r);
@@ -78,6 +82,11 @@ export default async function PanelVendedor({ searchParams }: PageProps<"/panel/
                       {oferta.comision != null && ` · Recibís ${pesos(oferta.monto - oferta.comision)} (comisión ${pesos(oferta.comision)})`}
                     </p>
                     {oferta.mensaje && <p className="mt-2 text-sm italic text-stone-600">“{oferta.mensaje}”</p>}
+                    {reputaciones.get(oferta.comprador_id) && (
+                      <div className="mt-2">
+                        <TarjetaReputacion r={reputaciones.get(oferta.comprador_id)!} como="comprador" compacta />
+                      </div>
+                    )}
                   </div>
                   <EtiquetaEstado estado={oferta.estado} tipo="oferta" />
                 </div>

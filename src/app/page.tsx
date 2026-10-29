@@ -2,6 +2,7 @@ import Link from "next/link";
 import { TarjetaLote } from "@/components/tarjeta-lote";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { estadoFavorito, idsFavoritos } from "@/lib/favoritos";
+import { impactoTotal, peso } from "@/lib/impacto";
 import type { Lote } from "@/lib/datos";
 
 const PASOS_VENDEDOR = [
@@ -27,7 +28,7 @@ export default async function Inicio() {
     .order("publicado_at", { ascending: false })
     .limit(6);
   const lotes = (data ?? []) as Lote[];
-  const favoritos = await idsFavoritos();
+  const [favoritos, impacto] = await Promise.all([idsFavoritos(), impactoTotal()]);
 
   return (
     <>
@@ -45,6 +46,11 @@ export default async function Inicio() {
               compradores verificados. Sin vender pieza por pieza, sin grupos de WhatsApp y sin riesgo de no
               cobrar.
             </p>
+            {impacto.operaciones > 0 && (
+              <Link href="/impacto" className="mt-6 inline-flex items-center gap-2 rounded-lg bg-white/10 px-3 py-2 text-sm text-white/90 hover:bg-white/15">
+                ♻ <strong className="text-white">{peso(impacto.kg)}</strong> de material ya no fue a residuos gracias a Sobrá
+              </Link>
+            )}
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href="/registro?volver=/panel/vendedor/lotes/nuevo" className="btn px-6 py-3 text-base">
                 Publicar mi sobrante

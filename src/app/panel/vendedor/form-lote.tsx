@@ -111,6 +111,16 @@ export function FormLote({ usuarioId, lote, retiro }: { usuarioId: string; lote?
         </div>
 
         <div>
+          <label htmlFor="peso_kg" className="etiqueta">Peso aproximado del lote (kg)</label>
+          <input id="peso_kg" name="peso_kg" type="number" min={1} step="any" defaultValue={lote?.peso_kg ?? ""} className="campo max-w-48" placeholder="Ej.: 900" />
+          <p className="mt-1 text-sm text-stone-500">
+            Con esto calculamos cuánto material salvaste de ir a residuos (y lo ves en tu constancia de impacto). Referencias:
+            porcelanato o cerámico, unos 20 kg por m²; una bolsa de cemento, 50 kg; un inodoro, unos 25 kg; una placa de durlock,
+            unos 20 kg. Lo confirmamos al revisar el lote.
+          </p>
+        </div>
+
+        <div>
           <label htmlFor="descripcion" className="etiqueta">Descripción (opcional)</label>
           <textarea id="descripcion" name="descripcion" rows={4} maxLength={3000} defaultValue={lote?.descripcion} className="campo" placeholder="Marca, modelo, por qué sobró, si está en su embalaje original..." />
         </div>

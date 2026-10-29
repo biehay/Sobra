@@ -24,11 +24,14 @@ export async function revisarLote(formData: FormData) {
     const precio = Number(formData.get("precio_publicado"));
     if (!(precio > 0)) volver("error", "Ingresá el precio de publicación");
     const sugerido = Number(formData.get("precio_sugerido"));
+    const peso = Number(formData.get("peso_kg"));
+    if (!(peso > 0)) volver("error", "Confirmá el peso aproximado del lote: se usa para el impacto ambiental");
     const { error } = await supabase
       .from("lotes")
       .update({
         estado: "publicado",
         precio_publicado: precio,
+        peso_kg: peso,
         precio_sugerido: sugerido > 0 ? sugerido : null,
         nota_admin: null,
       })

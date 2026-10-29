@@ -5,6 +5,7 @@ const PESTANAS = [
   { id: "compras", texto: "Mis compras", ruta: "/panel/comprador" },
   { id: "favoritos", texto: "Favoritos", ruta: "/panel/favoritos" },
   { id: "cobros", texto: "Cobros", ruta: "/panel/cobros" },
+  { id: "impacto", texto: "Impacto", ruta: "/panel/impacto" },
   { id: "datos", texto: "Mis datos", ruta: "/panel/perfil" },
 ] as const;
 
