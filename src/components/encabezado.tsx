@@ -35,7 +35,7 @@ export async function Encabezado() {
           </Link>
 
           <nav aria-label="Explorar" className="flex items-center">
-            <Desplegable etiqueta="Categorías" alinear="izquierda" claseBoton={claseMenu} anchoPanel="sm:w-[28rem]" boton={<>Categorías{flecha}</>}>
+            <Desplegable etiqueta="Categorías" alinear="izquierda" abrirAlPasar claseBoton={claseMenu} anchoPanel="sm:w-[28rem]" boton={<>Categorías{flecha}</>}>
               <div className="grid gap-0.5 p-2 sm:grid-cols-2">
                 {CATEGORIAS.map((c) => (
                   <Link key={c} href={`/lotes?categoria=${encodeURIComponent(c)}`} className="rounded-lg px-3 py-2 text-sm hover:bg-stone-100">

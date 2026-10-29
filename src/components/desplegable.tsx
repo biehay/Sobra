@@ -13,6 +13,7 @@ export function Desplegable({
   claseBoton = "",
   anchoPanel = "sm:w-72",
   alinear = "derecha",
+  abrirAlPasar = false,
 }: {
   boton: React.ReactNode;
   etiqueta: string;
@@ -20,6 +21,8 @@ export function Desplegable({
   claseBoton?: string;
   anchoPanel?: string;
   alinear?: "izquierda" | "derecha";
+  // Con el mouse: se abre después de medio segundo encima, sin hacer clic.
+  abrirAlPasar?: boolean;
 }) {
   // Se guarda en qué página se abrió: al cambiar de página queda cerrado solo.
   const ruta = usePathname();
@@ -27,6 +30,16 @@ export function Desplegable({
   const abierto = abiertoEn === ruta;
   const setAbierto = (valor: boolean) => setAbiertoEn(valor ? ruta : null);
   const contenedor = useRef<HTMLDivElement>(null);
+  const temporizador = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  // Solo con mouse: en el celular o la tablet sigue abriendo con un toque.
+  function alPasar(e: React.PointerEvent, entra: boolean) {
+    if (!abrirAlPasar || e.pointerType !== "mouse") return;
+    clearTimeout(temporizador.current);
+    // Al salir espera un poco, para poder cruzar del botón al menú sin que se cierre.
+    temporizador.current = setTimeout(() => setAbiertoEn(entra ? ruta : null), entra ? 500 : 250);
+  }
+  useEffect(() => () => clearTimeout(temporizador.current), []);
 
   useEffect(() => {
     if (!abierto) return;
@@ -45,13 +58,21 @@ export function Desplegable({
   }, [abierto]);
 
   return (
-    <div ref={contenedor} className="sm:relative">
+    <div
+      ref={contenedor}
+      className="sm:relative"
+      onPointerEnter={(e) => alPasar(e, true)}
+      onPointerLeave={(e) => alPasar(e, false)}
+    >
       <button
         type="button"
         aria-expanded={abierto}
         aria-haspopup="true"
         aria-label={etiqueta}
-        onClick={() => setAbierto(!abierto)}
+        onClick={() => {
+          clearTimeout(temporizador.current);
+          setAbierto(!abierto);
+        }}
         className={claseBoton}
       >
         {boton}
