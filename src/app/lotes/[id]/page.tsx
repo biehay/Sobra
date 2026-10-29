@@ -143,10 +143,13 @@ export default async function DetalleLote({ params, searchParams }: PageProps<"/
                 favoritos y te avisamos en cada baja.
               </p>
             )}
+            {/* Se guardan lotes publicados o reservados; uno vendido solo se puede quitar. */}
             {favorito !== undefined ? (
-              <BotonFavorito loteId={lote.id} guardado={favorito} volver={`/lotes/${lote.id}`} conTexto />
+              (favorito || ["publicado", "reservado"].includes(lote.estado)) && (
+                <BotonFavorito loteId={lote.id} guardado={favorito} volver={`/lotes/${lote.id}`} conTexto />
+              )
             ) : (
-              !perfil && (
+              !perfil && disponible && (
                 <Link href={`/ingresar?volver=/lotes/${lote.id}`} className="btn-sec w-full">
                   Guardar en favoritos
                 </Link>
