@@ -11,7 +11,7 @@ export const metadata: Metadata = { title: "Confirmá que sos vos" };
 
 // Segundo paso del ingreso: el código de 6 dígitos que mandamos al email.
 export default async function VerificarIngreso({ searchParams }: PageProps<"/seguridad/verificar">) {
-  const { volver: volverParam, ok, error } = await searchParams;
+  const { volver: volverParam, ok, error, envio } = await searchParams;
   const volver = typeof volverParam === "string" && volverParam.startsWith("/") && !volverParam.startsWith("//") ? volverParam : "/panel";
   if (!(await obtenerPerfil())) redirect(`/ingresar?volver=${encodeURIComponent(volver)}`);
   if (await sesionVerificada()) redirect(volver);
@@ -29,6 +29,13 @@ export default async function VerificarIngreso({ searchParams }: PageProps<"/seg
           <strong>Modo prueba:</strong> todavía no está configurado el envío de emails (Resend), así que el código no
           llega al mail. Buscalo en la terminal donde corre <code>npm run dev</code>: dice
           &quot;Código de acceso para {email}&quot;.
+        </p>
+      )}
+      {!enTerminal && envio === "terminal" && (
+        <p className="mt-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+          <strong>Modo prueba:</strong> Resend no pudo mandar el mail a {email}. Sin un dominio propio verificado en
+          Resend, solo se puede enviar al email con el que creaste la cuenta de Resend. Mientras tanto, el código está
+          en la terminal donde corre <code>npm run dev</code>: dice &quot;Código de acceso para {email}&quot;.
         </p>
       )}
       <div className="mt-6">

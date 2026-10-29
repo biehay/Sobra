@@ -25,9 +25,10 @@ function rutaVerificar(email: string, volver: string, aviso?: string) {
 // Segundo paso: se manda el código al email y se pasa a la pantalla de los 6
 // casilleros. Si no se pudo mandar, la pantalla muestra el error y el botón para reintentar.
 async function pedirSegundoPaso(volver: string): Promise<never> {
-  const { error } = await enviarCodigoAcceso();
+  const { error, soloEnTerminal } = await enviarCodigoAcceso();
   const params = new URLSearchParams({ volver });
   if (error) params.set("error", error);
+  if (soloEnTerminal) params.set("envio", "terminal");
   redirect(`/seguridad/verificar?${params}`);
 }
 

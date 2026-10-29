@@ -16,8 +16,9 @@ function pantalla(volver: string, tipo: "ok" | "error", mensaje: string): never 
 
 export async function pedirCodigo(formData: FormData) {
   const volver = rutaSegura(formData.get("volver"));
-  const { error } = await enviarCodigoAcceso();
+  const { error, soloEnTerminal } = await enviarCodigoAcceso();
   if (error) pantalla(volver, "error", error);
+  if (soloEnTerminal) redirect(`/seguridad/verificar?volver=${encodeURIComponent(volver)}&envio=terminal`);
   pantalla(volver, "ok", "Te mandamos un código nuevo.");
 }
 

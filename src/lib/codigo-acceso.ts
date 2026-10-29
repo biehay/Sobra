@@ -26,7 +26,8 @@ function mostrarEnConsola() {
   return process.env.NODE_ENV === "development" || process.env.SOBRA_CODIGOS_EN_CONSOLA === "1";
 }
 
-export async function enviarCodigoAcceso(): Promise<{ error?: string }> {
+// `soloEnTerminal`: en desarrollo, Resend no pudo mandarlo y el código quedó en la terminal.
+export async function enviarCodigoAcceso(): Promise<{ error?: string; soloEnTerminal?: boolean }> {
   const sesion = await sesionActual();
   if (!sesion) return { error: "Tu sesión venció. Volvé a ingresar." };
   const admin = crearClienteAdmin();
@@ -74,12 +75,17 @@ export async function enviarCodigoAcceso(): Promise<{ error?: string }> {
   try {
     await enviarEmail({ para: sesion.email, ...plantillas.codigoAcceso(codigo) });
   } catch (e) {
-    console.error("[Sobrá] No se pudo enviar el código de acceso", e);
-    // Con el remitente de prueba de Resend solo se puede enviar al email de la
-    // cuenta de Resend: en desarrollo, el código sale igual en la terminal.
+    const detalle = e instanceof Error ? e.message : String(e);
+    console.error(`[Sobrá] Resend no pudo enviar el código a ${sesion.email}: ${detalle}`);
+    // Con el remitente de prueba (onboarding@resend.dev) Resend solo envía al
+    // email de la cuenta de Resend, hasta que se verifique un dominio propio.
+    if (/testing emails|verify a domain|own email/i.test(detalle)) {
+      console.error("[Sobrá] Sin dominio verificado en Resend solo se puede enviar al email de tu cuenta de Resend.");
+    }
+    // En desarrollo, el código sale igual en la terminal.
     if (mostrarEnConsola()) {
       console.info(`[Sobrá] Código de acceso para ${sesion.email}: ${codigo} (Resend no lo pudo enviar)`);
-      return {};
+      return { soloEnTerminal: true };
     }
     return { error: "No pudimos enviarte el código por email. Probá de nuevo en un minuto." };
   }
