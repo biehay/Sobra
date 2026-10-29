@@ -184,6 +184,7 @@ async function MenuUsuario({ perfil }: { perfil: Perfil }) {
               <Link href="/panel/vendedor" className="block rounded-lg px-3 py-2 hover:bg-stone-100">Mis ventas y lotes</Link>
               <Link href="/panel/comprador" className="block rounded-lg px-3 py-2 hover:bg-stone-100">Mis compras</Link>
               <Link href="/panel/favoritos" className="block rounded-lg px-3 py-2 hover:bg-stone-100">Favoritos</Link>
+            <Link href="/panel/busquedas" className="block rounded-lg px-3 py-2 hover:bg-stone-100">Lo busco</Link>
               <Link href="/panel/cobros" className="block rounded-lg px-3 py-2 hover:bg-stone-100">Cobros y comprobantes</Link>
             <Link href="/panel/impacto" className="block rounded-lg px-3 py-2 hover:bg-stone-100">Mi impacto y constancias</Link>
               <Link href="/panel/perfil" className="block rounded-lg px-3 py-2 hover:bg-stone-100">Mis datos</Link>
@@ -204,6 +205,7 @@ function ResumenCuenta({ resumen: r, mes }: { resumen: Resumen; mes: string }) {
     r.lotes.observados && { texto: `${r.lotes.observados} ${r.lotes.observados === 1 ? "lote" : "lotes"} con observaciones para corregir`, href: "/panel/vendedor" },
     r.comprasPorRetirar && { texto: `${r.comprasPorRetirar} ${r.comprasPorRetirar === 1 ? "retiro" : "retiros"} para coordinar`, href: "/panel/comprador" },
     r.reclamosAbiertos && { texto: `${r.reclamosAbiertos} ${r.reclamosAbiertos === 1 ? "reclamo abierto" : "reclamos abiertos"}`, href: "/panel/vendedor" },
+    r.lotesParaMisBusquedas && { texto: `${r.lotesParaMisBusquedas} ${r.lotesParaMisBusquedas === 1 ? "lote nuevo" : "lotes nuevos"} para tus búsquedas`, href: "/panel/busquedas" },
     r.favoritosQueBajaron && { texto: `${r.favoritosQueBajaron} ${r.favoritosQueBajaron === 1 ? "favorito bajó" : "favoritos bajaron"} de precio`, href: "/panel/favoritos" },
   ].filter(Boolean) as { texto: string; href: string }[];
 

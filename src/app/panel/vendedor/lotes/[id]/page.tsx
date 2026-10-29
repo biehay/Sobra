@@ -18,7 +18,10 @@ export default async function EditarLote({ params, searchParams }: PageProps<"/p
   const { data } = await supabase.from("lotes").select("*").eq("id", id).eq("vendedor_id", perfil.id).maybeSingle();
   if (!data) notFound();
   const lote = data as Lote;
-  const { data: retiro } = await supabase.from("lote_retiro").select("*").eq("lote_id", id).maybeSingle();
+  const [{ data: retiro }, { data: minimo }] = await Promise.all([
+    supabase.from("lote_retiro").select("*").eq("lote_id", id).maybeSingle(),
+    supabase.from("lote_precio_minimo").select("precio_minimo").eq("lote_id", id).maybeSingle(),
+  ]);
   const bloqueado = lote.estado === "reservado" || lote.estado === "vendido";
 
   return (
@@ -41,7 +44,7 @@ export default async function EditarLote({ params, searchParams }: PageProps<"/p
       {bloqueado ? (
         <p className="tarjeta p-6 text-stone-600">Este lote tiene una operación en curso y ya no se puede editar.</p>
       ) : (
-        <FormLote usuarioId={perfil.id} lote={lote} retiro={retiro} />
+        <FormLote usuarioId={perfil.id} lote={lote} retiro={retiro} precioMinimo={minimo?.precio_minimo ?? null} />
       )}
     </div>
   );

@@ -15,6 +15,7 @@ import {
   MODOS_RETIRO,
   descuento,
   linkWhatsapp,
+  proximaBaja,
   pesos,
   urlFoto,
   type Lote,
@@ -136,6 +137,12 @@ export default async function DetalleLote({ params, searchParams }: PageProps<"/
             <p className="rounded-lg bg-green-50 px-3 py-2 text-sm text-green-800">
               ✓ Lote verificado por Sobrá · Pago protegido hasta el retiro
             </p>
+            {disponible && proximaBaja(lote) && (
+              <p className="rounded-lg bg-celeste-claro px-3 py-2 text-sm text-petroleo">
+                ↓ <strong>Precio en baja:</strong> si no se vende, baja {lote.baja_semanal_pct}% cada semana. Guardalo en
+                favoritos y te avisamos en cada baja.
+              </p>
+            )}
             {favorito !== undefined ? (
               <BotonFavorito loteId={lote.id} guardado={favorito} volver={`/lotes/${lote.id}`} conTexto />
             ) : (

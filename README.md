@@ -44,6 +44,12 @@ Además:
   cualquiera valida en `/impacto`. El cálculo y los factores están explicados en esa página.
 - **Reputación con hechos**: ventas sin reclamos por el material, compras retiradas y tiempo de respuesta, con
   sellos ("Material igual a las fotos", "Responde rápido", "Cumple con el retiro"). Nadie la puede escribir.
+- **Lo busco**: el comprador guarda lo que necesita (también desde el catálogo, con "Avisame cuando aparezca")
+  y le llega un email apenas se publica un lote que coincide. Los vendedores ven la demanda en
+  `/buscados` y en Mis ventas, sin datos de quién busca.
+- **Baja automática de precio (opcional)**: el vendedor elige cuánto baja por semana y un precio mínimo
+  (privado). Una tarea diaria (`/api/tareas/bajas-de-precio`, programada en `vercel.json`) baja los lotes que
+  pasaron una semana sin venderse y avisa a quienes los guardaron o los buscaban. Necesita `CRON_SECRET`.
 - **Favoritos**: el comprador guarda lotes con el corazón y, si el lote se republica más barato, le llega
   un email y lo ve en su panel.
 
@@ -174,7 +180,7 @@ npx supabase start          # la primera vez descarga todo; al final muestra las
 npx supabase db reset       # base limpia con todas las migraciones
 npx playwright install chromium
 # en .env.local: NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321 y las claves de "supabase status"
-SOBRA_CODIGOS_EN_CONSOLA=1 npm run build && npm start > servidor.log  # en otra terminal
+npm run build && CRON_SECRET=secreto-de-prueba SOBRA_CODIGOS_EN_CONSOLA=1 npm start > servidor.log  # en otra terminal
 SOBRA_LOG=servidor.log SUPABASE_SERVICE_ROLE_KEY=<clave service_role local> npm run test:recorrido
 ```
 
@@ -195,6 +201,7 @@ psql -d sobra_test -f supabase/tests/flujo_operacion.sql     # termina con "TODA
 psql -d sobra_test -f supabase/tests/retiro_y_reclamos.sql   # ídem
 psql -d sobra_test -f supabase/tests/visitas_favoritos_comprobantes.sql   # ídem
 psql -d sobra_test -f supabase/tests/impacto_y_reputacion.sql   # ídem
+psql -d sobra_test -f supabase/tests/busquedas_y_baja_automatica.sql   # ídem
 ```
 
 ## Estructura
@@ -230,7 +237,8 @@ Cosas que quedaron a propósito sin definir y hay que completar antes de tener u
 - [ ] **Contador**: inscripción para facturar la comisión y tratamiento del dinero retenido.
 - [ ] **Dominio** `sobra.com.ar`, verificado en Resend, y Resend como servidor de mail de Supabase con las
       plantillas de `supabase/templates/`.
-- [ ] **Publicar la app** (Vercel) con las variables de entorno de producción.
+- [ ] **Publicar la app** (Vercel) con las variables de entorno de producción, incluida `CRON_SECRET` para la
+      baja automática de precios.
 
 ## Pendiente para próximas versiones
 

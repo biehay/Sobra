@@ -47,6 +47,8 @@ const esquemaLote = z.object({
     (v) => (v === "" || v == null ? null : Number(v)),
     z.number("Peso inválido").positive("Peso inválido").max(1_000_000, "Revisá el peso").nullable(),
   ),
+  baja_semanal_pct: z.preprocess((v) => (v === "" || v == null ? null : Number(v)), z.number().min(1).max(20).nullable()),
+  precio_minimo: z.preprocess((v) => (v === "" || v == null ? null : Number(v)), z.number("Precio mínimo inválido").positive("Precio mínimo inválido").nullable()),
   items: z.preprocess(json, z.array(esquemaItem).max(100)),
   fotos: z.preprocess(json, z.array(z.string()).max(10)),
   direccion: z.string().trim().max(200).default(""),
@@ -63,7 +65,13 @@ export async function guardarLote(formData: FormData) {
   const datos = esquemaLote.safeParse(Object.fromEntries(formData));
   if (!datos.success) volverCon(rutaForm, "error", datos.error.issues[0].message);
 
-  const { direccion, horarios, indicaciones, ...lote } = datos.data;
+  const { direccion, horarios, indicaciones, precio_minimo, ...lote } = datos.data;
+  // Baja automática: van juntos o ninguno, y el mínimo tiene que ser menor al precio.
+  if (lote.baja_semanal_pct == null || precio_minimo == null) {
+    lote.baja_semanal_pct = null;
+  } else if (precio_minimo >= lote.precio_pedido) {
+    volverCon(rutaForm, "error", "El precio mínimo tiene que ser menor a lo que querés recuperar");
+  }
   // Las fotos tienen que estar en la carpeta del vendedor (la base también lo exige al subirlas).
   if (lote.fotos.some((f) => !f.startsWith(`${perfil.id}/`))) volverCon(rutaForm, "error", "Foto inválida");
   if (enviar && lote.fotos.length === 0) volverCon(rutaForm, "error", "Subí al menos una foto para enviarlo a revisión");
@@ -98,6 +106,13 @@ export async function guardarLote(formData: FormData) {
     .from("lote_retiro")
     .upsert({ lote_id: loteId, direccion, horarios, indicaciones });
   if (errorRetiro) volverCon(rutaForm, "error", errorRetiro.message);
+
+  // El precio mínimo va aparte, en una tabla que solo ven el vendedor y el admin.
+  const { error: errorMinimo } =
+    lote.baja_semanal_pct != null && precio_minimo != null
+      ? await supabase.from("lote_precio_minimo").upsert({ lote_id: loteId, precio_minimo })
+      : await supabase.from("lote_precio_minimo").delete().eq("lote_id", loteId);
+  if (errorMinimo) volverCon(rutaForm, "error", errorMinimo.message);
 
   if (pasoARevision) notificar.loteEnRevision(loteId);
   revalidatePath(PANEL_VENDEDOR);

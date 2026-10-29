@@ -189,6 +189,12 @@ export default async function Admin({ searchParams }: PageProps<"/admin">) {
                       <dd className="text-right font-semibold">{pesos(lote.precio_pedido)}</dd>
                       <dt className="text-stone-500">Sugerido</dt>
                       <dd className="text-right">{pesos(sugerido)}</dd>
+                      {lote.baja_semanal_pct != null && (
+                        <>
+                          <dt className="text-stone-500">Baja automática</dt>
+                          <dd className="text-right">{lote.baja_semanal_pct}% por semana</dd>
+                        </>
+                      )}
                     </dl>
                     <form action={revisarLote} className="space-y-2">
                       <input type="hidden" name="id" value={lote.id} />

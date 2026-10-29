@@ -87,6 +87,18 @@ export default async function Catalogo({ searchParams }: PageProps<"/lotes">) {
         </div>
       </form>
 
+      {(q || categoria) && (
+        <p className="mt-4 text-sm text-stone-600">
+          {lotes.length ? "¿No es justo lo que necesitás?" : "Todavía no hay lotes así."}{" "}
+          <a
+            href={`/panel/busquedas?${new URLSearchParams(Object.entries({ q: q || categoria, categoria, zona }).filter(([, v]) => v))}`}
+            className="font-semibold text-marca hover:underline"
+          >
+            Avisame cuando aparezca
+          </a>
+        </p>
+      )}
+
       {lotes.length ? (
         <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {lotes.map((lote) => (

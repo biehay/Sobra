@@ -7,11 +7,12 @@ import { DatosOperacion } from "@/components/datos-operacion";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { exigirRol } from "@/lib/sesion";
 import { visitasDeMisLotes } from "@/lib/visitas";
+import { busquedasPublicas } from "@/lib/busquedas";
 import { reputacionDe } from "@/lib/reputacion";
 import { TarjetaReputacion } from "@/components/reputacion";
 import { BotonEnviar } from "@/components/boton-enviar";
 import { EstadoReclamo, FormReclamo } from "@/components/reclamo";
-import { MODOS_RETIRO, pesos, type Lote, type Oferta, type Reclamo } from "@/lib/datos";
+import { MODOS_RETIRO, pesos, proximaBaja, type Lote, type Oferta, type Reclamo } from "@/lib/datos";
 import { cambiarEstadoLote, confirmarRetiro, responderOferta } from "../acciones";
 
 export const metadata: Metadata = { title: "Mis ventas" };
@@ -42,7 +43,7 @@ export default async function PanelVendedor({ searchParams }: PageProps<"/panel/
   const { data: reclamosData } = ofertas.length
     ? await supabase.from("reclamos").select("*").in("oferta_id", ofertas.map((o) => o.id)).order("created_at", { ascending: false })
     : { data: [] };
-  const visitas = await visitasDeMisLotes(lotes.map((l) => l.id));
+  const [visitas, demanda] = await Promise.all([visitasDeMisLotes(lotes.map((l) => l.id)), busquedasPublicas()]);
   const compradores = [...new Set(ofertas.filter((o) => o.estado === "pendiente").map((o) => o.comprador_id))];
   const reputaciones = new Map(await Promise.all(compradores.map(async (id) => [id, await reputacionDe(id)] as const)));
   const lotesConOfertas = new Set(ofertas.map((o) => o.lote_id));
@@ -66,6 +67,24 @@ export default async function PanelVendedor({ searchParams }: PageProps<"/panel/
       <div className="mt-6">
         <Aviso ok={ok} error={error} />
       </div>
+
+      {demanda.length > 0 && (
+        <section className="mt-6 rounded-xl bg-celeste-claro p-5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="font-bold text-petroleo">Lo que se está buscando</h2>
+            <Link href="/buscados" className="text-sm font-semibold text-celeste-oscuro hover:underline">Ver todo →</Link>
+          </div>
+          <p className="text-sm text-petroleo/80">Si te sobró algo de esto, publicalo: a quien lo busca le avisamos apenas se publica.</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {demanda.slice(0, 8).map((b, i) => (
+              <span key={i} className="rounded-full bg-white px-3 py-1 text-sm text-petroleo">
+                {b.texto}
+                {b.zona && <span className="text-stone-500"> · {b.zona}</span>}
+              </span>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="mt-8">
         <h2 className="mb-4 text-xl font-bold">Ofertas recibidas</h2>
@@ -179,6 +198,12 @@ export default async function PanelVendedor({ searchParams }: PageProps<"/panel/
                     <p className="text-sm text-amber-800">Observaciones: {lote.nota_admin}</p>
                   )}
                   <LineaVisitas lote={lote} visitas={visitas.get(lote.id)} tieneOfertas={lotesConOfertas.has(lote.id)} />
+                  {lote.baja_semanal_pct != null && lote.estado === "publicado" && (
+                    <p className="text-sm text-celeste-oscuro">
+                      ↓ Baja {lote.baja_semanal_pct}% por semana
+                      {proximaBaja(lote) && ` · próxima baja el ${proximaBaja(lote)!.toLocaleDateString("es-AR")}`}
+                    </p>
+                  )}
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <EtiquetaEstado estado={lote.estado} tipo="lote" />

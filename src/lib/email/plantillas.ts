@@ -152,6 +152,19 @@ export const plantillas = {
     }),
   }),
 
+  loteParaVos: (busqueda: string, lotes: { titulo: string; precio: number | null; id: string }[]): Plantilla => ({
+    asunto: lotes.length === 1 ? `Apareció lo que buscabas: ${lotes[0].titulo}` : `Aparecieron ${lotes.length} lotes que buscabas`,
+    html: plantilla({
+      titulo: "Apareció lo que buscabas",
+      parrafos: [
+        `Se publicó en Sobrá un lote que coincide con tu búsqueda <strong>“${escapar(busqueda)}”</strong>:`,
+        ...lotes.map((l) => `<a href="${urlSitio(`/lotes/${l.id}`)}" style="color:#e10600;font-weight:600">${escapar(l.titulo)}</a>${l.precio ? ` · ${pesos(l.precio)}` : ""}`),
+        "Los sobrantes se venden rápido: si te sirve, ofertá cuanto antes.",
+      ],
+      boton: { texto: "Ver mis búsquedas", ruta: "/panel/busquedas" },
+    }),
+  }),
+
   bajaDePrecio: (lote: string, antes: number, ahora: number, loteId: string): Plantilla => ({
     asunto: `Bajó de precio: ${lote}`,
     html: plantilla({

@@ -19,7 +19,7 @@ const geistMono = Geist_Mono({
 });
 
 const COLUMNAS_PIE: [string, [string, string][]][] = [
-  ["Sobrá", [["Ver lotes", "/lotes"], ["Publicar un sobrante", "/panel/vendedor/lotes/nuevo"], ["Cómo funciona", "/como-funciona"]]],
+  ["Sobrá", [["Ver lotes", "/lotes"], ["Publicar un sobrante", "/panel/vendedor/lotes/nuevo"], ["Lo que se está buscando", "/buscados"], ["Cómo funciona", "/como-funciona"]]],
   ["Ayuda", [["Centro de ayuda", "/ayuda"], ["Devoluciones y reclamos", "/devoluciones"], ["Botón de arrepentimiento", "/arrepentimiento"]]],
   ["Legal", [["Términos y condiciones", "/terminos"], ["Privacidad y cookies", "/privacidad"]]],
 ];

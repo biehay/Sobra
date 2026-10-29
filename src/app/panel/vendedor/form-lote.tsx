@@ -13,13 +13,14 @@ const MAX_FOTOS = 10;
 // Tope del archivo original; después de limpiarla la foto queda mucho más liviana.
 const MAX_BYTES = 25 * 1024 * 1024;
 
-export function FormLote({ usuarioId, lote, retiro }: { usuarioId: string; lote?: Lote; retiro?: Retiro | null }) {
+export function FormLote({ usuarioId, lote, retiro, precioMinimo }: { usuarioId: string; lote?: Lote; retiro?: Retiro | null; precioMinimo?: number | null }) {
   const [items, setItems] = useState<Item[]>(lote?.items.length ? lote.items : [{ nombre: "", cantidad: 1, unidad: "u" }]);
   const [fotos, setFotos] = useState<string[]>(lote?.fotos ?? []);
   const [subiendo, setSubiendo] = useState(false);
   const [errorFotos, setErrorFotos] = useState("");
   const [precioLista, setPrecioLista] = useState(lote?.precio_lista?.toString() ?? "");
   const [condicion, setCondicion] = useState<Condicion>(lote?.condicion ?? "nuevo");
+  const [bajaActiva, setBajaActiva] = useState(lote?.baja_semanal_pct != null);
   const sugerido = precioSugerido(Number(precioLista) || null, condicion);
 
   async function subirFotos(archivos: FileList | null) {
@@ -169,6 +170,35 @@ export function FormLote({ usuarioId, lote, retiro }: { usuarioId: string; lote?
           </p>
         )}
         <p className="text-sm text-stone-500">Sobrá cobra 12% de comisión solo si se vende.</p>
+
+        <div className="rounded-lg border border-stone-200 p-4">
+          <label className="flex items-start gap-3">
+            <input type="checkbox" checked={bajaActiva} onChange={(e) => setBajaActiva(e.target.checked)} className="mt-1 size-4 accent-marca" />
+            <span>
+              <span className="block font-medium">Bajar el precio solo si no se vende (opcional)</span>
+              <span className="text-sm text-stone-500">
+                Cada semana sin vender, el precio baja el porcentaje que elijas, hasta el mínimo que pongas. Los compradores que
+                lo guardaron reciben un aviso en cada baja. El mínimo no se muestra a nadie.
+              </span>
+            </span>
+          </label>
+          {bajaActiva && (
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              <div>
+                <label htmlFor="baja_semanal_pct" className="etiqueta">Cuánto baja por semana</label>
+                <select id="baja_semanal_pct" name="baja_semanal_pct" defaultValue={lote?.baja_semanal_pct ?? 10} className="campo">
+                  {[5, 10, 15].map((p) => (
+                    <option key={p} value={p}>{p}% por semana</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="precio_minimo" className="etiqueta">Precio mínimo</label>
+                <input id="precio_minimo" name="precio_minimo" type="number" min={1} required defaultValue={precioMinimo ?? ""} className="campo" placeholder="No baja de este precio" />
+              </div>
+            </div>
+          )}
+        </div>
       </section>
 
       <section className="tarjeta space-y-4 p-6">

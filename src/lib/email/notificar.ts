@@ -147,6 +147,26 @@ export const notificar = {
     });
   },
 
+  // A quienes guardaron una búsqueda que coincide con un lote recién publicado
+  // (o que bajó de precio y ahora entra en su precio máximo).
+  coincidencias(loteId: string) {
+    enSegundoPlano("coincidencias de búsquedas", async (admin) => {
+      const { data: avisos, error } = await admin.rpc("registrar_coincidencias", { p_lote: loteId });
+      if (error) throw error;
+      if (!avisos?.length) return;
+      const { data: lote } = await admin.from("lotes").select("titulo, precio_publicado").eq("id", loteId).single();
+      if (!lote) return;
+      const porUsuario = new Map<string, string>();
+      for (const a of avisos as { usuario_id: string; texto: string }[]) if (!porUsuario.has(a.usuario_id)) porUsuario.set(a.usuario_id, a.texto);
+      for (const [usuarioId, texto] of porUsuario) {
+        await enviarEmail({
+          para: await emailDe(admin, usuarioId),
+          ...plantillas.loteParaVos(texto, [{ titulo: lote.titulo, precio: lote.precio_publicado, id: loteId }]),
+        });
+      }
+    });
+  },
+
   loteEnRevision(loteId: string) {
     enSegundoPlano("lote en revisión", async (admin) => {
       const { data, error } = await admin.from("lotes").select("titulo, perfiles(nombre, empresa)").eq("id", loteId).single();

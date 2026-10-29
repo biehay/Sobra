@@ -39,6 +39,7 @@ export async function revisarLote(formData: FormData) {
     if (error) volver("error", error.message);
     notificar.loteRevisado(id);
     notificar.bajaDePrecio(id);
+    notificar.coincidencias(id);
     volver("ok", "Lote publicado.");
   }
 

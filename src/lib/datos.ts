@@ -44,6 +44,8 @@ export type Lote = {
   precio_sugerido: number | null;
   precio_publicado: number | null;
   peso_kg: number | null; // lo declara el vendedor y lo confirma el admin
+  baja_semanal_pct: number | null; // baja automática de precio (opcional)
+  ultima_baja_at: string | null;
   fotos: string[];
   estado: EstadoLote;
   nota_admin: string | null;
@@ -158,6 +160,13 @@ export function precioSugerido(precioLista: number | null, condicion: Condicion)
   if (!precioLista || precioLista <= 0) return null;
   // Redondeo a múltiplos de 1.000 para que el precio quede prolijo.
   return Math.max(1000, Math.round((precioLista * FACTOR_PRECIO[condicion]) / 1000) * 1000);
+}
+
+// Próxima baja automática: una semana después de publicado o de la última baja.
+export function proximaBaja(lote: Pick<Lote, "baja_semanal_pct" | "ultima_baja_at" | "publicado_at">): Date | null {
+  const desde = lote.ultima_baja_at ?? lote.publicado_at;
+  if (lote.baja_semanal_pct == null || !desde) return null;
+  return new Date(new Date(desde).getTime() + 7 * 86_400_000);
 }
 
 export function descuento(precio: number, precioLista: number | null): number | null {

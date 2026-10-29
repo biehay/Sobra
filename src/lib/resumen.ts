@@ -21,6 +21,7 @@ export type Resumen = {
   reclamosAbiertos: number;
   visitasSemana: number; // de todos sus lotes, últimos 7 días
   favoritosQueBajaron: number;
+  lotesParaMisBusquedas: number; // coincidencias de los últimos 7 días
   // Lo que necesita que el usuario haga algo (el numerito del círculo).
   pendientes: number;
 };
@@ -37,12 +38,13 @@ function neto(o: { monto: number; comision: number | null }) {
 
 export const resumenUsuario = cache(async (usuarioId: string): Promise<Resumen> => {
   const supabase = await crearClienteServidor();
-  const [{ data: lotesData }, { data: comprasData }, { count: reclamosAbiertos }, { data: visitasData }, { data: favoritosData }] = await Promise.all([
+  const [{ data: lotesData }, { data: comprasData }, { count: reclamosAbiertos }, { data: visitasData }, { data: favoritosData }, { count: coincidencias }] = await Promise.all([
     supabase.from("lotes").select("id, estado").eq("vendedor_id", usuarioId),
     supabase.from("ofertas").select("estado").eq("comprador_id", usuarioId).in("estado", ["pendiente", "aceptada", "pagada"]),
     supabase.from("reclamos").select("id", { count: "exact", head: true }).eq("estado", "abierto"),
     supabase.rpc("visitas_de_mis_lotes"),
     supabase.from("favoritos").select("precio_guardado, lotes(precio_publicado, estado)"),
+    supabase.from("busqueda_coincidencias").select("id", { count: "exact", head: true }).gte("created_at", new Date(Date.now() - 7 * 86_400_000).toISOString()),
   ]);
   const favoritos = (favoritosData ?? []) as unknown as { precio_guardado: number | null; lotes: { precio_publicado: number | null; estado: EstadoLote } | null }[];
   const lotes = (lotesData ?? []) as { id: string; estado: EstadoLote }[];
@@ -86,6 +88,7 @@ export const resumenUsuario = cache(async (usuarioId: string): Promise<Resumen> 
     favoritosQueBajaron: favoritos.filter(
       (f) => f.lotes?.estado === "publicado" && Number(f.precio_guardado) > Number(f.lotes.precio_publicado),
     ).length,
+    lotesParaMisBusquedas: coincidencias ?? 0,
   };
   return {
     ...resumen,

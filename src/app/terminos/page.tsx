@@ -80,6 +80,11 @@ export default function Terminos() {
         <li>Las fotos y la descripción tienen que mostrar el estado real del material.</li>
         <li>Revisamos cada lote antes de publicarlo y podemos pedir cambios o rechazarlo.</li>
         <li>El precio de publicación lo confirmamos con vos al revisarlo. Publicar es gratis.</li>
+        <li>
+          <strong>Baja automática de precio (opcional):</strong> si la activás, nos autorizás a bajar el precio de publicación
+          el porcentaje que elegiste cada semana que el lote pase sin venderse, hasta el precio mínimo que fijaste. El mínimo
+          no se muestra a los compradores. La podés desactivar o cambiar cuando quieras editando el lote.
+        </li>
       </ul>
 
       <h2>6. Ofertas y compra</h2>
@@ -89,6 +94,11 @@ export default function Terminos() {
         <li>El comprador paga antes del retiro. Sobrá retiene el pago hasta que se completa el retiro.</li>
         <li>Los datos de contacto y la dirección de retiro se comparten recién cuando el pago está confirmado.</li>
         <li>No está permitido cerrar por fuera de Sobrá una operación que empezó en Sobrá.</li>
+        <li>
+          <strong>Lo busco:</strong> podés guardar hasta 10 búsquedas y te avisamos por email cuando se publique un lote que
+          coincida. El texto de lo que buscás (sin tu nombre ni tus datos) se muestra a los vendedores en “Lo que se está
+          buscando”, así que no escribas datos personales ahí. Podemos borrar búsquedas que no correspondan.
+        </li>
       </ul>
 
       <h2>7. Pago protegido y código de retiro</h2>

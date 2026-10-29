@@ -13,6 +13,8 @@ const OUT = process.argv[2] ?? "pruebas/capturas";
 fs.mkdirSync(OUT, { recursive: true });
 // Clave service_role del Supabase local (la imprime `npx supabase status`).
 const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// Tiene que ser la misma CRON_SECRET con la que arrancó la app.
+const CRON_SECRET = process.env.CRON_SECRET ?? "secreto-de-prueba";
 if (!SERVICE_ROLE) throw new Error("Falta SUPABASE_SERVICE_ROLE_KEY (la del Supabase local)");
 const CLAVE = "clave-segura-123";
 
@@ -486,6 +488,15 @@ try {
   esperar((await anon.textContent("main")).includes("Sobre el vendedor"), "el lote muestra la reputación del vendedor");
   paso("Impacto: kilos y CO₂ por operación, constancia emitida y verificada por un tercero, reputación del vendedor en el lote");
 
+  // "Lo busco": Juan no encuentra inodoros y pide que le avisen.
+  await comp.goto(`${BASE}/lotes?q=inodoro`);
+  await comp.click("a:has-text('Avisame cuando aparezca')");
+  await comp.waitForURL("**/panel/busquedas?q=inodoro**");
+  esperar((await comp.inputValue("#texto")) === "inodoro", "el catálogo pasa la búsqueda a Lo busco");
+  await tras(comp, "ok=", () => comp.click("button:has-text('Avisame cuando aparezca')"));
+  await anon.goto(`${BASE}/buscados`);
+  esperar((await anon.textContent("main")).includes("inodoro"), "los vendedores ven lo que se está buscando");
+
   // 12. Segundo lote con reclamo -----------------------------------------
   await vend.goto(`${BASE}/panel/vendedor/lotes/nuevo`);
   await vend.fill("#titulo", "Inodoros Ferrum blancos x 4");
@@ -497,6 +508,10 @@ try {
   await vend.fill("#precio_pedido", "200000");
   await vend.fill("#peso_kg", "100");
   await vend.selectOption("#zona", "GBA Sur");
+  // Baja automática opcional: 5% por semana, sin bajar de $150.000.
+  await vend.check("text=Bajar el precio solo si no se vende");
+  await vend.selectOption("#baja_semanal_pct", "5");
+  await vend.fill("#precio_minimo", "150000");
   await tras(vend, "ok=", () => vend.click("button:has-text('Guardar borrador')"));
   await vend.locator("div.p-4", { hasText: "Inodoros Ferrum" }).locator("a:has-text('Editar')").click();
   await vend.waitForSelector("#titulo");
@@ -504,8 +519,12 @@ try {
   esperar((await aviso(vend)).includes("dirección de retiro"), "no deja enviar a revisión sin dirección de retiro");
   await vend.fill("#direccion", "Camino General Belgrano 1200, Lanús");
   await tras(vend, "ok=", () => vend.click("button:has-text('Enviar a revisión')"));
+  const marcaBusqueda = marcaLog();
   await adm.goto(`${BASE}/admin`);
   await tras(adm, "ok=", () => adm.click("button:has-text('Aprobar y publicar')"));
+  esperar(await enLog("Para: juan@contratista.test · Apareció lo que buscabas: Inodoros Ferrum", marcaBusqueda), "a quien lo buscaba le llega el aviso del lote nuevo");
+  await comp.goto(`${BASE}/panel/busquedas`);
+  esperar((await comp.textContent("main")).includes("Ya hay 1 lote que coincide"), "Lo busco muestra el lote que coincide");
   // Baja de precio: Lucía lo guarda, el vendedor lo baja y, al republicarlo, le llega el aviso.
   await comp2.goto(`${BASE}/lotes`);
   await comp2.locator(".relative", { hasText: "Inodoros Ferrum" }).locator("button[aria-label='Guardar en favoritos']").click();
@@ -523,6 +542,19 @@ try {
   await comp2.click("button[aria-label^='Mi cuenta']");
   esperar(await comp2.isVisible("text=1 favorito bajó de precio"), "el menú del usuario avisa que bajó un favorito");
   await captura(comp2, "favorito-bajo-de-precio");
+  // Baja automática: pasa una semana sin venderse y la tarea diaria lo baja 5%.
+  const [{ id: loteInodoros }] = await api("/rest/v1/lotes?select=id&titulo=like.Inodoros*");
+  esperar((await api(`/rest/v1/lote_precio_minimo?lote_id=eq.${loteInodoros}`))[0]?.precio_minimo === 150000, "se guardó el precio mínimo");
+  await api(`/rest/v1/lotes?id=eq.${loteInodoros}`, { method: "PATCH", body: JSON.stringify({ publicado_at: new Date(Date.now() - 8 * 86_400_000).toISOString(), ultima_baja_at: null }) });
+  esperar((await fetch(`${BASE}/api/tareas/bajas-de-precio`)).status === 401, "la tarea de bajas no corre sin la clave");
+  marcaPrecio = marcaLog();
+  const tarea = await (await fetch(`${BASE}/api/tareas/bajas-de-precio`, { headers: { Authorization: `Bearer ${CRON_SECRET}` } })).json();
+  esperar(tarea.bajaron === 1, "la tarea diaria bajó el lote: " + JSON.stringify(tarea));
+  esperar(await enLog("Para: lucia@arquitecta.test · Bajó de precio: Inodoros Ferrum", marcaPrecio), "la baja automática le avisa a quien lo guardó");
+  await anon.goto(`${BASE}/lotes/${loteInodoros}`);
+  const detalleInodoros = (await anon.textContent("main")).replace(/\s/g, " ");
+  esperar(detalleInodoros.includes("$ 171.000") && detalleInodoros.includes("Precio en baja"), "el lote muestra el precio nuevo y que está en baja");
+  esperar(!detalleInodoros.includes("150.000"), "el precio mínimo no se muestra");
   await comp.goto(`${BASE}/lotes`);
   await comp.click("a:has-text('Inodoros Ferrum')");
   await tras(comp, "ok=", () => comp.click("button:has-text('Enviar oferta')"));
@@ -548,7 +580,7 @@ try {
   await vend.goto(`${BASE}/panel/vendedor`);
   esperar((await vend.textContent("body")).includes("Pausado"), "el lote queda pausado");
   await captura(vend, "vendedor-tras-reclamo");
-  paso("Segundo lote: borrador, revisión, baja de precio avisada a quien lo guardó, oferta, pago, reclamo y devolución");
+  paso("Segundo lote: Lo busco avisó a quien lo buscaba, baja de precio manual y automática avisadas, oferta, pago, reclamo y devolución");
 
   // 13. Perfil, contraseña y recuperación --------------------------------
   await comp.goto(`${BASE}/panel/perfil`);

@@ -23,6 +23,10 @@ export default function Privacidad() {
         </li>
         <li><strong>Favoritos:</strong> los lotes que guardás, para avisarte si bajan de precio.</li>
         <li>
+          <strong>Búsquedas guardadas (Lo busco):</strong> lo que buscás, para avisarte cuando aparece. El texto de la búsqueda
+          se muestra a los vendedores sin tu nombre ni ningún dato tuyo.
+        </li>
+        <li>
           <strong>Reputación y constancias:</strong> tu reputación (cuántas operaciones completaste y si cumpliste) se calcula
           con tus operaciones y la ven otros usuarios sin tu nombre. Si emitís una constancia de material recuperado, quien
           tenga su código ve el nombre de tu empresa (o el tuyo) y los números de la constancia.
