@@ -57,7 +57,8 @@ Necesitás [Node.js 20 o más](https://nodejs.org) y una cuenta gratis en [Supab
    npm install
    npm run dev
    ```
-   Abrí http://localhost:3000.
+   La app se abre sola en el navegador (http://localhost:3000) apenas está lista. Si no querés que se
+   abra, arrancala con `SOBRA_NO_ABRIR=1 npm run dev`.
 6. **Hacete admin**: registrate en la app y después corré en el *SQL Editor* de Supabase:
    ```sql
    update perfiles set rol = 'admin', verificado = true

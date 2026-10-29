@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "node scripts/arrancar.mjs dev",
     "build": "next build",
-    "start": "next start",
+    "start": "node scripts/arrancar.mjs start",
     "lint": "eslint",
     "test": "vitest run",
     "test:recorrido": "node pruebas/recorrido.mjs",
