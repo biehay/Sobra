@@ -145,9 +145,22 @@ export const plantillas = {
       titulo: "Te transferimos el dinero",
       parrafos: [
         `Te transferimos <strong>${pesos(neto)}</strong> por la venta de <strong>${escapar(lote)}</strong>. ¡Gracias por vender en Sobrá!`,
+        "El detalle y el comprobante de la transferencia quedan en <strong>Cobros</strong>, en tu panel.",
         "¿Te sobró algo más? Publicarlo es gratis.",
       ],
-      boton: { texto: "Publicar otro lote", ruta: "/panel/vendedor/lotes/nuevo" },
+      boton: { texto: "Ver mis cobros", ruta: "/panel/cobros" },
+    }),
+  }),
+
+  bajaDePrecio: (lote: string, antes: number, ahora: number, loteId: string): Plantilla => ({
+    asunto: `Bajó de precio: ${lote}`,
+    html: plantilla({
+      titulo: "Un lote que guardaste bajó de precio",
+      parrafos: [
+        `<strong>${escapar(lote)}</strong> pasó de <span style="text-decoration:line-through">${pesos(antes)}</span> a <strong>${pesos(ahora)}</strong>.`,
+        "Si te interesa, ofertá antes de que lo reserve otro comprador.",
+      ],
+      boton: { texto: "Ver el lote", ruta: `/lotes/${loteId}` },
     }),
   }),
 

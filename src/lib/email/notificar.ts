@@ -126,6 +126,27 @@ export const notificar = {
     });
   },
 
+  // A quienes guardaron el lote, si se publicó más barato que cuando lo guardaron
+  // (o que el último aviso). Se avisa una sola vez por cada precio.
+  bajaDePrecio(loteId: string) {
+    enSegundoPlano("baja de precio", async (admin) => {
+      const { data: lote, error } = await admin.from("lotes").select("titulo, estado, precio_publicado").eq("id", loteId).single();
+      if (error) throw error;
+      const ahora = Number(lote.precio_publicado);
+      if (lote.estado !== "publicado" || !(ahora > 0)) return;
+      const { data: favoritos } = await admin
+        .from("favoritos")
+        .select("usuario_id, precio_guardado, precio_avisado")
+        .eq("lote_id", loteId);
+      for (const f of favoritos ?? []) {
+        const antes = Number(f.precio_avisado ?? f.precio_guardado);
+        if (!(antes > ahora)) continue;
+        await enviarEmail({ para: await emailDe(admin, f.usuario_id), ...plantillas.bajaDePrecio(lote.titulo, antes, ahora, loteId) });
+        await admin.from("favoritos").update({ precio_avisado: ahora }).eq("lote_id", loteId).eq("usuario_id", f.usuario_id);
+      }
+    });
+  },
+
   loteEnRevision(loteId: string) {
     enSegundoPlano("lote en revisión", async (admin) => {
       const { data, error } = await admin.from("lotes").select("titulo, perfiles(nombre, empresa)").eq("id", loteId).single();

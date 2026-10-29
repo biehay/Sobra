@@ -1,5 +1,6 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { crearClienteServidor } from "@/lib/supabase/server";
@@ -34,6 +35,7 @@ export async function revisarLote(formData: FormData) {
       .eq("id", id);
     if (error) volver("error", error.message);
     notificar.loteRevisado(id);
+    notificar.bajaDePrecio(id);
     volver("ok", "Lote publicado.");
   }
 
@@ -81,7 +83,6 @@ const OPERACIONES = {
   pago: { rpc: "confirmar_pago", ok: "Pago confirmado. Comprador y vendedor ya ven los datos de retiro.", aviso: notificar.pagoConfirmado },
   completar: { rpc: "completar_operacion", ok: "Operación completada. Recordá liquidarle al vendedor.", aviso: notificar.retiroConfirmado },
   cancelar: { rpc: "cancelar_oferta", ok: "Operación cancelada y lote republicado.", aviso: notificar.compraCancelada },
-  liquidar: { rpc: "marcar_liquidada", ok: "Liquidación al vendedor registrada.", aviso: notificar.liquidada },
 } as const;
 
 export async function avanzarOperacion(formData: FormData) {
@@ -94,4 +95,56 @@ export async function avanzarOperacion(formData: FormData) {
   if (error) volver("error", error.message);
   paso.aviso(ofertaId);
   volver("ok", paso.ok);
+}
+
+// Comprobantes de la transferencia al vendedor: PDF o imagen de hasta 5 MB, en
+// el bucket privado "comprobantes", dentro de la carpeta del vendedor.
+const TIPOS_COMPROBANTE: Record<string, string> = {
+  "application/pdf": "pdf",
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
+const MAX_COMPROBANTE = 5 * 1024 * 1024;
+
+async function subirComprobante(supabase: Awaited<ReturnType<typeof crearClienteServidor>>, ofertaId: string, archivo: FormDataEntryValue | null) {
+  if (!(archivo instanceof File) || archivo.size === 0) return null;
+  const extension = TIPOS_COMPROBANTE[archivo.type];
+  if (!extension) volver("error", "El comprobante tiene que ser un PDF o una imagen (JPG, PNG o WEBP)");
+  if (archivo.size > MAX_COMPROBANTE) volver("error", "El comprobante puede pesar hasta 5 MB");
+  const { data, error } = await supabase.from("ofertas").select("lotes(vendedor_id)").eq("id", ofertaId).single();
+  if (error) volver("error", error.message);
+  const vendedorId = (data.lotes as unknown as { vendedor_id: string }).vendedor_id;
+  const ruta = `${vendedorId}/${ofertaId}-${randomUUID()}.${extension}`;
+  const { error: errorSubida } = await supabase.storage.from("comprobantes").upload(ruta, archivo, { contentType: archivo.type });
+  if (errorSubida) volver("error", `No se pudo subir el comprobante: ${errorSubida.message}`);
+  return ruta;
+}
+
+export async function liquidar(formData: FormData) {
+  await exigirRol("admin");
+  const ofertaId = String(formData.get("id"));
+  const supabase = await crearClienteServidor();
+  const comprobante = await subirComprobante(supabase, ofertaId, formData.get("comprobante"));
+  const { error } = await supabase.rpc("marcar_liquidada", { p_oferta: ofertaId, p_comprobante: comprobante });
+  if (error) {
+    if (comprobante) await supabase.storage.from("comprobantes").remove([comprobante]);
+    volver("error", error.message);
+  }
+  notificar.liquidada(ofertaId);
+  volver("ok", comprobante ? "Transferencia registrada con su comprobante." : "Transferencia registrada. Podés sumar el comprobante después.");
+}
+
+export async function adjuntarComprobante(formData: FormData) {
+  await exigirRol("admin");
+  const ofertaId = String(formData.get("id"));
+  const supabase = await crearClienteServidor();
+  const comprobante = await subirComprobante(supabase, ofertaId, formData.get("comprobante"));
+  if (!comprobante) volver("error", "Elegí el archivo del comprobante");
+  const { error } = await supabase.rpc("adjuntar_comprobante", { p_oferta: ofertaId, p_comprobante: comprobante });
+  if (error) {
+    await supabase.storage.from("comprobantes").remove([comprobante]);
+    volver("error", error.message);
+  }
+  volver("ok", "Comprobante agregado. El vendedor ya lo ve en Cobros.");
 }

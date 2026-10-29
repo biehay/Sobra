@@ -5,7 +5,7 @@ export const metadata: Metadata = { title: "Privacidad y cookies" };
 
 export default function Privacidad() {
   return (
-    <PaginaLegal titulo="Política de privacidad y cookies" actualizada="27 de octubre de 2026">
+    <PaginaLegal titulo="Política de privacidad y cookies" actualizada="29 de octubre de 2026">
       <p>
         En Sobrá cuidamos los datos de las personas y empresas que usan el marketplace. Esta política explica qué datos
         juntamos, para qué los usamos, quién los ve y qué derechos tenés, de acuerdo con la Ley 25.326 de Protección de
@@ -17,6 +17,15 @@ export default function Privacidad() {
         <li><strong>De tu cuenta:</strong> nombre, email, WhatsApp, zona y, si los cargás, empresa y CUIT.</li>
         <li><strong>De tus lotes:</strong> fotos, descripción, materiales, precios y dirección de retiro.</li>
         <li><strong>De tus operaciones:</strong> ofertas, montos, estado de los pagos, retiros y reclamos.</li>
+        <li>
+          <strong>Comprobantes:</strong> el comprobante de cada transferencia que te hacemos por tus ventas. Se guarda en un
+          espacio privado y solo lo ven vos y el equipo de Sobrá.
+        </li>
+        <li><strong>Favoritos:</strong> los lotes que guardás, para avisarte si bajan de precio.</li>
+        <li>
+          <strong>Visitas a los lotes:</strong> contamos cuántas personas ven cada lote para mostrárselo a su vendedor.
+          No guardamos tu IP ni quién sos: solo un código irreversible que cambia todos los días.
+        </li>
       </ul>
       <p>
         <strong>No guardamos tu contraseña</strong>: solo un resumen cifrado que no se puede revertir.{" "}
@@ -29,6 +38,7 @@ export default function Privacidad() {
         <li>Crear y proteger tu cuenta, incluida la verificación por código.</li>
         <li>Publicar tus lotes y conectar a vendedores con compradores.</li>
         <li>Coordinar pagos, retiros y reclamos, y avisarte por email de cada paso.</li>
+        <li>Mostrarles a los vendedores cuántas visitas tienen sus lotes y avisarte si baja un lote que guardaste.</li>
         <li>Verificar a los compradores y prevenir fraudes.</li>
         <li>Cumplir obligaciones legales e impositivas.</li>
       </ul>

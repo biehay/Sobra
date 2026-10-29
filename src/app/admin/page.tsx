@@ -6,7 +6,7 @@ import { EtiquetaEstado } from "@/components/etiqueta-estado";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { exigirRol } from "@/lib/sesion";
 import { CONDICIONES, linkWhatsapp, pesos, precioSugerido, urlFoto, type Lote, type Oferta, type Perfil, MOTIVOS_RECLAMO, type Reclamo } from "@/lib/datos";
-import { avanzarOperacion, resolverReclamo, revisarLote, verificarUsuario } from "./acciones";
+import { adjuntarComprobante, avanzarOperacion, liquidar, resolverReclamo, revisarLote, verificarUsuario } from "./acciones";
 
 export const metadata: Metadata = { title: "Admin" };
 
@@ -41,6 +41,7 @@ export default async function Admin({ searchParams }: PageProps<"/admin">) {
   const operaciones = ofertas.filter((o) => o.estado === "aceptada" || o.estado === "pagada");
   const sinVerificar = perfiles.filter((p) => p.rol !== "admin" && !p.verificado);
   const aLiquidar = ofertas.filter((o) => o.estado === "completada" && !o.liquidada_at);
+  const sinComprobante = ofertas.filter((o) => o.liquidada_at && !o.comprobante);
   const vendedorDe = new Map(lotes.map((l) => [l.id, l.perfiles]));
 
   // Métricas clave del Lean Canvas.
@@ -276,9 +277,13 @@ export default async function Admin({ searchParams }: PageProps<"/admin">) {
                       {o.completada_at && ` · retirado el ${new Date(o.completada_at).toLocaleDateString("es-AR")}`}
                     </p>
                   </div>
-                  <form action={avanzarOperacion}>
+                  <form action={liquidar} className="flex flex-wrap items-center gap-2">
                     <input type="hidden" name="id" value={o.id} />
-                    <BotonEnviar name="paso" value="liquidar" className="btn px-3 py-1.5" pendiente="..." confirmar={`¿Ya le transferiste ${pesos(o.monto - (o.comision ?? 0))} al vendedor?`}>
+                    <label className="text-sm text-stone-600">
+                      <span className="sr-only">Comprobante de la transferencia</span>
+                      <input name="comprobante" type="file" accept="application/pdf,image/jpeg,image/png,image/webp" className="max-w-56 text-xs file:mr-2 file:rounded-md file:border file:border-stone-300 file:bg-white file:px-2 file:py-1" />
+                    </label>
+                    <BotonEnviar className="btn px-3 py-1.5" pendiente="Registrando..." confirmar={`¿Ya le transferiste ${pesos(o.monto - (o.comision ?? 0))} al vendedor?`}>
                       Marcar transferido
                     </BotonEnviar>
                   </form>
@@ -289,7 +294,33 @@ export default async function Admin({ searchParams }: PageProps<"/admin">) {
         ) : (
           <p className="tarjeta p-6 text-stone-500">No hay liquidaciones pendientes.</p>
         )}
+        <p className="mt-2 text-sm text-stone-500">
+          Adjuntá el comprobante de la transferencia (PDF o imagen, hasta 5 MB): el vendedor lo ve y lo descarga en Cobros.
+        </p>
       </section>
+
+      {sinComprobante.length > 0 && (
+        <section>
+          <h2 className="mb-4 text-xl font-bold">Transferencias sin comprobante ({sinComprobante.length})</h2>
+          <div className="tarjeta divide-y divide-stone-100">
+            {sinComprobante.map((o) => (
+              <div key={o.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
+                <div>
+                  <p className="font-semibold">{o.lotes?.titulo}</p>
+                  <p className="text-sm text-stone-600">
+                    {pesos(o.monto - (o.comision ?? 0))} transferidos el {new Date(o.liquidada_at!).toLocaleDateString("es-AR")}
+                  </p>
+                </div>
+                <form action={adjuntarComprobante} className="flex flex-wrap items-center gap-2">
+                  <input type="hidden" name="id" value={o.id} />
+                  <input name="comprobante" type="file" required aria-label="Comprobante de la transferencia" accept="application/pdf,image/jpeg,image/png,image/webp" className="max-w-56 text-xs file:mr-2 file:rounded-md file:border file:border-stone-300 file:bg-white file:px-2 file:py-1" />
+                  <BotonEnviar className="btn-sec px-3 py-1.5" pendiente="Subiendo...">Adjuntar</BotonEnviar>
+                </form>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section>
         <h2 className="mb-4 text-xl font-bold">Usuarios ({perfiles.length}) · {sinVerificar.length} sin verificar</h2>

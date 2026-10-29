@@ -19,6 +19,8 @@ export type Resumen = {
   comprasPorRetirar: number;
   ofertasEsperando: number;
   reclamosAbiertos: number;
+  visitasSemana: number; // de todos sus lotes, últimos 7 días
+  favoritosQueBajaron: number;
   // Lo que necesita que el usuario haga algo (el numerito del círculo).
   pendientes: number;
 };
@@ -35,11 +37,14 @@ function neto(o: { monto: number; comision: number | null }) {
 
 export const resumenUsuario = cache(async (usuarioId: string): Promise<Resumen> => {
   const supabase = await crearClienteServidor();
-  const [{ data: lotesData }, { data: comprasData }, { count: reclamosAbiertos }] = await Promise.all([
+  const [{ data: lotesData }, { data: comprasData }, { count: reclamosAbiertos }, { data: visitasData }, { data: favoritosData }] = await Promise.all([
     supabase.from("lotes").select("id, estado").eq("vendedor_id", usuarioId),
     supabase.from("ofertas").select("estado").eq("comprador_id", usuarioId).in("estado", ["pendiente", "aceptada", "pagada"]),
     supabase.from("reclamos").select("id", { count: "exact", head: true }).eq("estado", "abierto"),
+    supabase.rpc("visitas_de_mis_lotes"),
+    supabase.from("favoritos").select("precio_guardado, lotes(precio_publicado, estado)"),
   ]);
+  const favoritos = (favoritosData ?? []) as unknown as { precio_guardado: number | null; lotes: { precio_publicado: number | null; estado: EstadoLote } | null }[];
   const lotes = (lotesData ?? []) as { id: string; estado: EstadoLote }[];
 
   type Venta = { monto: number; comision: number | null; estado: EstadoOferta; completada_at: string | null; liquidada_at: string | null };
@@ -77,6 +82,10 @@ export const resumenUsuario = cache(async (usuarioId: string): Promise<Resumen> 
     comprasPorRetirar: contarCompras("pagada"),
     ofertasEsperando: contarCompras("pendiente"),
     reclamosAbiertos: reclamosAbiertos ?? 0,
+    visitasSemana: ((visitasData ?? []) as { semana: number }[]).reduce((total, v) => total + Number(v.semana), 0),
+    favoritosQueBajaron: favoritos.filter(
+      (f) => f.lotes?.estado === "publicado" && Number(f.precio_guardado) > Number(f.lotes.precio_publicado),
+    ).length,
   };
   return {
     ...resumen,

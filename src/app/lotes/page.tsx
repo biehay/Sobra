@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { TarjetaLote } from "@/components/tarjeta-lote";
 import { crearClienteServidor } from "@/lib/supabase/server";
+import { estadoFavorito, idsFavoritos } from "@/lib/favoritos";
 import { CATEGORIAS, CONDICIONES, ZONAS, descuento, type Condicion, type Lote } from "@/lib/datos";
 
 export const metadata: Metadata = { title: "Lotes disponibles" };
@@ -38,7 +39,9 @@ export default async function Catalogo({ searchParams }: PageProps<"/lotes">) {
   if (categoria) consulta = consulta.eq("categoria", categoria);
   if (zona) consulta = consulta.eq("zona", zona);
   if (condicion) consulta = consulta.eq("condicion", condicion);
-  const { data } = await consulta;
+  const [{ data }, favoritos] = await Promise.all([consulta, idsFavoritos()]);
+  // Para volver a esta misma búsqueda después de tocar el corazón.
+  const volver = `/lotes?${new URLSearchParams(Object.entries({ q, categoria, zona, condicion, orden: claveOrden }).filter(([, v]) => v))}`;
   let lotes = (data ?? []) as Lote[];
   if (claveOrden === "descuento") {
     const rebaja = (l: Lote) => descuento(l.precio_publicado ?? l.precio_pedido, l.precio_lista) ?? 0;
@@ -87,7 +90,7 @@ export default async function Catalogo({ searchParams }: PageProps<"/lotes">) {
       {lotes.length ? (
         <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {lotes.map((lote) => (
-            <TarjetaLote key={lote.id} lote={lote} />
+            <TarjetaLote key={lote.id} lote={lote} favorito={estadoFavorito(favoritos, lote)} volver={volver} />
           ))}
         </div>
       ) : (

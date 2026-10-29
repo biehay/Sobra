@@ -64,6 +64,8 @@ export async function Encabezado() {
             )}
           </nav>
 
+            <Buscador clase="mx-2 hidden max-w-md flex-1 md:flex" />
+
           <div className="ml-auto flex items-center gap-2 sm:gap-3">
             {perfil?.rol !== "admin" && (
               <Link href={publicar} className="btn hidden sm:inline-flex">
@@ -86,10 +88,38 @@ export async function Encabezado() {
             )}
           </div>
         </div>
+        {/* En el celular el buscador va en una segunda fila, a todo el ancho. */}
+        <div className="contenedor pb-3 md:hidden">
+          <Buscador clase="flex" />
+        </div>
       </header>
       {/* Afuera del header: su desenfoque de fondo haría que "fixed" se ubique dentro de él. */}
       {perfil?.rol !== "admin" && <BotonPublicarFlotante href={publicar} />}
     </>
+  );
+}
+
+// Busca en el catálogo desde cualquier pantalla (es un formulario común que va a /lotes?q=...).
+function Buscador({ clase }: { clase: string }) {
+  return (
+    <form action="/lotes" role="search" className={`${clase} items-center rounded-lg border border-stone-300 bg-white focus-within:border-marca focus-within:ring-2 focus-within:ring-marca/20`}>
+      <label htmlFor={`buscar-${clase.includes("hidden") ? "escritorio" : "celular"}`} className="sr-only">
+        Buscar materiales
+      </label>
+      <input
+        id={`buscar-${clase.includes("hidden") ? "escritorio" : "celular"}`}
+        name="q"
+        type="search"
+        placeholder="Buscar porcelanato, caños, cemento..."
+        className="min-w-0 flex-1 bg-transparent px-3 py-2 text-sm outline-none"
+      />
+      <button aria-label="Buscar" className="px-3 py-2 text-stone-500 hover:text-marca">
+        <svg aria-hidden viewBox="0 0 20 20" className="size-5" fill="none" stroke="currentColor" strokeWidth={2}>
+          <circle cx="9" cy="9" r="6" />
+          <path strokeLinecap="round" d="m14 14 3.5 3.5" />
+        </svg>
+      </button>
+    </form>
   );
 }
 
@@ -148,9 +178,11 @@ async function MenuUsuario({ perfil }: { perfil: Perfil }) {
           <Link href="/admin" className="block rounded-lg px-3 py-2 hover:bg-stone-100">Panel de admin</Link>
         ) : (
           <>
-            <Link href="/panel/vendedor" className="block rounded-lg px-3 py-2 hover:bg-stone-100">Mis ventas y lotes</Link>
-            <Link href="/panel/comprador" className="block rounded-lg px-3 py-2 hover:bg-stone-100">Mis compras</Link>
-            <Link href="/panel/perfil" className="block rounded-lg px-3 py-2 hover:bg-stone-100">Mis datos</Link>
+              <Link href="/panel/vendedor" className="block rounded-lg px-3 py-2 hover:bg-stone-100">Mis ventas y lotes</Link>
+              <Link href="/panel/comprador" className="block rounded-lg px-3 py-2 hover:bg-stone-100">Mis compras</Link>
+              <Link href="/panel/favoritos" className="block rounded-lg px-3 py-2 hover:bg-stone-100">Favoritos</Link>
+              <Link href="/panel/cobros" className="block rounded-lg px-3 py-2 hover:bg-stone-100">Cobros y comprobantes</Link>
+              <Link href="/panel/perfil" className="block rounded-lg px-3 py-2 hover:bg-stone-100">Mis datos</Link>
           </>
         )}
         <form action="/salir" method="post">
@@ -168,6 +200,7 @@ function ResumenCuenta({ resumen: r, mes }: { resumen: Resumen; mes: string }) {
     r.lotes.observados && { texto: `${r.lotes.observados} ${r.lotes.observados === 1 ? "lote" : "lotes"} con observaciones para corregir`, href: "/panel/vendedor" },
     r.comprasPorRetirar && { texto: `${r.comprasPorRetirar} ${r.comprasPorRetirar === 1 ? "retiro" : "retiros"} para coordinar`, href: "/panel/comprador" },
     r.reclamosAbiertos && { texto: `${r.reclamosAbiertos} ${r.reclamosAbiertos === 1 ? "reclamo abierto" : "reclamos abiertos"}`, href: "/panel/vendedor" },
+    r.favoritosQueBajaron && { texto: `${r.favoritosQueBajaron} ${r.favoritosQueBajaron === 1 ? "favorito bajó" : "favoritos bajaron"} de precio`, href: "/panel/favoritos" },
   ].filter(Boolean) as { texto: string; href: string }[];
 
   return (
@@ -196,12 +229,17 @@ function ResumenCuenta({ resumen: r, mes }: { resumen: Resumen; mes: string }) {
       <div>
         <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">Mis lotes</p>
         {r.lotes.total ? (
+          <>
           <div className="mt-2 flex flex-wrap gap-1.5 text-xs">
             <Chip n={r.lotes.publicados} texto={["publicado", "publicados"]} />
             <Chip n={r.lotes.enRevision} texto={["en revisión", "en revisión"]} />
             <Chip n={r.lotes.reservados} texto={["reservado", "reservados"]} />
             <Chip n={r.lotes.vendidos} texto={["vendido", "vendidos"]} />
           </div>
+          <p className="mt-2 text-sm text-stone-600">
+            👁 <strong>{r.visitasSemana}</strong> {r.visitasSemana === 1 ? "visita" : "visitas"} a tus lotes en los últimos 7 días
+          </p>
+          </>
         ) : (
           <p className="mt-1 text-sm text-stone-600">
             Todavía no publicaste nada.{" "}

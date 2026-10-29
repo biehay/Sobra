@@ -62,6 +62,7 @@ export type Oferta = {
   pagada_at: string | null;
   completada_at: string | null;
   liquidada_at: string | null;
+  comprobante: string | null; // ruta en el bucket privado "comprobantes"
   created_at: string;
 };
 

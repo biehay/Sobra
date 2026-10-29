@@ -3,6 +3,8 @@ import Link from "next/link";
 const PESTANAS = [
   { id: "ventas", texto: "Mis ventas", ruta: "/panel/vendedor" },
   { id: "compras", texto: "Mis compras", ruta: "/panel/comprador" },
+  { id: "favoritos", texto: "Favoritos", ruta: "/panel/favoritos" },
+  { id: "cobros", texto: "Cobros", ruta: "/panel/cobros" },
   { id: "datos", texto: "Mis datos", ruta: "/panel/perfil" },
 ] as const;
 

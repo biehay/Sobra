@@ -1,5 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
+import { after } from "next/server";
+import { BotonFavorito } from "@/components/boton-favorito";
+import { estadoFavorito, idsFavoritos } from "@/lib/favoritos";
+import { registrarVisita, visitasDeMisLotes } from "@/lib/visitas";
 import { Aviso } from "@/components/aviso";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { obtenerPerfil, sesionVerificada } from "@/lib/sesion";
@@ -29,6 +34,21 @@ export default async function DetalleLote({ params, searchParams }: PageProps<"/
   const precio = lote.precio_publicado ?? lote.precio_pedido;
   const off = descuento(precio, lote.precio_lista);
   const disponible = lote.estado === "publicado";
+  const esMio = perfil?.id === lote.vendedor_id;
+  const favorito = estadoFavorito(await idsFavoritos(), lote);
+
+  // Se cuenta la visita después de responder (no demora la página). No cuentan
+  // las del propio vendedor ni las del admin.
+  if (["publicado", "reservado"].includes(lote.estado) && !esMio && perfil?.rol !== "admin") {
+    const h = await headers();
+    const visitante = {
+      usuarioId: perfil?.id,
+      ip: h.get("x-forwarded-for")?.split(",")[0].trim() || h.get("x-real-ip") || "",
+      navegador: h.get("user-agent") ?? "",
+    };
+    after(() => registrarVisita(lote.id, visitante));
+  }
+  const visitas = esMio ? (await visitasDeMisLotes([lote.id])).get(lote.id) : undefined;
 
   return (
     <div className="contenedor py-10">
@@ -113,6 +133,20 @@ export default async function DetalleLote({ params, searchParams }: PageProps<"/
             <p className="rounded-lg bg-green-50 px-3 py-2 text-sm text-green-800">
               ✓ Lote verificado por Sobrá · Pago protegido hasta el retiro
             </p>
+            {favorito !== undefined ? (
+              <BotonFavorito loteId={lote.id} guardado={favorito} volver={`/lotes/${lote.id}`} conTexto />
+            ) : (
+              !perfil && (
+                <Link href={`/ingresar?volver=/lotes/${lote.id}`} className="btn-sec w-full">
+                  Guardar en favoritos
+                </Link>
+              )
+            )}
+            {esMio && visitas && (
+              <p className="text-sm text-stone-600">
+                Tu lote tuvo <strong>{visitas.semana}</strong> {visitas.semana === 1 ? "visita" : "visitas"} en los últimos 7 días ({visitas.total} en total).
+              </p>
+            )}
           </div>
 
           <Aviso ok={ok} error={error} />

@@ -45,8 +45,20 @@ function esperar(cond, msg) {
 }
 
 const confirmaciones = [];
+const NAVEGADOR = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36";
+
+// Espera a que aparezca un texto en el log del servidor (por ejemplo un email sin enviar).
+async function enLog(texto, desde) {
+  for (let i = 0; i < 40; i++) {
+    if (fs.readFileSync(LOG).subarray(desde).toString().includes(texto)) return true;
+    await new Promise((r) => setTimeout(r, 250));
+  }
+  return false;
+}
+
 async function nuevaPagina(browser, quien, ancho = 1280, conAvisoVisto = true) {
-  const ctx = await browser.newContext({ viewport: { width: ancho, height: 900 } });
+  // Navegador "normal": la app no cuenta visitas de robots ni de navegadores headless.
+  const ctx = await browser.newContext({ viewport: { width: ancho, height: 900 }, userAgent: NAVEGADOR });
   if (conAvisoVisto) await ctx.addCookies([{ name: "sobra_cookies", value: "ok", url: BASE }]);
   const pg = await ctx.newPage();
   pg.on("dialog", (d) => {
@@ -321,6 +333,22 @@ try {
   await captura(anon, "portada-con-lote");
   await anon.goto(`${BASE}/lotes?q=porcelanato&categoria=${encodeURIComponent("Cerámicos y porcelanatos")}&zona=GBA+Sur&orden=barato`);
   esperar((await anon.locator("a[href^='/lotes/']").count()) === 1, "el filtro encuentra el lote");
+  // Buscador y desplegables del header.
+  await anon.goto(`${BASE}/como-funciona`);
+  await anon.fill("#buscar-escritorio", "porcelanato");
+  await anon.press("#buscar-escritorio", "Enter");
+  await anon.waitForURL("**/lotes?q=porcelanato");
+  esperar((await anon.locator("a[href^='/lotes/']").count()) === 1, "el buscador del header encuentra el lote");
+  await anon.click("button[aria-label='Categorías']");
+  await captura(anon, "header-categorias");
+  await anon.click("header a:has-text('Cerámicos y porcelanatos')");
+  await anon.waitForURL("**categoria=**");
+  esperar((await anon.locator("a[href^='/lotes/']").count()) === 1, "el desplegable de categorías filtra");
+  await anon.click("button[aria-label='Ofertas']");
+  await anon.click("header a:has-text('Mayor descuento')");
+  await anon.waitForURL("**orden=descuento");
+  esperar((await anon.locator("a[href^='/lotes/']").count()) === 1, "Ofertas > Mayor descuento muestra el lote rebajado");
+  esperar((await anon.locator("button[aria-label='Guardar en favoritos']").count()) === 0, "sin cuenta no aparece el corazón en las tarjetas");
   await anon.goto(`${BASE}/lotes?q=inexistente`);
   esperar(await anon.locator("text=No encontramos lotes").isVisible(), "filtro sin resultados");
   await anon.goto(`${BASE}/lotes`);
@@ -329,7 +357,7 @@ try {
   const loteUrl = anon.url();
   esperar((await anon.textContent("body")).includes("47% menos"), "muestra el descuento sobre el precio de lista");
   await captura(anon, "detalle-lote-visitante");
-  paso("Catálogo: portada, filtros, búsqueda sin resultados y detalle con descuento");
+  paso("Catálogo: portada, buscador del header, categorías, ofertas, filtros y detalle con descuento");
 
   // 8. Ofertas -----------------------------------------------------------
   await comp.goto(loteUrl);
@@ -348,15 +376,24 @@ try {
   await comp.goto(loteUrl);
   await tras(comp, "error=", () => comp.click("button:has-text('Enviar oferta')"));
   esperar((await aviso(comp)).includes("Ya tenés una oferta pendiente"), "no deja duplicar ofertas pendientes");
+  // Favoritos: Lucía guarda el lote y lo ve en su panel.
+  await comp2.goto(loteUrl);
+  await comp2.click("button:has-text('Guardar en favoritos')");
+  await comp2.waitForSelector("button:has-text('Guardado en favoritos')");
+  await comp2.goto(`${BASE}/panel/favoritos`);
+  esperar((await comp2.textContent("main")).includes("Porcelanato"), "el lote guardado aparece en Favoritos");
+  await captura(comp2, "favoritos");
   await comp2.goto(loteUrl);
   await comp2.fill("#monto", "400000");
   await tras(comp2, "ok=", () => comp2.click("button:has-text('Enviar oferta')"));
   await vend.goto(loteUrl);
   esperar((await vend.textContent("body")).includes("Este es tu lote"), "el vendedor no puede ofertar por su lote");
-  paso("Ofertas: comprador sin verificar bloqueado, admin verificó, 2 ofertas, sin duplicados");
+  paso("Ofertas: comprador sin verificar bloqueado, admin verificó, favorito guardado, 2 ofertas, sin duplicados");
 
   // 9. Vendedor acepta ---------------------------------------------------
   await vend.goto(`${BASE}/panel/vendedor`);
+  const visitas = Number((await vend.textContent("main")).match(/(\d+) visitas? en los últimos 7 días/)?.[1] ?? 0);
+  esperar(visitas >= 3, `el vendedor ve las visitas de su lote (${visitas})`);
   await captura(vend, "panel-vendedor-ofertas");
   await tras(vend, "ok=", () => vend.locator(".tarjeta", { hasText: "$ 450.000" }).locator("button:has-text('Aceptar')").click());
   await comp2.goto(`${BASE}/panel/comprador`);
@@ -393,12 +430,29 @@ try {
   // 11. Liquidación -------------------------------------------------------
   await adm.goto(`${BASE}/admin`);
   await captura(adm, "admin-liquidacion-pendiente");
+  const pdf = Buffer.from("%PDF-1.4\n1 0 obj<< /Type /Catalog >>endobj\ntrailer<< /Root 1 0 R >>\n%%EOF\n");
+  await adm.setInputFiles("input[name=comprobante]", { name: "transferencia.pdf", mimeType: "application/pdf", buffer: pdf });
   await tras(adm, "ok=", () => adm.click("button:has-text('Marcar transferido')"));
+  esperar((await aviso(adm)).includes("con su comprobante"), "el admin registra la transferencia con el comprobante");
   await vend.goto(`${BASE}/panel/vendedor`);
   esperar((await vend.textContent("body")).includes("Te transferimos"), "el vendedor ve la transferencia");
+  await vend.goto(`${BASE}/panel/cobros`);
+  const cobros = (await vend.textContent("main")).replace(/\s/g, " ");
+  esperar(cobros.includes("Porcelanato") && cobros.includes("$ 396.000"), "Cobros muestra la transferencia con el neto");
+  await captura(vend, "cobros");
+  const hrefComprobante = await vend.locator("a:has-text('Ver comprobante')").getAttribute("href");
+  const firmado = await vend.context().request.get(BASE + hrefComprobante, { maxRedirects: 0 });
+  const destino = firmado.headers()["location"] ?? "";
+  esperar(destino.includes("/storage/v1/object/sign/comprobantes/"), "el comprobante se abre con un link firmado: " + destino);
+  const archivo = await vend.context().request.get(destino);
+  esperar((await archivo.body()).toString().startsWith("%PDF"), "el vendedor descarga el comprobante");
+  const ajeno = await comp.context().request.get(BASE + hrefComprobante, { maxRedirects: 0 });
+  esperar(!(ajeno.headers()["location"] ?? "").includes("/storage/"), "el comprador no puede abrir el comprobante del vendedor");
+  const planilla = await (await vend.context().request.get(`${BASE}/panel/cobros/descargar`)).text();
+  esperar(planilla.includes("Porcelanato") && planilla.includes("396000"), "la planilla de cobros trae la transferencia");
   await anon.goto(loteUrl);
   esperar((await anon.textContent("body")).includes("vendido"), "el lote figura vendido");
-  paso("Liquidación al vendedor registrada; el lote figura vendido");
+  paso("Liquidación con comprobante: el vendedor lo ve en Cobros, lo descarga y baja la planilla; el comprador no puede abrirlo");
 
   // 12. Segundo lote con reclamo -----------------------------------------
   await vend.goto(`${BASE}/panel/vendedor/lotes/nuevo`);
@@ -419,6 +473,23 @@ try {
   await tras(vend, "ok=", () => vend.click("button:has-text('Enviar a revisión')"));
   await adm.goto(`${BASE}/admin`);
   await tras(adm, "ok=", () => adm.click("button:has-text('Aprobar y publicar')"));
+  // Baja de precio: Lucía lo guarda, el vendedor lo baja y, al republicarlo, le llega el aviso.
+  await comp2.goto(`${BASE}/lotes`);
+  await comp2.locator(".relative", { hasText: "Inodoros Ferrum" }).locator("button[aria-label='Guardar en favoritos']").click();
+  await comp2.waitForSelector("button[aria-label='Quitar de favoritos']");
+  await vend.goto(`${BASE}/panel/vendedor`);
+  await vend.locator("div.p-4", { hasText: "Inodoros Ferrum" }).locator("a:has-text('Editar')").click();
+  await vend.fill("#precio_pedido", "180000");
+  await tras(vend, "ok=", () => vend.click("button:has-text('Enviar a revisión')"));
+  let marcaPrecio = marcaLog();
+  await adm.goto(`${BASE}/admin`);
+  await tras(adm, "ok=", () => adm.click("button:has-text('Aprobar y publicar')"));
+  esperar(await enLog("Para: lucia@arquitecta.test · Bajó de precio: Inodoros Ferrum", marcaPrecio), "a quien lo guardó le llega el aviso de baja de precio");
+  await comp2.goto(`${BASE}/panel/favoritos`);
+  esperar((await comp2.textContent("main")).replace(/\s/g, " ").includes("Bajó $ 20.000"), "Favoritos muestra cuánto bajó");
+  await comp2.click("button[aria-label^='Mi cuenta']");
+  esperar(await comp2.isVisible("text=1 favorito bajó de precio"), "el menú del usuario avisa que bajó un favorito");
+  await captura(comp2, "favorito-bajo-de-precio");
   await comp.goto(`${BASE}/lotes`);
   await comp.click("a:has-text('Inodoros Ferrum')");
   await tras(comp, "ok=", () => comp.click("button:has-text('Enviar oferta')"));
@@ -444,7 +515,7 @@ try {
   await vend.goto(`${BASE}/panel/vendedor`);
   esperar((await vend.textContent("body")).includes("Pausado"), "el lote queda pausado");
   await captura(vend, "vendedor-tras-reclamo");
-  paso("Segundo lote: borrador, revisión, oferta, pago, reclamo del comprador y devolución resuelta por el admin");
+  paso("Segundo lote: borrador, revisión, baja de precio avisada a quien lo guardó, oferta, pago, reclamo y devolución");
 
   // 13. Perfil, contraseña y recuperación --------------------------------
   await comp.goto(`${BASE}/panel/perfil`);

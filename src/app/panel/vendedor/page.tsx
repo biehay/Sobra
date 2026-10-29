@@ -6,6 +6,7 @@ import { EtiquetaEstado } from "@/components/etiqueta-estado";
 import { DatosOperacion } from "@/components/datos-operacion";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { exigirRol } from "@/lib/sesion";
+import { visitasDeMisLotes } from "@/lib/visitas";
 import { BotonEnviar } from "@/components/boton-enviar";
 import { EstadoReclamo, FormReclamo } from "@/components/reclamo";
 import { MODOS_RETIRO, pesos, type Lote, type Oferta, type Reclamo } from "@/lib/datos";
@@ -39,6 +40,8 @@ export default async function PanelVendedor({ searchParams }: PageProps<"/panel/
   const { data: reclamosData } = ofertas.length
     ? await supabase.from("reclamos").select("*").in("oferta_id", ofertas.map((o) => o.id)).order("created_at", { ascending: false })
     : { data: [] };
+  const visitas = await visitasDeMisLotes(lotes.map((l) => l.id));
+  const lotesConOfertas = new Set(ofertas.map((o) => o.lote_id));
   const reclamos = new Map<string, Reclamo>();
   for (const r of (reclamosData ?? []) as Reclamo[]) if (!reclamos.has(r.oferta_id)) reclamos.set(r.oferta_id, r);
 
@@ -133,6 +136,14 @@ export default async function PanelVendedor({ searchParams }: PageProps<"/panel/
                     {oferta.liquidada_at
                       ? `Te transferimos ${pesos(oferta.monto - (oferta.comision ?? 0))} el ${new Date(oferta.liquidada_at).toLocaleDateString("es-AR")}.`
                       : `Retiro confirmado. Te transferimos ${pesos(oferta.monto - (oferta.comision ?? 0))} en los próximos días hábiles.`}
+                    {oferta.comprobante && (
+                      <>
+                        {" "}
+                        <a href={`/panel/cobros/comprobante/${oferta.id}`} target="_blank" rel="noreferrer" className="font-semibold text-marca hover:underline">
+                          Ver comprobante
+                        </a>
+                      </>
+                    )}
                   </p>
                 )}
               </div>
@@ -158,6 +169,7 @@ export default async function PanelVendedor({ searchParams }: PageProps<"/panel/
                   {lote.estado === "rechazado" && lote.nota_admin && (
                     <p className="text-sm text-amber-800">Observaciones: {lote.nota_admin}</p>
                   )}
+                  <LineaVisitas lote={lote} visitas={visitas.get(lote.id)} tieneOfertas={lotesConOfertas.has(lote.id)} />
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <EtiquetaEstado estado={lote.estado} tipo="lote" />
@@ -200,5 +212,29 @@ function BotonEstado({ id, estado, texto, peligro }: { id: string; estado: strin
         {texto}
       </BotonEnviar>
     </form>
+  );
+}
+
+function diasDesde(fecha: string | null) {
+  return fecha ? (Date.now() - new Date(fecha).getTime()) / 86_400_000 : 0;
+}
+
+// Visitas del lote y, si lo miran pero nadie oferta, una sugerencia de precio.
+function LineaVisitas({ lote, visitas, tieneOfertas }: { lote: Lote; visitas?: { semana: number; total: number }; tieneOfertas: boolean }) {
+  if (!["publicado", "reservado", "vendido"].includes(lote.estado)) return null;
+  const semana = visitas?.semana ?? 0;
+  const diasPublicado = diasDesde(lote.publicado_at);
+  const sugerirBaja = lote.estado === "publicado" && !tieneOfertas && diasPublicado >= 7 && semana >= 15;
+  return (
+    <>
+      <p className="text-sm text-stone-500">
+        👁 {semana} {semana === 1 ? "visita" : "visitas"} en los últimos 7 días · {visitas?.total ?? 0} en total
+      </p>
+      {sugerirBaja && (
+        <p className="text-sm text-amber-800">
+          Lo miran, pero nadie ofertó todavía: quizás conviene bajar un poco el precio. Escribinos y lo ajustamos.
+        </p>
+      )}
+    </>
   );
 }

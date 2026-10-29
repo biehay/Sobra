@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { TarjetaLote } from "@/components/tarjeta-lote";
 import { crearClienteServidor } from "@/lib/supabase/server";
+import { estadoFavorito, idsFavoritos } from "@/lib/favoritos";
 import type { Lote } from "@/lib/datos";
 
 const PASOS_VENDEDOR = [
@@ -26,6 +27,7 @@ export default async function Inicio() {
     .order("publicado_at", { ascending: false })
     .limit(6);
   const lotes = (data ?? []) as Lote[];
+  const favoritos = await idsFavoritos();
 
   return (
     <>
@@ -78,7 +80,7 @@ export default async function Inicio() {
         {lotes.length ? (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {lotes.map((lote) => (
-              <TarjetaLote key={lote.id} lote={lote} />
+              <TarjetaLote key={lote.id} lote={lote} favorito={estadoFavorito(favoritos, lote)} volver="/" />
             ))}
           </div>
         ) : (

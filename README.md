@@ -22,7 +22,19 @@ admin); para ofertar, el admin tiene que haber verificado la cuenta. Nadie puede
 7. Si algo sale mal (el material no coincide, el comprador no se presenta), cualquiera de los dos
    **abre un reclamo**. La operación queda en pausa y el admin decide: devolver el pago, completar la
    venta o cerrar el reclamo sin cambios.
-8. El admin le transfiere al vendedor el monto menos la comisión (12%) y lo **marca como transferido**.
+8. El admin le transfiere al vendedor el monto menos la comisión (12%), lo **marca como transferido** y
+   adjunta el **comprobante** (PDF o imagen). El vendedor lo ve y lo descarga en **Cobros**, junto con una
+   planilla de todas sus transferencias para el contador.
+
+Además:
+
+- **Header** con buscador, desplegables de categorías y ofertas, el botón "+ Publicar sobrante" (en el
+  celular, flotando abajo) y el menú del usuario: su resumen de plata del mes, lo que se le debe, sus lotes
+  y lo que tiene para hacer.
+- **Visitas**: cada vendedor ve cuántas personas miraron cada lote en los últimos 7 días. Si lo miran y
+  nadie oferta, la app le sugiere revisar el precio. No se guarda la IP ni quién visitó (ver Seguridad).
+- **Favoritos**: el comprador guarda lotes con el corazón y, si el lote se republica más barato, le llega
+  un email y lo ve en su panel.
 
 Las reglas (quién puede ver y hacer qué) están en la base de datos, en
 `supabase/migrations/`, así que valen aunque alguien llame a la API directamente.
@@ -108,6 +120,12 @@ registrarte sin código.
   hacen que cada usuario vea solo lo suyo. El contacto y la dirección de la contraparte se revelan
   recién cuando el pago está confirmado. Supabase cifra la base y los backups en disco (AES-256) y
   todo viaja por HTTPS.
+- **Comprobantes**: van a un espacio privado de Supabase (bucket `comprobantes`). Solo el admin los sube y
+  cada vendedor puede abrir solo los de su carpeta, con un link que vence al minuto. Para abrirlos hay que
+  haber ingresado el código del email.
+- **Visitas**: la base guarda un hash del día con el usuario (o con la IP y el navegador, si no ingresó):
+  sirve para contar una visita por persona y por día, pero no permite saber quién es ni seguirlo de un día
+  a otro. Las registra solo el servidor, así que nadie puede inflarlas desde afuera.
 - **Fotos**: antes de subirlas se borran los metadatos (incluidas las coordenadas GPS que guardan los
   celulares), para no revelar la ubicación del depósito.
 - **Claves secretas**: `SUPABASE_SERVICE_ROLE_KEY` y `RESEND_API_KEY` solo existen en el servidor
@@ -152,8 +170,9 @@ Los emails del Supabase local (por ejemplo, los códigos de verificación) se ve
 
 ### Base de datos
 
-`supabase/tests/flujo_operacion.sql` recorre una operación completa y `supabase/tests/retiro_y_reclamos.sql`
-el código de retiro y los reclamos. Verifican que cada regla de seguridad bloquee lo que tiene que
+`supabase/tests/flujo_operacion.sql` recorre una operación completa, `supabase/tests/retiro_y_reclamos.sql`
+el código de retiro y los reclamos, y `supabase/tests/visitas_favoritos_comprobantes.sql` las visitas, los
+favoritos y los comprobantes. Verifican que cada regla de seguridad bloquee lo que tiene que
 bloquear. Se corren contra un PostgreSQL local con `supabase/tests/stub_supabase.sql` (simula lo mínimo
 de Supabase):
 
@@ -162,6 +181,7 @@ createdb sobra_test
 psql -d sobra_test -f supabase/tests/stub_supabase.sql $(ls supabase/migrations/*.sql | sed 's/^/-f /')
 psql -d sobra_test -f supabase/tests/flujo_operacion.sql     # termina con "TODAS LAS PRUEBAS PASARON"
 psql -d sobra_test -f supabase/tests/retiro_y_reclamos.sql   # ídem
+psql -d sobra_test -f supabase/tests/visitas_favoritos_comprobantes.sql   # ídem
 ```
 
 ## Estructura
@@ -173,6 +193,8 @@ src/app/
   (auth)/                  ingresar y registro
   panel/vendedor/          "Mis ventas": mis lotes, cargar/editar lote, ofertas recibidas
   panel/comprador/         "Mis compras": mis ofertas, pago, código y datos de retiro
+  panel/favoritos/         lotes guardados y cuánto bajaron
+  panel/cobros/            transferencias recibidas, comprobantes y planilla para el contador
   admin/                   revisión de lotes, operaciones, usuarios y métricas
 src/lib/datos.ts           tipos, categorías, zonas, precio sugerido y formatos
 src/lib/email/              envío con Resend, plantillas y a quién avisar en cada paso
@@ -185,5 +207,6 @@ supabase/templates/        emails de Supabase: código de verificación y recupe
 
 - Cobro online con Mercado Pago (hoy el pago es por transferencia y lo confirma el admin).
 - Avisos por WhatsApp además del email.
+- Resumen semanal por email al vendedor con las visitas de sus lotes.
 - Cotización de fletes por zona.
 - Material recuperado de demolición y otros rubros.
