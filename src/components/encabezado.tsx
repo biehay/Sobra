@@ -47,7 +47,7 @@ export async function Encabezado() {
                 Ver todos los lotes →
               </Link>
             </Desplegable>
-            <Desplegable etiqueta="Ofertas" alinear="izquierda" claseBoton={claseMenu} boton={<>Ofertas{flecha}</>}>
+            <Desplegable etiqueta="Ofertas" alinear="izquierda" abrirAlPasar claseBoton={claseMenu} boton={<>Ofertas{flecha}</>}>
               <div className="p-2">
                 {OFERTAS.map((o) => (
                   <Link key={o.href} href={o.href} className="block rounded-lg px-3 py-2 hover:bg-stone-100">
