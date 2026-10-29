@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { EMAIL_CONTACTO } from "@/components/pagina-legal";
+import { COMPROMISOS, EMAIL_CONTACTO } from "@/components/pagina-legal";
 import { TASA_COMISION, linkWhatsapp } from "@/lib/datos";
 
 export const metadata: Metadata = { title: "Centro de ayuda" };
@@ -52,7 +52,7 @@ export default function Ayuda() {
           <span className="flex size-11 items-center justify-center rounded-full bg-celeste-claro text-xl">💬</span>
           <span>
             <span className="block font-semibold">WhatsApp</span>
-            <span className="text-sm text-stone-600">Lunes a viernes de 9 a 18</span>
+            <span className="text-sm text-stone-600">{COMPROMISOS.horarioSoporte}</span>
           </span>
         </a>
         <a href={`mailto:${EMAIL_CONTACTO}`} className="tarjeta flex items-center gap-3 p-5 transition hover:shadow-md">

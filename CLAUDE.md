@@ -9,5 +9,6 @@
   - `src/app/devoluciones/page.tsx` (devoluciones y reclamos) y `src/app/ayuda/page.tsx` (preguntas frecuentes).
   Si corresponde, actualizarlos en el mismo cambio, poner la fecha nueva en `actualizada` y avisarle al usuario qué se agregó.
   Si un cambio en los términos afecta derechos u obligaciones de los usuarios, recordar que hay que avisarles con 10 días de anticipación.
+- **Antes de lanzar** (cuando el usuario hable de publicar la app, Vercel, salir a producción o tener usuarios reales), recordarle la lista "Antes de lanzar" del README, en especial lo que dejó pendiente a propósito: plazo para avisar defectos ocultos, plazo de reembolso, horario de soporte, datos del titular, número de WhatsApp y revisión de un abogado.
 - Los colores se definen solo en `src/app/globals.css` (paleta "Fuego y cielo", ver `public/marca/manual-marca.png`).
 - Nunca editar migraciones ya aplicadas: cada cambio de base va en un archivo nuevo de `supabase/migrations/`, y hay que avisarle al usuario que lo ejecute.

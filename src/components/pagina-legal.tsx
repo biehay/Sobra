@@ -2,6 +2,14 @@ import type { ReactNode } from "react";
 
 export const EMAIL_CONTACTO = process.env.NEXT_PUBLIC_EMAIL_CONTACTO ?? "hola@sobra.com.ar";
 
+// Compromisos con los usuarios: se definen antes de lanzar (en .env.local).
+// Mientras estén vacíos, los textos muestran "[a definir]".
+export const COMPROMISOS = {
+  plazoDefectos: process.env.NEXT_PUBLIC_PLAZO_AVISO_DEFECTOS || "[plazo a definir]",
+  plazoReembolso: process.env.NEXT_PUBLIC_PLAZO_REEMBOLSO || "[plazo a definir]",
+  horarioSoporte: process.env.NEXT_PUBLIC_HORARIO_SOPORTE || "[horario a definir]",
+};
+
 // Datos del titular de Sobrá que exige la ley (se completan en .env.local).
 export const TITULAR = {
   nombre: process.env.NEXT_PUBLIC_TITULAR_NOMBRE || "[nombre o razón social a completar]",

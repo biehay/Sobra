@@ -210,6 +210,21 @@ supabase/migrations/       esquema, permisos y funciones de la base
 supabase/templates/        emails de Supabase: código de verificación y recuperar contraseña
 ```
 
+## Antes de lanzar
+
+Cosas que quedaron a propósito sin definir y hay que completar antes de tener usuarios reales:
+
+- [ ] **Compromisos con los usuarios** (en `.env.local`): plazo para avisar defectos ocultos
+      (`NEXT_PUBLIC_PLAZO_AVISO_DEFECTOS`), plazo de reembolso (`NEXT_PUBLIC_PLAZO_REEMBOLSO`) y horario de
+      soporte (`NEXT_PUBLIC_HORARIO_SOPORTE`). Mientras estén vacíos, las páginas muestran "[a definir]".
+- [ ] **Titular de Sobrá** en los términos: nombre o razón social, CUIT y domicilio (`NEXT_PUBLIC_TITULAR_*`).
+- [ ] **WhatsApp de soporte** real (`NEXT_PUBLIC_WHATSAPP`) y email de contacto (`NEXT_PUBLIC_EMAIL_CONTACTO`).
+- [ ] **Revisión de un abogado**: términos, privacidad, devoluciones, arrepentimiento y retención de pagos.
+- [ ] **Contador**: inscripción para facturar la comisión y tratamiento del dinero retenido.
+- [ ] **Dominio** `sobra.com.ar`, verificado en Resend, y Resend como servidor de mail de Supabase con las
+      plantillas de `supabase/templates/`.
+- [ ] **Publicar la app** (Vercel) con las variables de entorno de producción.
+
 ## Pendiente para próximas versiones
 
 - Cobro online con Mercado Pago (hoy el pago es por transferencia y lo confirma el admin).

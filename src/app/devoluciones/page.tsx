@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { EMAIL_CONTACTO, PaginaLegal } from "@/components/pagina-legal";
+import { COMPROMISOS, EMAIL_CONTACTO, PaginaLegal } from "@/components/pagina-legal";
 
 export const metadata: Metadata = { title: "Devoluciones y reclamos" };
 
@@ -40,14 +40,14 @@ export default function Devoluciones() {
       <p>
         Entregar el código significa que revisaste el material y lo aceptaste, y con eso se libera el pago al vendedor. Si
         después encontrás un defecto que no se podía ver en el retiro, escribinos a{" "}
-        <a href={`mailto:${EMAIL_CONTACTO}`} className={enlace}>{EMAIL_CONTACTO}</a> dentro de los 10 días corridos, con
+        <a href={`mailto:${EMAIL_CONTACTO}`} className={enlace}>{EMAIL_CONTACTO}</a> dentro de {COMPROMISOS.plazoDefectos}, con
         fotos y el detalle, y lo analizamos con el vendedor. Esto no limita las garantías que te da la ley.
       </p>
 
       <h2>Cómo te devolvemos el dinero</h2>
       <ul>
         <li>Te devolvemos el monto completo que pagaste, por transferencia a una cuenta a tu nombre.</li>
-        <li>Lo hacemos dentro de los 5 días hábiles desde que se resuelve el reclamo y te avisamos por email.</li>
+        <li>Lo hacemos dentro de {COMPROMISOS.plazoReembolso} desde que se resuelve el reclamo y te avisamos por email.</li>
         <li>Si el reclamo se resuelve a favor de la devolución, el vendedor no paga comisión por esa operación.</li>
       </ul>
 
