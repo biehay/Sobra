@@ -5,6 +5,12 @@ Lotes verificados, precio sugerido, compradores verificados, cobro protegido y r
 
 Hecho con **Next.js 16** (App Router), **Supabase** (base de datos, login y fotos) y **Tailwind CSS 4**.
 
+## Marca
+
+Logo y paleta "Fuego y cielo" (rojo `#E10600`, celeste `#00B4D8`, azul petróleo `#062A3A`). Los archivos
+del logo y el manual con todos los colores están en `public/marca/` (`manual-marca.png`). En el código,
+los colores se definen una sola vez en `src/app/globals.css`.
+
 ## Cómo funciona una operación
 
 Hay una sola cuenta para comprar y vender. Cualquier usuario puede publicar (cada lote lo revisa el

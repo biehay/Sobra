@@ -105,9 +105,9 @@ export default async function PanelComprador({ searchParams }: PageProps<"/panel
 
               {oferta.estado === "pagada" && reclamos.get(oferta.id)?.estado !== "abierto" && (
                 <>
-                  <div className="rounded-lg border-2 border-dashed border-marca/40 bg-marca-claro p-4 text-center">
-                    <p className="text-sm font-semibold text-marca-oscuro">Tu código de retiro</p>
-                    <p className="my-1 font-mono text-4xl font-bold tracking-[0.3em] text-marca-oscuro">{codigos.get(oferta.id) ?? "------"}</p>
+                  <div className="rounded-lg border-2 border-dashed border-celeste bg-celeste-claro p-4 text-center">
+                    <p className="text-sm font-semibold text-celeste-oscuro">Tu código de retiro</p>
+                    <p className="my-1 font-mono text-4xl font-bold tracking-[0.3em] text-petroleo">{codigos.get(oferta.id) ?? "------"}</p>
                     <p className="text-sm text-stone-700">
                       Revisá el material y dáselo al vendedor <strong>solo si está todo bien</strong>: con este código se completa la
                       compra. Si algo no coincide, no se lo des y reportalo acá abajo.

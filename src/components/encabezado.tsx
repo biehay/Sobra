@@ -4,6 +4,7 @@ import { resumenUsuario, type Resumen } from "@/lib/resumen";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { CATEGORIAS, pesos, type Perfil } from "@/lib/datos";
 import { Desplegable } from "@/components/desplegable";
+import { Logo } from "@/components/logo";
 import { BotonPublicarFlotante } from "@/components/boton-publicar-flotante";
 
 const PUBLICAR = "/panel/vendedor/lotes/nuevo";
@@ -30,8 +31,10 @@ export async function Encabezado() {
     <>
       <header className="sticky top-0 z-20 border-b border-stone-200 bg-white/95 backdrop-blur">
         <div className="contenedor flex h-16 items-center gap-2 sm:gap-4">
-          <Link href="/" className="mr-1 text-xl font-extrabold tracking-tight sm:mr-3">
-            Sobr<span className="text-marca">á</span>
+          <Link href="/" aria-label="Sobrá, inicio" className="mr-1 shrink-0 text-petroleo sm:mr-3">
+            {/* En el celular no entra el logo completo: queda la etiqueta. */}
+            <Logo soloIcono className="h-8 w-8 sm:hidden" />
+            <Logo className="hidden h-8 w-auto sm:block" />
           </Link>
 
           <nav aria-label="Explorar" className="flex items-center">

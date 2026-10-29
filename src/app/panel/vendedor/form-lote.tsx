@@ -154,7 +154,7 @@ export function FormLote({ usuarioId, lote, retiro }: { usuarioId: string; lote?
           </div>
         </div>
         {sugerido && (
-          <p className="rounded-lg bg-marca-claro px-4 py-3 text-sm text-marca-oscuro">
+          <p className="rounded-lg bg-celeste-claro px-4 py-3 text-sm text-petroleo">
             Para que se venda rápido sugerimos alrededor de <strong>{pesos(sugerido)}</strong>. Al revisarlo te confirmamos el precio de publicación.
           </p>
         )}

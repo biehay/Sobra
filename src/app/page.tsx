@@ -31,16 +31,16 @@ export default async function Inicio() {
 
   return (
     <>
-      <section className="border-b border-stone-200 bg-white">
+      <section className="bg-gradient-to-br from-petroleo via-petroleo to-[#0b4a5e] text-white">
         <div className="contenedor grid gap-10 py-16 sm:py-24 lg:grid-cols-2 lg:items-center">
           <div>
-            <p className="mb-4 inline-block rounded-full bg-marca-claro px-3 py-1 text-sm font-semibold text-marca">
+            <p className="mb-4 inline-block rounded-full bg-white/10 px-3 py-1 text-sm font-semibold tracking-wide text-celeste">
               Sobrantes de obra · AMBA
             </p>
             <h1 className="text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl">
-              Vendé lo que te sobró en días, con el cobro asegurado.
+              Vendé lo que te sobró <span className="text-celeste">en días</span>, con el cobro asegurado.
             </h1>
-            <p className="mt-5 max-w-xl text-lg text-stone-600">
+            <p className="mt-5 max-w-xl text-lg text-white/80">
               Sobrá conecta constructoras, corralones y distribuidores que tienen materiales sin usar con
               compradores verificados. Sin vender pieza por pieza, sin grupos de WhatsApp y sin riesgo de no
               cobrar.
@@ -49,7 +49,7 @@ export default async function Inicio() {
               <Link href="/registro?volver=/panel/vendedor/lotes/nuevo" className="btn px-6 py-3 text-base">
                 Publicar mi sobrante
               </Link>
-              <Link href="/lotes" className="btn-sec px-6 py-3 text-base">
+              <Link href="/lotes" className="btn-celeste px-6 py-3 text-base">
                 Comprar materiales
               </Link>
             </div>
@@ -61,9 +61,9 @@ export default async function Inicio() {
               ["Cobro protegido", "El comprador paga antes de retirar."],
               ["Retiro coordinado", "Con fletes asociados por zona."],
             ].map(([titulo, texto]) => (
-              <li key={titulo} className="tarjeta p-5">
+              <li key={titulo} className="rounded-xl border border-white/10 bg-white/5 p-5">
                 <p className="font-semibold">{titulo}</p>
-                <p className="mt-1 text-sm text-stone-600">{texto}</p>
+                <p className="mt-1 text-sm text-white/70">{texto}</p>
               </li>
             ))}
           </ul>
@@ -105,7 +105,7 @@ export default async function Inicio() {
               <ol className="space-y-4">
                 {(pasos as string[][]).map(([paso, texto], i) => (
                   <li key={paso} className="flex gap-4">
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-marca-claro font-bold text-marca">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-celeste-claro font-bold text-celeste-oscuro">
                       {i + 1}
                     </span>
                     <div>

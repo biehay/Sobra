@@ -16,14 +16,14 @@ export function urlSitio(ruta = "/") {
 function plantilla({ titulo, parrafos, boton }: { titulo: string; parrafos: string[]; boton?: { texto: string; ruta: string } }) {
   const cuerpo = parrafos.map((p) => `<p style="margin:0 0 14px;font-size:15px;line-height:1.55;color:#44403c">${p}</p>`).join("");
   const accion = boton
-    ? `<p style="margin:24px 0 8px"><a href="${urlSitio(boton.ruta)}" style="display:inline-block;background:#c2410c;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 22px;border-radius:8px">${boton.texto}</a></p>`
+    ? `<p style="margin:24px 0 8px"><a href="${urlSitio(boton.ruta)}" style="display:inline-block;background:#e10600;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 22px;border-radius:8px">${boton.texto}</a></p>`
     : "";
   return `<!doctype html><html lang="es"><body style="margin:0;background:#fafaf9;font-family:Arial,Helvetica,sans-serif">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fafaf9;padding:32px 16px"><tr><td align="center">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border:1px solid #e7e5e4;border-radius:12px">
-<tr><td style="padding:28px 32px 8px;font-size:22px;font-weight:800;color:#1c1917">Sobr<span style="color:#c2410c">á</span></td></tr>
+<tr><td style="padding:28px 32px 8px;font-size:22px;font-weight:800;color:#062a3a">Sobr<span style="color:#e10600">á</span></td></tr>
 <tr><td style="padding:8px 32px 28px">
-<h1 style="margin:0 0 16px;font-size:20px;color:#1c1917">${titulo}</h1>${cuerpo}${accion}
+<h1 style="margin:0 0 16px;font-size:20px;color:#062a3a">${titulo}</h1>${cuerpo}${accion}
 </td></tr></table>
 <p style="margin:16px 0 0;font-size:12px;color:#a8a29e">Sobrá · Marketplace de sobrantes de obra del AMBA</p>
 </td></tr></table></body></html>`;
@@ -36,7 +36,7 @@ export const plantillas = {
       titulo: "Tu código para ingresar",
       parrafos: [
         "Escribí este código en Sobrá para confirmar que sos vos:",
-        `<span style="display:block;padding:16px;background:#fff1e8;border-radius:8px;text-align:center;font-family:'Courier New',monospace;font-size:32px;font-weight:700;letter-spacing:8px;color:#9a3412">${escapar(codigo)}</span>`,
+        `<span style="display:block;padding:16px;background:#e6f8fc;border-radius:8px;text-align:center;font-family:'Courier New',monospace;font-size:32px;font-weight:700;letter-spacing:8px;color:#062a3a">${escapar(codigo)}</span>`,
         "Vence en 10 minutos. Si no fuiste vos, ignorá este email y cambiá tu contraseña: alguien la está usando.",
       ],
     }),

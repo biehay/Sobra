@@ -3,20 +3,29 @@
 @theme inline {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --color-marca: #c2410c;
-  --color-marca-oscuro: #9a3412;
-  --color-marca-claro: #fff1e8;
-  --color-tinta: #1c1917;
+  /* Paleta "Fuego y cielo": rojo para lo que se toca, celeste para destacar. */
+  --color-marca: #e10600; /* rojo fuego: botones principales, logo, descuentos */
+  --color-marca-oscuro: #b30500; /* rojo al pasar el mouse y textos sobre rojo claro */
+  --color-marca-claro: #ffeceb; /* fondo rojo suave */
+  --color-celeste: #00b4d8; /* celeste turquesa: destacados y botón secundario */
+  --color-celeste-oscuro: #0369a1; /* celeste para textos y links sobre blanco */
+  --color-celeste-claro: #e6f8fc; /* fondo celeste suave */
+  --color-petroleo: #062a3a; /* azul petróleo: textos, portada y fondos oscuros */
+  --color-tinta: #062a3a;
 }
 
 body {
-  background: #fafaf9;
+  background: #f7fafb;
   color: var(--color-tinta);
 }
 
 @layer components {
   .btn {
     @apply inline-flex items-center justify-center gap-2 rounded-lg bg-marca px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-marca-oscuro disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  /* Sobre celeste el texto va en azul petróleo: el blanco casi no se lee. */
+  .btn-celeste {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-celeste px-4 py-2.5 text-sm font-semibold text-petroleo transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-sec {
     @apply inline-flex items-center justify-center gap-2 rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-sm font-semibold text-stone-800 transition hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-50;
