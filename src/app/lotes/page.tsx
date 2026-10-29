@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { TarjetaLote } from "@/components/tarjeta-lote";
 import { crearClienteServidor } from "@/lib/supabase/server";
-import { CATEGORIAS, ZONAS, type Lote } from "@/lib/datos";
+import { CATEGORIAS, CONDICIONES, ZONAS, descuento, type Condicion, type Lote } from "@/lib/datos";
 
 export const metadata: Metadata = { title: "Lotes disponibles" };
 
@@ -9,6 +9,8 @@ const ORDENES = {
   recientes: { columna: "publicado_at", ascendente: false, texto: "Más recientes" },
   barato: { columna: "precio_publicado", ascendente: true, texto: "Menor precio" },
   caro: { columna: "precio_publicado", ascendente: false, texto: "Mayor precio" },
+  // El descuento no es una columna: se traen los que tienen precio de lista y se ordenan acá.
+  descuento: { columna: "publicado_at", ascendente: false, texto: "Mayor descuento" },
 } as const;
 
 export default async function Catalogo({ searchParams }: PageProps<"/lotes">) {
@@ -16,7 +18,9 @@ export default async function Catalogo({ searchParams }: PageProps<"/lotes">) {
   const q = typeof filtros.q === "string" ? filtros.q.trim() : "";
   const categoria = typeof filtros.categoria === "string" ? filtros.categoria : "";
   const zona = typeof filtros.zona === "string" ? filtros.zona : "";
-  const orden = ORDENES[(filtros.orden as keyof typeof ORDENES) ?? "recientes"] ?? ORDENES.recientes;
+  const condicion = typeof filtros.condicion === "string" && filtros.condicion in CONDICIONES ? (filtros.condicion as Condicion) : "";
+  const claveOrden = typeof filtros.orden === "string" && filtros.orden in ORDENES ? (filtros.orden as keyof typeof ORDENES) : "recientes";
+  const orden = ORDENES[claveOrden];
 
   const supabase = await crearClienteServidor();
   let consulta = supabase
@@ -24,7 +28,8 @@ export default async function Catalogo({ searchParams }: PageProps<"/lotes">) {
     .select("*")
     .in("estado", ["publicado", "reservado"])
     .order(orden.columna, { ascending: orden.ascendente })
-    .limit(60);
+    .limit(claveOrden === "descuento" ? 300 : 60);
+  if (claveOrden === "descuento") consulta = consulta.not("precio_lista", "is", null);
   if (q) {
     // Saca los caracteres que tienen significado en el filtro de PostgREST.
     const termino = q.replace(/[%,()*]/g, " ");
@@ -32,15 +37,20 @@ export default async function Catalogo({ searchParams }: PageProps<"/lotes">) {
   }
   if (categoria) consulta = consulta.eq("categoria", categoria);
   if (zona) consulta = consulta.eq("zona", zona);
+  if (condicion) consulta = consulta.eq("condicion", condicion);
   const { data } = await consulta;
-  const lotes = (data ?? []) as Lote[];
+  let lotes = (data ?? []) as Lote[];
+  if (claveOrden === "descuento") {
+    const rebaja = (l: Lote) => descuento(l.precio_publicado ?? l.precio_pedido, l.precio_lista) ?? 0;
+    lotes = lotes.filter((l) => rebaja(l) > 0).sort((a, b) => rebaja(b) - rebaja(a)).slice(0, 60);
+  }
 
   return (
     <div className="contenedor py-10">
       <h1 className="text-3xl font-bold">Lotes disponibles</h1>
       <p className="mt-1 text-stone-600">Materiales sobrantes verificados, con retiro en el AMBA.</p>
 
-      <form className="tarjeta mt-6 grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-5">
+      <form className="tarjeta mt-6 grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-6">
         <input name="q" defaultValue={q} placeholder="Buscar: porcelanato, caño, cemento..." className="campo lg:col-span-2" />
         <select name="categoria" defaultValue={categoria} className="campo" aria-label="Categoría">
           <option value="">Todas las categorías</option>
@@ -54,8 +64,16 @@ export default async function Catalogo({ searchParams }: PageProps<"/lotes">) {
             <option key={z}>{z}</option>
           ))}
         </select>
+        <select name="condicion" defaultValue={condicion} className="campo" aria-label="Estado del material">
+          <option value="">Cualquier estado</option>
+          {Object.entries(CONDICIONES).map(([valor, texto]) => (
+            <option key={valor} value={valor}>
+              {texto}
+            </option>
+          ))}
+        </select>
         <div className="flex gap-2">
-          <select name="orden" defaultValue={(filtros.orden as string) ?? "recientes"} className="campo" aria-label="Orden">
+          <select name="orden" defaultValue={claveOrden} className="campo" aria-label="Orden">
             {Object.entries(ORDENES).map(([valor, o]) => (
               <option key={valor} value={valor}>
                 {o.texto}

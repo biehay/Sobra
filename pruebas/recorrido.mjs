@@ -151,7 +151,7 @@ async function tras(pg, patron, accion) {
 }
 
 async function aviso(pg) {
-  return (await pg.locator("p.rounded-lg.border").first().textContent().catch(() => "")) ?? "";
+  return (await pg.locator("[data-aviso]").first().textContent().catch(() => "")) ?? "";
 }
 
 const browser = await chromium.launch({
@@ -500,6 +500,11 @@ try {
   paso("Admin: al volver a ingresar se le pide el código del email; uno incorrecto se rechaza");
 
   // 15. Cerrar sesión ------------------------------------------------------
+  // El menú del usuario (el círculo del encabezado) muestra el resumen y tiene "Salir".
+  await vend.click("button[aria-label^='Mi cuenta']");
+  await vend.waitForSelector("text=Ganado en");
+  esperar(await vend.isVisible("text=Te debemos"), "el menú del usuario muestra lo que se le debe");
+  await captura(vend, "menu-usuario");
   await vend.click("button:has-text('Salir')");
   await vend.waitForURL(BASE + "/");
   await vend.goto(`${BASE}/panel/vendedor`);
