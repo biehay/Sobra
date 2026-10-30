@@ -25,7 +25,7 @@ export async function cambiarFavorito(formData: FormData) {
   const { loteId, guardar, volver } = datos.data;
 
   const perfil = await obtenerPerfil();
-  if (!perfil) redirect(`/ingresar?volver=${encodeURIComponent(volver)}`);
+  if (!perfil) redirect(`/registro?motivo=favorito&volver=${encodeURIComponent(volver)}`);
   if (!(await sesionVerificada())) redirect(`/seguridad/verificar?volver=${encodeURIComponent(volver)}`);
 
   const supabase = await crearClienteServidor();

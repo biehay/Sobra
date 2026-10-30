@@ -10,13 +10,21 @@ import { registrarse } from "../acciones";
 export const metadata: Metadata = { title: "Crear cuenta" };
 
 export default async function Registro({ searchParams }: PageProps<"/registro">) {
-  const { volver, error } = await searchParams;
+  const { volver, error, motivo } = await searchParams;
+  const destino = typeof volver === "string" && volver.startsWith("/") && !volver.startsWith("//") ? volver : "/panel";
+  // Si llegó desde algo que quiso hacer, le decimos para qué es la cuenta.
+  const porQue: Record<string, string> = {
+    favorito: "Creá tu cuenta para guardar este lote: te avisamos si baja de precio.",
+    busqueda: "Creá tu cuenta y te mandamos un email apenas se publique lo que buscás.",
+  };
 
   return (
     <div className="contenedor max-w-lg py-16">
       <h1 className="text-3xl font-bold">Creá tu cuenta</h1>
       <p className="mt-1 text-stone-600">
-        Con una sola cuenta podés vender lo que te sobró y comprar materiales con descuento.
+        {typeof motivo === "string" && porQue[motivo]
+          ? porQue[motivo]
+          : "Con una sola cuenta podés vender lo que te sobró y comprar materiales con descuento."}
       </p>
       <ul className="mt-4 grid gap-2 text-sm text-stone-600 sm:grid-cols-2">
         <li className="tarjeta p-3">
@@ -34,7 +42,7 @@ export default async function Registro({ searchParams }: PageProps<"/registro">)
       </div>
 
       <form action={registrarse} className="tarjeta mt-4 grid gap-4 p-6 sm:grid-cols-2">
-        <input type="hidden" name="volver" value={typeof volver === "string" ? volver : "/panel"} />
+        <input type="hidden" name="volver" value={destino} />
         <div className="sm:col-span-2">
           <label htmlFor="nombre" className="etiqueta">Nombre y apellido</label>
           <input id="nombre" name="nombre" required autoComplete="name" className="campo" />
@@ -72,7 +80,7 @@ export default async function Registro({ searchParams }: PageProps<"/registro">)
 
       <p className="mt-6 text-center text-sm text-stone-600">
         ¿Ya tenés cuenta?{" "}
-        <Link href="/ingresar" className="font-semibold text-marca hover:underline">Ingresá</Link>
+        <Link href={`/ingresar?volver=${encodeURIComponent(destino)}`} className="font-semibold text-marca hover:underline">Ingresá</Link>
       </p>
     </div>
   );

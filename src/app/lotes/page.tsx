@@ -40,6 +40,9 @@ export default async function Catalogo({ searchParams }: PageProps<"/lotes">) {
   if (zona) consulta = consulta.eq("zona", zona);
   if (condicion) consulta = consulta.eq("condicion", condicion);
   const [{ data }, favoritos] = await Promise.all([consulta, idsFavoritos()]);
+  // "Avisame cuando aparezca": a quien no tiene cuenta lo lleva a crearla y después a Lo busco.
+  const rutaBusqueda = `/panel/busquedas?${new URLSearchParams(Object.entries({ q: q || categoria, categoria, zona }).filter(([, v]) => v))}`;
+  const avisame = favoritos?.usuarioId === null ? `/registro?motivo=busqueda&volver=${encodeURIComponent(rutaBusqueda)}` : rutaBusqueda;
   // Para volver a esta misma búsqueda después de tocar el corazón.
   const volver = `/lotes?${new URLSearchParams(Object.entries({ q, categoria, zona, condicion, orden: claveOrden }).filter(([, v]) => v))}`;
   let lotes = (data ?? []) as Lote[];
@@ -91,7 +94,7 @@ export default async function Catalogo({ searchParams }: PageProps<"/lotes">) {
         <p className="mt-4 text-sm text-stone-600">
           {lotes.length ? "¿No es justo lo que necesitás?" : "Todavía no hay lotes así."}{" "}
           <a
-            href={`/panel/busquedas?${new URLSearchParams(Object.entries({ q: q || categoria, categoria, zona }).filter(([, v]) => v))}`}
+            href={avisame}
             className="font-semibold text-marca hover:underline"
           >
             Avisame cuando aparezca

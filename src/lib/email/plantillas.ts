@@ -1,4 +1,5 @@
 import { pesos } from "@/lib/datos";
+import type { Resumen } from "@/lib/resumen-semanal";
 
 // Plantillas de los emails de aviso. Devuelven asunto y HTML; los textos que
 // vienen de los usuarios (títulos, observaciones) se escapan.
@@ -151,6 +152,25 @@ export const plantillas = {
       boton: { texto: "Ver mis cobros", ruta: "/panel/cobros" },
     }),
   }),
+
+  resumenSemanal: (nombre: string, r: Resumen, linkBaja: string): Plantilla => {
+    const link = (l: { id: string; titulo: string; precio_publicado: number | null }) =>
+      `<a href="${urlSitio(`/lotes/${l.id}`)}" style="color:#e10600;font-weight:600">${escapar(l.titulo)}</a>${l.precio_publicado ? ` · ${pesos(l.precio_publicado)}` : ""}`;
+    const bloques: string[] = [];
+    if (r.ofertasPorResponder) bloques.push(`<strong>Tenés ${r.ofertasPorResponder} ${r.ofertasPorResponder === 1 ? "oferta" : "ofertas"} para responder.</strong> No las dejes esperando: el comprador puede irse a otro lote.`);
+    if (r.paraTusBusquedas.length) bloques.push(`<strong>Nuevo para lo que buscás:</strong><br>${r.paraTusBusquedas.map(link).join("<br>")}`);
+    if (r.favoritosQueBajaron.length) bloques.push(`<strong>Bajaron de precio:</strong><br>${r.favoritosQueBajaron.map((l) => `${link(l)} <span style="text-decoration:line-through;color:#a8a29e">${pesos(l.antes)}</span>`).join("<br>")}`);
+    if (r.visitasATusLotes) bloques.push(`Tus lotes tuvieron <strong>${r.visitasATusLotes} ${r.visitasATusLotes === 1 ? "visita" : "visitas"}</strong> esta semana.`);
+    if (r.enTuZona.length) bloques.push(`<strong>Recién publicado en tu zona:</strong><br>${r.enTuZona.map(link).join("<br>")}`);
+    return {
+      asunto: r.ofertasPorResponder ? `Tenés ofertas para responder en Sobrá` : `Lo nuevo en Sobrá para vos, ${nombre}`,
+      html: plantilla({
+        titulo: `Hola, ${escapar(nombre)}: esto es lo nuevo de tu semana`,
+        parrafos: [...bloques, `<span style="font-size:12px;color:#a8a29e">Te lo mandamos una vez por semana y solo si hay algo nuevo. <a href="${linkBaja}" style="color:#a8a29e">No quiero recibirlo más</a>.</span>`],
+        boton: { texto: "Entrar a Sobrá", ruta: "/" },
+      }),
+    };
+  },
 
   loteParaVos: (busqueda: string, lotes: { titulo: string; precio: number | null; id: string }[]): Plantilla => ({
     asunto: lotes.length === 1 ? `Apareció lo que buscabas: ${lotes[0].titulo}` : `Aparecieron ${lotes.length} lotes que buscabas`,
