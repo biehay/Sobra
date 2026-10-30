@@ -198,8 +198,6 @@ const esquemaPerfil = z.object({
     .trim()
     .refine((t) => normalizarTelefono(t) !== null, "Ingresá un celular con código de área, por ejemplo 11 2345 6789"),
   zona: z.enum(ZONAS, "Elegí tu zona"),
-  // Casilla: viene "on" si está tildada y no viene si no.
-  recibe_resumen: z.preprocess((v) => v === "on", z.boolean()),
 });
 
 export async function actualizarPerfil(formData: FormData) {

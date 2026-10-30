@@ -24,7 +24,6 @@ export type Perfil = {
   telefono: string | null;
   zona: string | null;
   verificado: boolean;
-  recibe_resumen: boolean;
   created_at: string;
 };
 

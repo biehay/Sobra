@@ -61,13 +61,6 @@ export default async function Perfil({ searchParams }: PageProps<"/panel/perfil"
             ))}
           </select>
         </div>
-        <label className="flex items-start gap-3 sm:col-span-2">
-          <input type="checkbox" name="recibe_resumen" defaultChecked={perfil.recibe_resumen} className="mt-1 size-4 accent-marca" />
-          <span className="text-sm">
-            <span className="font-medium">Resumen semanal por email</span>
-            <span className="block text-stone-500">Una vez por semana y solo si hay algo nuevo: ofertas para responder, lotes para lo que buscás y favoritos que bajaron.</span>
-          </span>
-        </label>
         <BotonEnviar className="btn sm:col-span-2" pendiente="Guardando...">Guardar cambios</BotonEnviar>
       </form>
 

@@ -85,7 +85,6 @@ if (urlValida) {
           ["20261102000000_visitas_favoritos_comprobantes.sql", "/rest/v1/favoritos?select=id&limit=1"],
           ["20261103000000_impacto_y_reputacion.sql", "/rest/v1/constancias?select=codigo&limit=1"],
           ["20261104000000_busquedas_y_baja_automatica.sql", "/rest/v1/busquedas?select=id&limit=1"],
-          ["20261105000000_resumen_semanal.sql", "/rest/v1/perfiles?select=recibe_resumen&limit=1"],
         ];
         for (const [archivo, ruta] of migraciones) {
           const r = await pedir(ruta, servicio);

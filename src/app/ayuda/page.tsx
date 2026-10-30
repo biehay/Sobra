@@ -46,7 +46,6 @@ const TEMAS: { titulo: string; preguntas: [string, React.ReactNode][] }[] = [
     preguntas: [
       ["No me llega el código por email", "Revisá la carpeta de spam y esperá un minuto antes de pedir otro. Si sigue sin llegar, escribinos."],
       ["¿Por qué me piden un código cada vez que entro desde otro dispositivo?", "Para que nadie pueda entrar a tu cuenta con tu contraseña sola. El código confirma que también tenés acceso a tu email."],
-      ["¿Cómo dejo de recibir el resumen semanal?", <>Desde <Link href="/panel/perfil" className={enlace}>Mis datos</Link> destildando “Resumen semanal por email”, o con el link que viene al final de cada resumen. Los avisos de tus operaciones (ofertas, pagos, retiros) te siguen llegando.</>],
       ["Me olvidé la contraseña", <>Entrá a <Link href="/recuperar" className={enlace}>Recuperar contraseña</Link> y te mandamos un código para crear una nueva.</>],
       ["¿Puedo comprar y vender con la misma cuenta?", "Sí. Con una sola cuenta publicás tus sobrantes y comprás los de otros."],
     ],

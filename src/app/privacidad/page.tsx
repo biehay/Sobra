@@ -47,10 +47,6 @@ export default function Privacidad() {
         <li>Crear y proteger tu cuenta, incluida la verificación por código.</li>
         <li>Publicar tus lotes y conectar a vendedores con compradores.</li>
         <li>Coordinar pagos, retiros y reclamos, y avisarte por email de cada paso.</li>
-        <li>
-          Mandarte un resumen semanal con lo nuevo para vos (ofertas para responder, lotes para lo que buscás, favoritos que
-          bajaron), solo si hay algo nuevo. Lo podés desactivar en Mis datos o desde el link de cada email.
-        </li>
         <li>Mostrarles a los vendedores cuántas visitas tienen sus lotes y avisarte si baja un lote que guardaste.</li>
         <li>Verificar a los compradores y prevenir fraudes.</li>
         <li>Cumplir obligaciones legales e impositivas.</li>

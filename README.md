@@ -51,9 +51,6 @@ Además:
   invitación a crear la cuenta para visitantes, una sección "Para vos" para quien ya tiene cuenta (lo nuevo para
   sus búsquedas y su zona) y lo que diferencia a Sobrá. Al tocar el corazón o "Avisame cuando aparezca" sin
   cuenta, el registro explica para qué es y vuelve al mismo lugar.
-- **Resumen semanal por email** (`/api/tareas/resumen-semanal`, lunes): solo a quien tiene algo nuevo (ofertas
-  para responder, lotes para sus búsquedas, favoritos que bajaron, visitas). Se desactiva en Mis datos o con el
-  link firmado del email.
 - **Lo busco**: el comprador guarda lo que necesita (también desde el catálogo, con "Avisame cuando aparezca")
   y le llega un email apenas se publica un lote que coincide. Los vendedores ven la demanda en
   `/buscados` y en Mis ventas, sin datos de quién busca.

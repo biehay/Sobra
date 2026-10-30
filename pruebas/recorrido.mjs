@@ -1,4 +1,3 @@
-import crypto from "node:crypto";
 // Recorrido completo de Sobrá en un navegador real, contra el Supabase local:
 // aviso de cookies, páginas legales, registro con código, admin con dos pasos,
 // lote con fotos, revisión, ofertas, pago, código de retiro, reclamo,
@@ -589,24 +588,6 @@ try {
   esperar((await vend.textContent("body")).includes("Pausado"), "el lote queda pausado");
   await captura(vend, "vendedor-tras-reclamo");
   paso("Segundo lote: Lo busco avisó a quien lo buscaba, baja de precio manual y automática avisadas, oferta, pago, reclamo y devolución");
-
-  // Resumen semanal: solo a quien tiene algo nuevo, y con baja en un clic.
-  let marcaResumen = marcaLog();
-  const resumen = await (await fetch(`${BASE}/api/tareas/resumen-semanal`, { headers: { Authorization: `Bearer ${CRON_SECRET}` } })).json();
-  esperar(resumen.enviados >= 1, "el resumen semanal se mandó: " + JSON.stringify(resumen));
-  esperar(await enLog("Para: marta@constructora.test · ", marcaResumen), "a la vendedora le llega el resumen (tiene visitas)");
-  const [{ id: idMarta }] = await api("/rest/v1/perfiles?select=id&nombre=eq.Marta%20G%C3%B3mez");
-  const firma = crypto.createHmac("sha256", CRON_SECRET).update(`baja-resumen:${idMarta}`).digest("hex").slice(0, 32);
-  await anon.goto(`${BASE}/resumen-baja?u=${idMarta}&f=${firma}`);
-  await anon.click("button:has-text('no me lo manden más')");
-  await anon.waitForSelector("text=no te lo mandamos más");
-  await anon.goto(`${BASE}/resumen-baja?u=${idMarta}&f=${"0".repeat(32)}`);
-  await anon.click("button:has-text('no me lo manden más')");
-  await anon.waitForSelector("text=El link no es válido");
-  marcaResumen = marcaLog();
-  await fetch(`${BASE}/api/tareas/resumen-semanal`, { headers: { Authorization: `Bearer ${CRON_SECRET}` } });
-  esperar(!(await enLog("Para: marta@constructora.test · ", marcaResumen)), "después de la baja no le llega más");
-  paso("Resumen semanal: solo a quien tiene novedades, con baja desde el email (firmada)");
 
   // 13. Perfil, contraseña y recuperación --------------------------------
   await comp.goto(`${BASE}/panel/perfil`);
