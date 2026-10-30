@@ -3,9 +3,9 @@ import { cuitValido, descuento, formatearCuit, linkWhatsapp, normalizarTelefono,
 
 describe("precioSugerido", () => {
   it("aplica el factor según la condición y redondea a miles", () => {
-    expect(precioSugerido(900_000, "nuevo")).toBe(540_000);
-    expect(precioSugerido(900_000, "sin_uso")).toBe(450_000);
-    expect(precioSugerido(123_456, "usado_buen_estado")).toBe(43_000);
+    expect(precioSugerido(900_000, "nuevo")).toBe(675_000);
+    expect(precioSugerido(900_000, "sin_uso")).toBe(585_000);
+    expect(precioSugerido(123_456, "usado_buen_estado")).toBe(62_000);
   });
 
   it("no sugiere nada sin precio de lista", () => {
@@ -13,8 +13,13 @@ describe("precioSugerido", () => {
     expect(precioSugerido(0, "nuevo")).toBeNull();
   });
 
+  it("no sugiere nada si el precio de lista es absurdamente bajo", () => {
+    expect(precioSugerido(5, "nuevo")).toBeNull();
+    expect(precioSugerido(999, "nuevo")).toBeNull();
+  });
+
   it("nunca sugiere menos de $1.000", () => {
-    expect(precioSugerido(500, "usado_buen_estado")).toBe(1000);
+    expect(precioSugerido(1500, "usado_buen_estado")).toBe(1000);
   });
 });
 

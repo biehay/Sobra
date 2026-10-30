@@ -14,7 +14,7 @@ const TEMAS: { titulo: string; preguntas: [string, React.ReactNode][] }[] = [
     preguntas: [
       ["¿Cuánto cuesta publicar?", `Publicar es gratis. Solo si vendés, Sobrá cobra una comisión del ${Math.round(TASA_COMISION * 100)}% sobre el monto de la venta.`],
       ["¿Cuánto tarda en publicarse mi lote?", "Lo revisamos y te avisamos por email. Si falta algo (por ejemplo, una foto), te lo devolvemos con observaciones para que lo corrijas."],
-      ["¿Cómo sé a qué precio publicarlo?", "Al cargar el precio de lista te mostramos un precio sugerido según el estado del material. Lo confirmamos con vos al revisarlo."],
+      ["¿Cómo sé a qué precio publicarlo?", "Tocá “Sugerir precio con IA” al cargar el lote: busca cuánto cuesta hoy ese material nuevo en tiendas y corralones, te muestra las fuentes y te sugiere un precio 25% menor si está nuevo, 35% si está sin uso o 50% si está usado. Es una orientación: lo confirmamos con vos al revisarlo."],
       ["¿Cuándo cobro?", <>Cuando el comprador retira y te da el código de retiro, cargalo en Mis ventas. Te transferimos el monto menos la comisión y el comprobante queda en <Link href="/panel/cobros" className={enlace}>Cobros</Link>.</>],
       ["¿Qué es la baja automática de precio?", "Es opcional: al cargar el lote elegís cuánto baja por semana (5, 10 o 15%) y un precio mínimo. Si pasa una semana sin venderse, el precio baja solo, hasta ese mínimo, y les avisamos a quienes lo guardaron. Nadie ve tu mínimo."],
       ["¿Cómo sé qué se está buscando?", <>En <Link href="/buscados" className={enlace}>Lo que se está buscando</Link> ves lo que los compradores pidieron que les avisemos. Si tenés algo de eso, publicalo: les llega el aviso apenas lo aprobamos.</>],

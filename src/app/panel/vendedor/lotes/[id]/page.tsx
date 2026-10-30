@@ -7,6 +7,9 @@ import { exigirRol } from "@/lib/sesion";
 import type { Lote } from "@/lib/datos";
 import { FormLote } from "../../form-lote";
 
+// La sugerencia de precio con IA busca en la web: puede tardar hasta un par de minutos.
+export const maxDuration = 180;
+
 export const metadata: Metadata = { title: "Editar lote" };
 
 export default async function EditarLote({ params, searchParams }: PageProps<"/panel/vendedor/lotes/[id]">) {

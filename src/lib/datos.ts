@@ -148,16 +148,21 @@ export const MODOS_RETIRO: Record<ModoRetiro, string> = {
 // Comisión de Sobrá. Debe coincidir con public.tasa_comision() en la base.
 export const TASA_COMISION = 0.12;
 
-// Precio sugerido como fracción del precio de lista según la condición.
-// Es una primera regla para orientar al admin; se ajusta con datos reales de ventas.
-const FACTOR_PRECIO: Record<Condicion, number> = {
-  nuevo: 0.6,
-  sin_uso: 0.5,
-  usado_buen_estado: 0.35,
+// Precio sugerido como fracción del precio de mercado del material nuevo, según
+// su estado: 25% menos si está nuevo en su embalaje, 35% sin uso y 50% usado.
+// Se aplica al precio que estima la IA (lib/precio-mercado.ts) o, si no, al
+// precio de lista que carga el vendedor.
+export const FACTOR_PRECIO: Record<Condicion, number> = {
+  nuevo: 0.75,
+  sin_uso: 0.65,
+  usado_buen_estado: 0.5,
 };
 
+// Por debajo de esto, el precio de lista seguramente está mal cargado (por ejemplo "5").
+const PRECIO_LISTA_MINIMO = 1000;
+
 export function precioSugerido(precioLista: number | null, condicion: Condicion): number | null {
-  if (!precioLista || precioLista <= 0) return null;
+  if (!precioLista || precioLista < PRECIO_LISTA_MINIMO) return null;
   // Redondeo a múltiplos de 1.000 para que el precio quede prolijo.
   return Math.max(1000, Math.round((precioLista * FACTOR_PRECIO[condicion]) / 1000) * 1000);
 }

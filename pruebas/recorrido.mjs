@@ -306,6 +306,9 @@ try {
   await vend.fill("#precio_lista", "900000");
   await vend.fill("#precio_pedido", "500000");
   await vend.fill("#peso_kg", "900");
+  // Sugerencia con IA: sin ANTHROPIC_API_KEY (la prueba no la usa, cuesta plata) avisa qué falta.
+  await vend.click("button:has-text('Sugerir precio con IA')");
+  await vend.waitForSelector("text=ANTHROPIC_API_KEY");
   await vend.waitForSelector("text=sugerimos alrededor de");
   await vend.selectOption("#zona", "GBA Sur");
   await vend.fill("#localidad", "Lanús");

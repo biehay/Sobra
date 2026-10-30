@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { crearClienteNavegador } from "@/lib/supabase/client";
 import { limpiarFoto } from "@/lib/limpiar-foto";
 import { CATEGORIAS, CONDICIONES, ZONAS, pesos, precioSugerido, urlFoto, type Condicion, type Item, type Lote } from "@/lib/datos";
 import { BotonEnviar } from "@/components/boton-enviar";
 import { guardarLote } from "../acciones";
+import { PrecioConIA } from "./precio-con-ia";
 
 type Retiro = { direccion: string; horarios: string; indicaciones: string };
 
@@ -22,6 +23,25 @@ export function FormLote({ usuarioId, lote, retiro, precioMinimo }: { usuarioId:
   const [condicion, setCondicion] = useState<Condicion>(lote?.condicion ?? "nuevo");
   const [bajaActiva, setBajaActiva] = useState(lote?.baja_semanal_pct != null);
   const sugerido = precioSugerido(Number(precioLista) || null, condicion);
+  const formulario = useRef<HTMLFormElement>(null);
+  const precioPedido = useRef<HTMLInputElement>(null);
+
+  // Lo que la IA necesita para tasar: lo que ya está escrito en el formulario.
+  function datosDelLote() {
+    const f = new FormData(formulario.current!);
+    return {
+      titulo: String(f.get("titulo") ?? ""),
+      categoria: String(f.get("categoria") ?? ""),
+      condicion,
+      descripcion: String(f.get("descripcion") ?? ""),
+      items: items.filter((i) => i.nombre.trim() && i.cantidad > 0),
+    };
+  }
+
+  function usarPrecioIA(mercado: number, sugeridoIA: number) {
+    setPrecioLista(String(mercado));
+    if (precioPedido.current) precioPedido.current.value = String(sugeridoIA);
+  }
 
   async function subirFotos(archivos: FileList | null) {
     if (!archivos?.length) return;
@@ -61,7 +81,7 @@ export function FormLote({ usuarioId, lote, retiro, precioMinimo }: { usuarioId:
   const itemsValidos = items.filter((item) => item.nombre.trim() && item.cantidad > 0);
 
   return (
-    <form action={guardarLote} className="space-y-6">
+    <form ref={formulario} action={guardarLote} className="space-y-6">
       {lote && <input type="hidden" name="id" value={lote.id} />}
       <input type="hidden" name="items" value={JSON.stringify(itemsValidos)} />
       <input type="hidden" name="fotos" value={JSON.stringify(fotos)} />
@@ -161,14 +181,15 @@ export function FormLote({ usuarioId, lote, retiro, precioMinimo }: { usuarioId:
           </div>
           <div>
             <label htmlFor="precio_pedido" className="etiqueta">¿Cuánto querés recuperar?</label>
-            <input id="precio_pedido" name="precio_pedido" type="number" min={1} required defaultValue={lote?.precio_pedido} className="campo" />
+            <input ref={precioPedido} id="precio_pedido" name="precio_pedido" type="number" min={1} required defaultValue={lote?.precio_pedido} className="campo" />
           </div>
         </div>
         {sugerido && (
-          <p className="rounded-lg bg-celeste-claro px-4 py-3 text-sm text-petroleo">
-            Para que se venda rápido sugerimos alrededor de <strong>{pesos(sugerido)}</strong>. Al revisarlo te confirmamos el precio de publicación.
+          <p className="rounded-lg bg-stone-50 px-4 py-3 text-sm text-stone-700">
+            Según el precio de lista que cargaste, sugerimos alrededor de <strong>{pesos(sugerido)}</strong>. Al revisarlo te confirmamos el precio de publicación.
           </p>
         )}
+        <PrecioConIA datosDelLote={datosDelLote} alUsar={usarPrecioIA} />
         <p className="text-sm text-stone-500">Sobrá cobra 12% de comisión solo si se vende.</p>
 
         <div className="rounded-lg border border-stone-200 p-4">

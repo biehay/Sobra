@@ -10,7 +10,7 @@ const enlace = "font-semibold text-marca hover:underline";
 export default function Terminos() {
   const comision = `${Math.round(TASA_COMISION * 100)}%`;
   return (
-    <PaginaLegal titulo="Términos y condiciones" actualizada="29 de octubre de 2026">
+    <PaginaLegal titulo="Términos y condiciones" actualizada="30 de octubre de 2026">
       <div className="rounded-xl border border-celeste/40 bg-celeste-claro p-5 text-petroleo">
         <p className="font-bold">Resumen</p>
         <ul className="mt-2">
@@ -80,6 +80,10 @@ export default function Terminos() {
         <li>Las fotos y la descripción tienen que mostrar el estado real del material.</li>
         <li>Revisamos cada lote antes de publicarlo y podemos pedir cambios o rechazarlo.</li>
         <li>El precio de publicación lo confirmamos con vos al revisarlo. Publicar es gratis.</li>
+        <li>
+          <strong>Precio sugerido con IA:</strong> es una estimación hecha con precios públicos de material nuevo y puede
+          equivocarse. Es solo una orientación: el precio lo decidís vos y lo confirmamos al revisar el lote.
+        </li>
         <li>
           <strong>Baja automática de precio (opcional):</strong> si la activás, nos autorizás a bajar el precio de publicación
           el porcentaje que elegiste cada semana que el lote pase sin venderse, hasta el precio mínimo que fijaste. El mínimo

@@ -39,6 +39,9 @@ Además:
   y lo que tiene para hacer.
 - **Visitas**: cada vendedor ve cuántas personas miraron cada lote en los últimos 7 días. Si lo miran y
   nadie oferta, la app le sugiere revisar el precio. No se guarda la IP ni quién visitó (ver Seguridad).
+- **Precio sugerido con IA**: en el formulario del lote, "Sugerir precio con IA" usa Claude con búsqueda web
+  para estimar cuánto cuesta el material nuevo en Argentina (con fuentes) y sugiere 25% menos si está nuevo,
+  35% sin uso o 50% usado. Necesita `ANTHROPIC_API_KEY`; cada usuario puede pedir hasta 15 por día.
 - **Impacto**: cada operación suma los kilos que no fueron a residuos (vendedor) y los reutilizados con el CO₂
   evitado (comprador). Desde **Mi impacto** se emite una **constancia** en PDF con código de verificación, que
   cualquiera valida en `/impacto`. El cálculo y los factores están explicados en esa página.

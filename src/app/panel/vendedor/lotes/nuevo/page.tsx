@@ -3,6 +3,9 @@ import { Aviso } from "@/components/aviso";
 import { exigirRol } from "@/lib/sesion";
 import { FormLote } from "../../form-lote";
 
+// La sugerencia de precio con IA busca en la web: puede tardar hasta un par de minutos.
+export const maxDuration = 180;
+
 export const metadata: Metadata = { title: "Publicar lote" };
 
 export default async function NuevoLote({ searchParams }: PageProps<"/panel/vendedor/lotes/nuevo">) {
