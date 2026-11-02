@@ -117,9 +117,13 @@ if (urlValida) {
 const resend = (process.env.RESEND_API_KEY ?? "").trim();
 if (resend) {
   try {
+    // Una clave de "solo envío" (la recomendada) no puede listar dominios: Resend
+    // responde 401 "restricted_api_key", que igual confirma que la clave existe.
     const r = await fetch("https://api.resend.com/domains", { headers: { Authorization: `Bearer ${resend}` } });
+    const cuerpo = r.ok ? "" : await r.text();
     if (r.ok) ok("La clave de Resend es correcta");
-    else mal(`Resend rechazó la clave (${r.status})`, "Revisá RESEND_API_KEY en .env.local");
+    else if (r.status === 401 && /restricted/i.test(cuerpo)) ok("La clave de Resend es correcta (de solo envío, como corresponde)");
+    else mal(`Resend rechazó la clave (${r.status})`, "Revisá RESEND_API_KEY en .env.local: que esté completa, sin espacios ni comillas");
   } catch {
     mal("No se pudo conectar con Resend", "Revisá tu conexión a internet");
   }
