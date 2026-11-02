@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { TarjetaLote } from "@/components/tarjeta-lote";
 import { CalculadoraSobrante } from "@/components/calculadora-sobrante";
+import { ParaVosVisitante } from "@/components/para-vos-visitante";
+import { recomendacionesParaUsuario } from "@/lib/recomendaciones";
+import type { Recomendacion } from "@/lib/recomendaciones/motor";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { obtenerPerfil } from "@/lib/sesion";
 import { estadoFavorito, idsFavoritos } from "@/lib/favoritos";
@@ -54,19 +57,19 @@ export default async function Inicio() {
   const publicar = perfil ? "/panel/vendedor/lotes/nuevo" : "/registro?volver=/panel/vendedor/lotes/nuevo";
   const tarjeta = (lote: Lote) => <TarjetaLote key={lote.id} lote={lote} favorito={estadoFavorito(favoritos, lote)} volver="/" />;
 
-  // Para quien ya tiene cuenta: lo nuevo para sus búsquedas y lo de su zona.
-  let paraVos: Lote[] = [];
+  // Para quien ya tiene cuenta: recomendaciones según lo que vio, guardó,
+  // ofertó y compró (ver lib/recomendaciones), más lo nuevo para sus búsquedas.
+  let paraVos: Recomendacion[] = [];
   if (perfil && perfil.rol === "usuario") {
-    const { data: coincidencias } = await supabase
-      .from("busqueda_coincidencias")
-      .select("lotes(*)")
-      .order("created_at", { ascending: false })
-      .limit(12);
-    const deBusquedas = ((coincidencias ?? []) as unknown as { lotes: Lote | null }[])
+    const [recs, { data: coincidencias }] = await Promise.all([
+      recomendacionesParaUsuario(perfil.id, perfil.zona, 6),
+      supabase.from("busqueda_coincidencias").select("lotes(*)").order("created_at", { ascending: false }).limit(6),
+    ]);
+    const deBusquedas: Recomendacion[] = ((coincidencias ?? []) as unknown as { lotes: Lote | null }[])
       .map((c) => c.lotes)
-      .filter((l): l is Lote => !!l && l.estado === "publicado");
-    const deMiZona = lotes.filter((l) => l.zona === perfil.zona && l.vendedor_id !== perfil.id);
-    paraVos = [...new Map([...deBusquedas, ...deMiZona].map((l) => [l.id, l])).values()].slice(0, 6);
+      .filter((l): l is Lote => !!l && l.estado === "publicado")
+      .map((l) => ({ lote: l, puntaje: 1, motivo: { tipo: "parecido", texto: "Coincide con lo que buscás" } }));
+    paraVos = [...new Map([...deBusquedas, ...recs].map((r) => [r.lote.id, r])).values()].slice(0, 6);
   }
 
   return (
@@ -142,14 +145,16 @@ export default async function Inicio() {
           <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
             <div>
               <h2 className="text-2xl font-bold">Para vos</h2>
-              <p className="text-sm text-stone-600">
-                {perfil.zona ? `Lo nuevo para tus búsquedas y lo publicado en ${perfil.zona}.` : "Lo nuevo para tus búsquedas."}
-              </p>
+              <p className="text-sm text-stone-600">Según lo que viste, guardaste y compraste.</p>
             </div>
             <Link href="/panel/busquedas" className="text-sm font-semibold text-marca hover:underline">Avisame cuando aparezca algo →</Link>
           </div>
           {paraVos.length ? (
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{paraVos.map(tarjeta)}</div>
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {paraVos.map((r) => (
+                <TarjetaLote key={r.lote.id} lote={r.lote} motivo={r.motivo.texto} favorito={estadoFavorito(favoritos, r.lote)} volver="/" />
+              ))}
+            </div>
           ) : (
             <div className="tarjeta flex flex-wrap items-center justify-between gap-4 p-6">
               <p className="text-stone-600">Contanos qué material necesitás y te mandamos un email apenas se publique.</p>
@@ -158,6 +163,8 @@ export default async function Inicio() {
           )}
         </section>
       ) : !perfil ? (
+        <>
+        <ParaVosVisitante />
         <section className="contenedor pt-10">
           <div className="grid gap-6 rounded-2xl border border-celeste/40 bg-celeste-claro p-6 sm:p-8 lg:grid-cols-[1fr_auto] lg:items-center">
             <div>
@@ -182,6 +189,7 @@ export default async function Inicio() {
             </div>
           </div>
         </section>
+        </>
       ) : null}
 
       {/* 3. Más productos: las mejores ofertas y lo recién publicado. */}

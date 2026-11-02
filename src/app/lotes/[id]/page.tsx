@@ -5,6 +5,9 @@ import { after } from "next/server";
 import { BotonFavorito } from "@/components/boton-favorito";
 import { estadoFavorito, idsFavoritos } from "@/lib/favoritos";
 import { registrarVisita, visitasDeMisLotes } from "@/lib/visitas";
+import { recomendacionesDeLote, registrarVista } from "@/lib/recomendaciones";
+import { TarjetaLote } from "@/components/tarjeta-lote";
+import { RecordarVista } from "@/components/recordar-vista";
 import { reputacionDe } from "@/lib/reputacion";
 import { TarjetaReputacion } from "@/components/reputacion";
 import { Aviso } from "@/components/aviso";
@@ -52,6 +55,10 @@ export default async function DetalleLote({ params, searchParams }: PageProps<"/
     after(() => registrarVisita(lote.id, visitante));
   }
   const visitas = esMio ? (await visitasDeMisLotes([lote.id])).get(lote.id) : undefined;
+  // Historial para recomendar (solo con cuenta; sin cuenta queda en el navegador).
+  if (perfil && !esMio && perfil.rol === "usuario") await registrarVista(lote.id);
+  const { parecidos, complementos } = await recomendacionesDeLote(lote, perfil?.id ?? null, perfil?.zona ?? null);
+  const favoritos = await idsFavoritos();
   const reputacionVendedor = await reputacionDe(lote.vendedor_id);
 
   return (
@@ -248,6 +255,30 @@ export default async function DetalleLote({ params, searchParams }: PageProps<"/
           )}
         </aside>
       </div>
+
+      {complementos.length > 0 && (
+        <section className="mt-14">
+          <h2 className="text-2xl font-bold">Para completar la obra</h2>
+          <p className="mb-5 text-sm text-stone-600">Lo que suele hacer falta junto con este material.</p>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {complementos.map((r) => (
+              <TarjetaLote key={r.lote.id} lote={r.lote} motivo={r.motivo.texto} favorito={estadoFavorito(favoritos, r.lote)} volver={`/lotes/${lote.id}`} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {parecidos.length > 0 && (
+        <section className="mt-14">
+          <h2 className="mb-5 text-2xl font-bold">También te puede interesar</h2>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {parecidos.map((r) => (
+              <TarjetaLote key={r.lote.id} lote={r.lote} motivo={r.motivo.texto} favorito={estadoFavorito(favoritos, r.lote)} volver={`/lotes/${lote.id}`} />
+            ))}
+          </div>
+        </section>
+      )}
+      <RecordarVista loteId={lote.id} />
     </div>
   );
 }

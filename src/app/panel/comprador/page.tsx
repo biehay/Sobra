@@ -10,6 +10,9 @@ import { exigirRol } from "@/lib/sesion";
 import { EstadoReclamo, FormReclamo } from "@/components/reclamo";
 import { MODOS_RETIRO, linkWhatsapp, pesos, type Oferta, type Reclamo } from "@/lib/datos";
 import { cancelarOferta } from "../acciones";
+import { TarjetaLote } from "@/components/tarjeta-lote";
+import { recomendacionesParaUsuario } from "@/lib/recomendaciones";
+import { estadoFavorito, idsFavoritos } from "@/lib/favoritos";
 
 export const metadata: Metadata = { title: "Mis compras" };
 
@@ -31,6 +34,13 @@ export default async function PanelComprador({ searchParams }: PageProps<"/panel
     supabase.from("codigos_retiro").select("oferta_id, codigo").in("oferta_id", ids),
     supabase.from("reclamos").select("*").in("oferta_id", ids).order("created_at", { ascending: false }),
   ]);
+  // Después de comprar, lo que suele hacer falta para terminar la obra.
+  const compro = ofertas.some((o) => ["pagada", "completada"].includes(o.estado));
+  const [paraCompletar, favoritos] = await Promise.all([
+    compro ? recomendacionesParaUsuario(perfil.id, perfil.zona, 6) : Promise.resolve([]),
+    idsFavoritos(),
+  ]);
+  const complementos = paraCompletar.filter((r) => r.motivo.tipo === "complemento").slice(0, 3);
   const codigos = new Map((codigosData ?? []).map((c) => [c.oferta_id as string, c.codigo as string]));
   // El último reclamo de cada operación.
   const reclamos = new Map<string, Reclamo>();
@@ -138,6 +148,18 @@ export default async function PanelComprador({ searchParams }: PageProps<"/panel
           </p>
         )}
       </section>
+
+      {complementos.length > 0 && (
+        <section className="mt-12">
+          <h2 className="text-xl font-bold">Para completar tu obra</h2>
+          <p className="mb-4 text-sm text-stone-600">Lo que suele hacer falta junto con lo que compraste.</p>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {complementos.map((r) => (
+              <TarjetaLote key={r.lote.id} lote={r.lote} motivo={r.motivo.texto} favorito={estadoFavorito(favoritos, r.lote)} volver="/panel/comprador" />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

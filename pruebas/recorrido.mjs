@@ -252,7 +252,9 @@ try {
   await tras(vend, "ok=", () => vend.click("button:has-text('pedí otro código')"));
   const codigoV2 = (await ultimoEmail("marta@constructora.test", "Tu código de Sobrá", Date.now() - 5000)).Subject.match(/\d{6}/)[0];
   await escribirCodigo(vend, codigoV2);
-  await vend.waitForURL("**/panel/vendedor/lotes/nuevo");
+  await vend.waitForURL("**/panel/vendedor/lotes/nuevo").catch(async () => {
+    throw new Error(`El código nuevo (${codigoV2}, el anterior era ${codigoV}) no entró. Aviso: "${await aviso(vend)}"`);
+  });
   await vend.goto(`${BASE}/panel/vendedor`);
   esperar(await vend.locator("nav a:has-text('Mis compras')").isVisible(), "el panel tiene pestañas de ventas y compras");
   await captura(vend, "panel-vendedor-vacio");
@@ -562,6 +564,10 @@ try {
   const detalleInodoros = (await anon.textContent("main")).replace(/\s/g, " ");
   esperar(detalleInodoros.includes("$ 171.000") && detalleInodoros.includes("Precio en baja"), "el lote muestra el precio nuevo y que está en baja");
   esperar(!detalleInodoros.includes("150.000"), "el precio mínimo no se muestra");
+  // Recomendaciones: Juan compró porcelanato, así que le sugiere lo que va con eso.
+  await comp.goto(`${BASE}/panel/comprador`);
+  const compras = await comp.textContent("main");
+  esperar(compras.includes("Para completar tu obra") && compras.includes("Inodoros Ferrum") && compras.includes("Va con Porcelanato"), "después de comprar, recomienda lo que complementa la compra");
   await comp.goto(`${BASE}/lotes`);
   await comp.click("a:has-text('Inodoros Ferrum')");
   await tras(comp, "ok=", () => comp.click("button:has-text('Enviar oferta')"));
@@ -587,7 +593,7 @@ try {
   await vend.goto(`${BASE}/panel/vendedor`);
   esperar((await vend.textContent("body")).includes("Pausado"), "el lote queda pausado");
   await captura(vend, "vendedor-tras-reclamo");
-  paso("Segundo lote: Lo busco avisó a quien lo buscaba, baja de precio manual y automática avisadas, oferta, pago, reclamo y devolución");
+  paso("Segundo lote: Lo busco avisó a quien lo buscaba, recomendación de complementos, baja de precio manual y automática avisadas, oferta, pago, reclamo y devolución");
 
   // 13. Perfil, contraseña y recuperación --------------------------------
   await comp.goto(`${BASE}/panel/perfil`);

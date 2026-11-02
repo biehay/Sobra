@@ -3,7 +3,8 @@ import { CONDICIONES, descuento, pesos, urlFoto, type Lote } from "@/lib/datos";
 import { BotonFavorito } from "@/components/boton-favorito";
 
 // `favorito`: si el usuario lo guardó. Sin usuario logueado (undefined) no se muestra el corazón.
-export function TarjetaLote({ lote, favorito, volver = "/lotes" }: { lote: Lote; favorito?: boolean; volver?: string }) {
+// `motivo`: por qué se lo recomendamos (por ejemplo "Va con Porcelanato 60x60").
+export function TarjetaLote({ lote, favorito, volver = "/lotes", motivo }: { lote: Lote; favorito?: boolean; volver?: string; motivo?: string }) {
   const precio = lote.precio_publicado ?? lote.precio_pedido;
   const off = descuento(precio, lote.precio_lista);
   const noDisponible = lote.estado === "reservado" || lote.estado === "vendido";
@@ -30,6 +31,7 @@ export function TarjetaLote({ lote, favorito, volver = "/lotes" }: { lote: Lote;
           )}
         </div>
         <div className="space-y-1 p-4">
+          {motivo && <p className="mb-1 line-clamp-1 text-xs font-semibold text-celeste-oscuro">{motivo}</p>}
           <p className="text-xs font-medium uppercase tracking-wide text-stone-500">{lote.categoria}</p>
           <h3 className="line-clamp-2 font-semibold group-hover:text-marca">{lote.titulo}</h3>
           <p className="text-sm text-stone-500">

@@ -51,6 +51,12 @@ Además:
   invitación a crear la cuenta para visitantes, una sección "Para vos" para quien ya tiene cuenta (lo nuevo para
   sus búsquedas y su zona) y lo que diferencia a Sobrá. Al tocar el corazón o "Avisame cuando aparezca" sin
   cuenta, el registro explica para qué es y vuelve al mismo lugar.
+- **Recomendaciones** (`src/lib/recomendaciones/`): según lo que cada persona vio, guardó, ofertó y compró (lo
+  reciente pesa más). Mezcla parecido (categoría, palabras, zona, precio), "quienes vieron esto también vieron"
+  (solo con 2 personas o más, para no revelar a nadie) y complementos de obra (porcelanato → pegamento y
+  pastina), con variedad y el motivo de cada una. Se ven en la portada ("Para vos" y, sin cuenta, "Basado en lo
+  que viste", guardado solo en el navegador), en cada lote ("Para completar la obra" y "También te puede
+  interesar") y en Mis compras. El motor tiene pruebas en `motor.test.ts`.
 - **Lo busco**: el comprador guarda lo que necesita (también desde el catálogo, con "Avisame cuando aparezca")
   y le llega un email apenas se publica un lote que coincide. Los vendedores ven la demanda en
   `/buscados` y en Mis ventas, sin datos de quién busca.
@@ -209,6 +215,7 @@ psql -d sobra_test -f supabase/tests/retiro_y_reclamos.sql   # ídem
 psql -d sobra_test -f supabase/tests/visitas_favoritos_comprobantes.sql   # ídem
 psql -d sobra_test -f supabase/tests/impacto_y_reputacion.sql   # ídem
 psql -d sobra_test -f supabase/tests/busquedas_y_baja_automatica.sql   # ídem
+psql -d sobra_test -f supabase/tests/recomendaciones.sql   # ídem
 ```
 
 ## Estructura

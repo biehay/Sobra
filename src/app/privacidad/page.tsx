@@ -5,7 +5,7 @@ export const metadata: Metadata = { title: "Privacidad y cookies" };
 
 export default function Privacidad() {
   return (
-    <PaginaLegal titulo="Política de privacidad y cookies" actualizada="30 de octubre de 2026">
+    <PaginaLegal titulo="Política de privacidad y cookies" actualizada="2 de noviembre de 2026">
       <p>
         En Sobrá cuidamos los datos de las personas y empresas que usan el marketplace. Esta política explica qué datos
         juntamos, para qué los usamos, quién los ve y qué derechos tenés, de acuerdo con la Ley 25.326 de Protección de
@@ -22,6 +22,12 @@ export default function Privacidad() {
           espacio privado y solo lo ven vos y el equipo de Sobrá.
         </li>
         <li><strong>Favoritos:</strong> los lotes que guardás, para avisarte si bajan de precio.</li>
+        <li>
+          <strong>Lotes que viste:</strong> si tenés cuenta, guardamos qué lotes abriste durante 180 días para recomendarte otros
+          parecidos o que los complementan. Si no tenés cuenta, esa lista queda solo en tu navegador (no en una cookie ni en
+          nuestros servidores) y la podés borrar limpiando los datos del sitio. Las recomendaciones del tipo “quienes vieron esto
+          también vieron” usan datos de varias personas juntas, nunca lo que hizo alguien en particular.
+        </li>
         <li>
           <strong>Búsquedas guardadas (Lo busco):</strong> lo que buscás, para avisarte cuando aparece. El texto de la búsqueda
           se muestra a los vendedores sin tu nombre ni ningún dato tuyo.
