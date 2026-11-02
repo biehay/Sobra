@@ -97,6 +97,12 @@ if (urlValida) {
         const rol = await pedir("/rest/v1/perfiles?select=rol&rol=eq.usuario&limit=1", servicio);
         if (rol.estado === 200) ok("Migración 20261031000000_cuenta_unica.sql aplicada");
         else mal("Falta la migración 20261031000000_cuenta_unica.sql", "Ejecutala en Supabase > SQL Editor (copiar, pegar y Run)");
+        // Datos de ejemplo (npm run ejemplos): está bien para probar, nunca en producción.
+        const usuarios = await pedir("/auth/v1/admin/users?per_page=1000", servicio);
+        if (usuarios.estado === 200) {
+          const deEjemplo = (JSON.parse(usuarios.cuerpo).users ?? []).filter((x) => x.email?.endsWith("@ejemplos.sobra.test")).length;
+          if (deEjemplo) info(`Hay datos de EJEMPLO cargados (${deEjemplo} cuentas de ejemplo). Antes de lanzar, borralos con: npm run ejemplos:borrar`);
+        }
       }
       else mal(`Supabase rechazó la clave service_role (${admin.estado})`, "Volvé a copiar SUPABASE_SERVICE_ROLE_KEY completa (Reveal > Copy)");
     }

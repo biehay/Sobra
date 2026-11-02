@@ -344,3 +344,33 @@ describe("ordenar (catálogo Para vos)", () => {
     expect(orden[3]).toBe(reservado);
   });
 });
+
+describe("complementos que no son", () => {
+  it("una descripción con 'cajas cerradas' no lo vuelve complemento de un cable, y la fibra óptica no pide térmicas", () => {
+    const cableElectrico = lote({ titulo: "Cable unipolar 2,5 mm x 4 rollos", categoria: "Electricidad e iluminación" });
+    const fibra = lote({ titulo: "Bobina de fibra óptica monomodo", categoria: "Otros", items: [{ nombre: "Cable de fibra óptica 12 hilos", cantidad: 2000, unidad: "m" }] });
+    const porcelanato = lote({ titulo: "Porcelanato 60x120 calacatta", categoria: "Cerámicos y porcelanatos", descripcion: "Cajas cerradas." });
+    const tablero = lote({ titulo: "Tablero con 12 térmicas", categoria: "Electricidad e iluminación" });
+    const conCable = recomendar({ senales: [senal(cableElectrico, "compra")], candidatos: [porcelanato, tablero], ahora: AHORA });
+    expect(conCable.find((r) => r.lote.id === tablero.id)?.complemento).not.toBeNull();
+    expect(conCable.find((r) => r.lote.id === porcelanato.id)?.complemento ?? null).toBeNull();
+    const conFibra = recomendar({ senales: [senal(fibra, "compra")], candidatos: [porcelanato, tablero], ahora: AHORA });
+    expect(conFibra.every((r) => r.complemento === null)).toBe(true);
+    const cajasDeFibra = lote({ titulo: "Conectores y cajas de empalme", categoria: "Otros", items: [{ nombre: "Caja de empalme 24 fibras", cantidad: 6, unidad: "u" }] });
+    const cajasDeLuz = lote({ titulo: "Cajas de luz rectangulares x 50", categoria: "Electricidad e iluminación" });
+    const otraVez = recomendar({ senales: [senal(cableElectrico, "compra")], candidatos: [cajasDeFibra, cajasDeLuz], ahora: AHORA });
+    expect(otraVez.find((r) => r.lote.id === cajasDeLuz.id)?.complemento).not.toBeNull();
+    expect(otraVez.find((r) => r.lote.id === cajasDeFibra.id)?.complemento ?? null).toBeNull();
+  });
+
+  it("pastina y pegamento no cuentan como repetidos: cubren necesidades distintas", () => {
+    const porcelanato = lote({ titulo: "Porcelanato 60x60 gris", categoria: "Cerámicos y porcelanatos", zona: "CABA", items: [{ nombre: "Porcelanato 60x60", cantidad: 38, unidad: "m2" }] });
+    const deposito = { zona: "GBA Norte", vendedor_id: "corralon" };
+    const pastina = lote({ titulo: "Pastina gris x 15 kg", categoria: "Cemento, cal y áridos", ...deposito });
+    const pegamento = lote({ titulo: "Pegamento para porcelanato x 20 bolsas de 30 kg", categoria: "Cemento, cal y áridos", ...deposito });
+    const bachas = lote({ titulo: "Bachas de apoyar x 5", categoria: "Sanitarios y grifería", zona: "CABA" });
+    const latex = lote({ titulo: "Látex interior x 6 baldes", categoria: "Pinturas e impermeabilizantes", zona: "CABA" });
+    const recs = recomendar({ senales: [senal(porcelanato, "compra")], candidatos: [bachas, latex, pastina, pegamento], ahora: AHORA }, 3);
+    expect(recs.map((r) => r.lote.id)).toEqual(expect.arrayContaining([pastina.id, pegamento.id]));
+  });
+});

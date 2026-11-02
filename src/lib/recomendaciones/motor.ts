@@ -297,10 +297,35 @@ function cantidadEn(lote: Lote, unidad: UnidadFicha, fichas: Map<string, Ficha>)
 // Qué tan bien le alcanza: 1 si cubre lo que necesita sin sobrar demasiado.
 function ajusteCantidad(ofrecido: number, necesario: number) {
   const r = ofrecido / necesario;
-  return r >= 1 ? Math.max(0.5, 1 - (r - 1) * 0.25) : r;
+  // Que falte es peor que que sobre: con lo que falta no se termina la obra.
+  return r >= 1 ? Math.max(0.75, 1 - (r - 1) * 0.1) : r;
 }
 
 // Palabras y medidas de un lote. Las medidas van dos veces: pesan el doble.
+// Solo el producto (título, materiales y ficha), sin la descripción: para
+// detectar complementos. En la descripción aparecen cosas como "cajas cerradas"
+// que no hablan del producto.
+function palabrasDeProducto(lote: Lote, fichas: Map<string, Ficha>): string[] {
+  const ficha = fichas.get(lote.id);
+  const texto = `${lote.titulo} ${lote.items.map((i) => i.nombre).join(" ")}${ficha ? ` ${ficha.material} ${ficha.palabras_clave.join(" ")}` : ""}`;
+  return palabras(texto);
+}
+
+// Reglas escritas a mano que no aplican en otros rubros: un cable de fibra
+// óptica no lleva térmicas ni cajas de luz (eso lo resuelve su ficha técnica).
+const EXCEPCIONES_MATERIAL: Record<string, string[]> = {
+  cabl: ["fibra", "optica", "coaxil", "utp", "red", "telefonico"],
+  // "Porcelanato símil cemento" describe el aspecto, no el material.
+  cemento: ["simil", "porcelanato", "ceramico", "microcemento"],
+};
+
+// Y del otro lado: lo que pide esa regla tampoco se busca en productos de ese
+// otro rubro (la "caja" de un cable eléctrico no es una caja de empalme de fibra).
+const EXCEPCIONES_COMPLEMENTO: Record<string, string[]> = {};
+for (const [regla, excepciones] of Object.entries(EXCEPCIONES_MATERIAL)) {
+  for (const c of COMPLEMENTOS_MATERIAL[regla] ?? []) EXCEPCIONES_COMPLEMENTO[c] = [...(EXCEPCIONES_COMPLEMENTO[c] ?? []), ...excepciones];
+}
+
 function palabrasDe(lote: Lote): string[] {
   const texto = `${lote.titulo} ${lote.items.map((i) => i.nombre).join(" ")} ${lote.descripcion}`;
   const med = medidas(texto);
@@ -432,7 +457,7 @@ export function armarInteres(senales: Senal[], ahora = Date.now(), busquedas: Bu
     }
     // Rendimientos: solo con lo que compró u ofertó (lo que de verdad va a usar).
     if (s.tipo === "compra" || s.tipo === "oferta") {
-      for (const material of new Set(palabrasDe(s.lote))) {
+      for (const material of new Set(palabrasDeProducto(s.lote, fichas))) {
         for (const r of RENDIMIENTOS[material] ?? []) {
           const cantidad = cantidadDe(s.lote, r.unidad);
           if (!cantidad) continue;
@@ -445,7 +470,11 @@ export function armarInteres(senales: Senal[], ahora = Date.now(), busquedas: Bu
     const pesoComplemento = s.tipo === "compra" || s.tipo === "oferta" ? peso : peso * 0.3;
     const claves = [
       ...(COMPLEMENTOS_CATEGORIA[s.lote.categoria] ?? []).map((c) => `cat:${c}`),
-      ...palabrasDe(s.lote).flatMap((w) => (COMPLEMENTOS_MATERIAL[w] ?? []).map((m) => `pal:${m}`)),
+      ...(() => {
+        const propias = palabrasDeProducto(s.lote, fichas);
+        const excluida = (w: string) => (EXCEPCIONES_MATERIAL[w] ?? []).some((x) => propias.includes(x));
+        return propias.flatMap((w) => (excluida(w) ? [] : (COMPLEMENTOS_MATERIAL[w] ?? []).map((m) => `pal:${m}`)));
+      })(),
     ];
     for (const clave of new Set(claves)) {
       const actual = interes.complementos.get(clave);
@@ -554,6 +583,7 @@ function puntuar(ctx: Contexto, descartarVistos: boolean) {
     .filter((l) => l.estado === "publicado" && l.vendedor_id !== ctx.usuarioId && !descartar.has(l.id))
     .map((lote) => {
       const pal = contar(palabrasConFicha(lote, fichas));
+      const producto = contar(palabrasDeProducto(lote, fichas));
       const partes = {
         categoria: interes.total ? (interes.categorias.get(lote.categoria) ?? 0) / interes.total : 0,
         palabras: similitudCoseno(pal, interes.palabras) * proporcionParecido,
@@ -575,16 +605,23 @@ function puntuar(ctx: Contexto, descartarVistos: boolean) {
       };
       // Complementos: por categoría y por material puntual (lo puntual pesa más).
       let origenComplemento: Lote | null = null;
+      // Qué necesidad cubre (por ejemplo "pal:pastina"): dos complementos que cubren
+      // necesidades distintas no cuentan como repetidos.
+      let necesidad: string | null = null;
       const porCategoria = interes.complementos.get(`cat:${lote.categoria}`);
       if (porCategoria) {
-        partes.complemento = (0.6 * porCategoria.peso) / maxComplemento;
+        // Por categoría es una pista general: pesa menos que un material puntual.
+        partes.complemento = (0.45 * porCategoria.peso) / maxComplemento;
         origenComplemento = porCategoria.origen;
+        necesidad = `cat:${lote.categoria}`;
       }
-      for (const p of pal.keys()) {
+      for (const p of producto.keys()) {
         const porMaterial = interes.complementos.get(`pal:${p}`);
+        if ((EXCEPCIONES_COMPLEMENTO[p] ?? []).some((x) => producto.has(x))) continue;
         if (porMaterial && porMaterial.peso / maxComplemento >= partes.complemento) {
           partes.complemento = Math.min(1, porMaterial.peso / maxComplemento);
           origenComplemento = porMaterial.origen;
+          necesidad = `pal:${p}`;
         }
       }
       const col = ctx.colectivas?.get(lote.id);
@@ -596,7 +633,7 @@ function puntuar(ctx: Contexto, descartarVistos: boolean) {
       // proceso de lo que compró y si este lote lo cubre, y en qué cantidad.
       let deFicha: { c: ComplementoFicha; alcanza: number | null } | null = null;
       for (const c of interes.deFichas) {
-        if (!cumpleComplemento(c, pal)) continue;
+        if (!cumpleComplemento(c, producto)) continue;
         let valor = c.peso / maxComplemento;
         let alcanza: number | null = null;
         if (c.necesario) {
@@ -609,6 +646,7 @@ function puntuar(ctx: Contexto, descartarVistos: boolean) {
         if (valor >= partes.complemento) {
           partes.complemento = Math.min(1, valor);
           deFicha = { c, alcanza };
+          necesidad = `ficha:${c.nucleo.join(" ")}`;
         }
       }
 
@@ -621,7 +659,7 @@ function puntuar(ctx: Contexto, descartarVistos: boolean) {
       // Rendimientos: si es un complemento que necesita, cuánto le alcanza.
       let rendimiento: { alcanza: number; origen: Lote; cantidad: number; unidad: string } | null = null;
       for (const [material, necesidad] of interes.necesidades) {
-        if (!pal.has(material)) continue;
+        if (!producto.has(material)) continue;
         const kg = cantidadDe(lote, "kg");
         if (!kg) continue;
         const ajuste = ajusteCantidad(kg, necesidad.kg);
@@ -654,6 +692,7 @@ function puntuar(ctx: Contexto, descartarVistos: boolean) {
         puntaje,
         partes,
         origenComplemento,
+        necesidad,
         busquedaCumplida,
         rendimiento,
         retiroCompartido,
@@ -691,7 +730,9 @@ export function recomendar(ctx: Contexto, cantidad = 6): Recomendacion[] {
     let mejor = 0;
     let mejorValor = -Infinity;
     restantes.forEach((r, i) => {
-      const repeticion = elegidos.length ? Math.max(...elegidos.map((e) => parecido(e.lote, r.lote))) : 0;
+      const repeticion = elegidos.length
+        ? Math.max(...elegidos.map((e) => parecido(e.lote, r.lote) * (e.necesidad && r.necesidad && e.necesidad !== r.necesidad ? 0.3 : 1)))
+        : 0;
       const valor = 0.75 * r.puntaje - 0.25 * repeticion * r.puntaje;
       if (valor > mejorValor) {
         mejorValor = valor;
@@ -776,7 +817,7 @@ function motivo(
     };
   }
   if (r.retiroCompartido) return { tipo: "viaje", texto: `Lo retirás en el mismo viaje que ${corto(r.retiroCompartido.titulo)}` };
-  if (partes.complemento >= 0.5 && r.origenComplemento && W.complemento * partes.complemento >= W.palabras * partes.palabras) {
+  if (partes.complemento >= 0.4 && r.origenComplemento && W.complemento * partes.complemento >= W.palabras * partes.palabras) {
     return { tipo: "complemento", texto: `Va con ${corto(r.origenComplemento.titulo)}` };
   }
   const referencia = masParecida.lote ?? principal;

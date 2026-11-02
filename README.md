@@ -253,6 +253,21 @@ supabase/migrations/       esquema, permisos y funciones de la base
 supabase/templates/        emails de Supabase: código de verificación y recuperar contraseña
 ```
 
+## Datos de ejemplo
+
+Para probar la app con mercadería cargada:
+
+```bash
+npm run ejemplos          # 5 vendedores, 32 lotes publicados con fotos y algo de actividad
+npm run ejemplos:borrar   # borra todo lo de ejemplo y deja la base limpia
+```
+
+Todo lo de ejemplo cuelga de cuentas `@ejemplos.sobra.test` (sin contraseña conocida: no se puede entrar con
+ellas). Al borrarlas se van sus lotes, fotos, visitas, favoritos y fichas, y también las ofertas que hayas hecho
+**sobre** lotes de ejemplo. Tus cuentas y tus lotes no se tocan. Volver a correr `npm run ejemplos` reemplaza
+los ejemplos anteriores. Las fotos son ilustraciones con la leyenda "Foto de ejemplo" y cada descripción
+termina en "(Publicación de ejemplo para pruebas.)".
+
 ## Antes de lanzar
 
 Cosas que quedaron a propósito sin definir y hay que completar antes de tener usuarios reales:
@@ -267,6 +282,7 @@ Cosas que quedaron a propósito sin definir y hay que completar antes de tener u
 - [ ] **Contador**: inscripción para facturar la comisión y tratamiento del dinero retenido.
 - [ ] **Dominio** `sobra.com.ar`, verificado en Resend, y Resend como servidor de mail de Supabase con las
       plantillas de `supabase/templates/`.
+- [ ] **Borrar los datos de ejemplo**: `npm run ejemplos:borrar` (`npm run verificar` avisa si siguen cargados).
 - [ ] **Publicar la app** (Vercel) con las variables de entorno de producción, incluida `CRON_SECRET` para la
       baja automática de precios.
 
