@@ -24,7 +24,7 @@ export default function Privacidad() {
         <li><strong>Favoritos:</strong> los lotes que guardás, para avisarte si bajan de precio.</li>
         <li>
           <strong>Lotes que viste:</strong> si tenés cuenta, guardamos qué lotes abriste durante 180 días para recomendarte otros
-          parecidos o que los complementan. Si no tenés cuenta, esa lista queda solo en tu navegador (no en una cookie ni en
+          parecidos o que los complementan, y si llegaste a cada uno desde una recomendación (para saber cuáles sirven). Si no tenés cuenta, esa lista queda solo en tu navegador (no en una cookie ni en
           nuestros servidores) y la podés borrar limpiando los datos del sitio. Las recomendaciones del tipo “quienes vieron esto
           también vieron” usan datos de varias personas juntas, nunca lo que hizo alguien en particular.
         </li>
@@ -69,8 +69,9 @@ export default function Privacidad() {
         <li><strong>El equipo de Sobrá:</strong> para revisar lotes, verificar usuarios y resolver reclamos.</li>
         <li>
           <strong>Proveedores que nos prestan servicios:</strong> Supabase (base de datos y archivos), Resend (envío de
-          emails), Anthropic (la IA que sugiere precios: recibe solo el título, la categoría, el estado, los materiales y la
-          descripción del lote, nunca tus datos personales) y, cuando se habilite, Mercado Pago (pagos). Solo reciben lo necesario para prestar su servicio.
+          emails), Anthropic (la IA que sugiere precios y arma la ficha técnica de cada lote publicado para
+          recomendar complementos: recibe solo el título, la categoría, el estado, los materiales y la descripción del
+          lote, nunca tus datos personales) y, cuando se habilite, Mercado Pago (pagos). Solo reciben lo necesario para prestar su servicio.
         </li>
       </ul>
 

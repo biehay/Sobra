@@ -4,14 +4,27 @@ import { BotonFavorito } from "@/components/boton-favorito";
 
 // `favorito`: si el usuario lo guardó. Sin usuario logueado (undefined) no se muestra el corazón.
 // `motivo`: por qué se lo recomendamos (por ejemplo "Va con Porcelanato 60x60").
-export function TarjetaLote({ lote, favorito, volver = "/lotes", motivo }: { lote: Lote; favorito?: boolean; volver?: string; motivo?: string }) {
+// `origen`: de qué recomendación viene ("rec-complemento"), para medir cuáles sirven.
+export function TarjetaLote({
+  lote,
+  favorito,
+  volver = "/lotes",
+  motivo,
+  origen,
+}: {
+  lote: Lote;
+  favorito?: boolean;
+  volver?: string;
+  motivo?: string;
+  origen?: string;
+}) {
   const precio = lote.precio_publicado ?? lote.precio_pedido;
   const off = descuento(precio, lote.precio_lista);
   const noDisponible = lote.estado === "reservado" || lote.estado === "vendido";
 
   return (
     <div className="relative">
-      <Link href={`/lotes/${lote.id}`} className="tarjeta group block overflow-hidden transition hover:shadow-md">
+      <Link href={origen ? `/lotes/${lote.id}?ref=${origen}` : `/lotes/${lote.id}`} className="tarjeta group block overflow-hidden transition hover:shadow-md">
         <div className="relative aspect-[4/3] bg-stone-100">
           {lote.fotos[0] ? (
             // eslint-disable-next-line @next/next/no-img-element

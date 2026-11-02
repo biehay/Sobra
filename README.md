@@ -56,7 +56,18 @@ Además:
   (solo con 2 personas o más, para no revelar a nadie) y complementos de obra (porcelanato → pegamento y
   pastina), con variedad y el motivo de cada una. Se ven en la portada ("Para vos" y, sin cuenta, "Basado en lo
   que viste", guardado solo en el navegador), en cada lote ("Para completar la obra" y "También te puede
-  interesar") y en Mis compras. El motor tiene pruebas en `motor.test.ts`.
+  interesar") y en Mis compras. Además razona como alguien de obra: deduce la **etapa** de la obra
+  (estructura → cerramientos → instalaciones → terminaciones) y anticipa la siguiente; usa **rendimientos**
+  (5 kg de pegamento por m² de porcelanato) para preferir el complemento cuya cantidad alcanza; sube lo que se
+  retira en el **mismo viaje**; y da exposición a los sobrantes que **casi nadie vio** (anti-desperdicio).
+  También entiende sinónimos y medidas (60x60, 20 mm), zonas vecinas, "Lo busco" y la confianza en el
+  vendedor, y deja un lugar para descubrir. En el admin se ve qué tipo de recomendación lleva más visitas.
+  **Fichas técnicas** (`fichas.ts`, tabla `fichas_lote`): al aprobarse un lote, la IA arma una ficha con qué es,
+  su proceso físico de uso o instalación, su etapa y los complementos que hacen falta (con cuánto por unidad).
+  Así el motor sabe de cualquier rubro sin listas a mano: una consola → joysticks, fibra óptica → conectores y
+  empalmes. Los lotes viejos la arman la primera vez que alguien los abre. Sin `ANTHROPIC_API_KEY` usa las reglas
+  escritas a mano como respaldo.
+  El motor tiene pruebas en `motor.test.ts`.
 - **Lo busco**: el comprador guarda lo que necesita (también desde el catálogo, con "Avisame cuando aparezca")
   y le llega un email apenas se publica un lote que coincide. Los vendedores ven la demanda en
   `/buscados` y en Mis ventas, sin datos de quién busca.

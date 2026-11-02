@@ -40,7 +40,7 @@ export default async function PanelComprador({ searchParams }: PageProps<"/panel
     compro ? recomendacionesParaUsuario(perfil.id, perfil.zona, 6) : Promise.resolve([]),
     idsFavoritos(),
   ]);
-  const complementos = paraCompletar.filter((r) => r.motivo.tipo === "complemento").slice(0, 3);
+  const complementos = paraCompletar.flatMap((r) => (r.complemento ? [{ lote: r.lote, motivo: r.complemento }] : [])).slice(0, 3);
   const codigos = new Map((codigosData ?? []).map((c) => [c.oferta_id as string, c.codigo as string]));
   // El último reclamo de cada operación.
   const reclamos = new Map<string, Reclamo>();
@@ -155,7 +155,7 @@ export default async function PanelComprador({ searchParams }: PageProps<"/panel
           <p className="mb-4 text-sm text-stone-600">Lo que suele hacer falta junto con lo que compraste.</p>
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {complementos.map((r) => (
-              <TarjetaLote key={r.lote.id} lote={r.lote} motivo={r.motivo.texto} favorito={estadoFavorito(favoritos, r.lote)} volver="/panel/comprador" />
+              <TarjetaLote key={r.lote.id} lote={r.lote} motivo={r.motivo.texto} origen={`rec-${r.motivo.tipo}`} favorito={estadoFavorito(favoritos, r.lote)} volver="/panel/comprador" />
             ))}
           </div>
         </section>

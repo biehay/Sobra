@@ -59,6 +59,24 @@ export default async function Admin({ searchParams }: PageProps<"/admin">) {
     ["Usuarios verificados", perfiles.filter((p) => p.rol === "usuario" && p.verificado).length],
   ];
 
+  // Qué tipo de recomendación lleva a la gente a abrir lotes (últimos 30 días).
+  const { data: recsData } = await supabase.rpc("metricas_recomendaciones");
+  const recs = (recsData ?? []) as { origen: string; visitas: number }[];
+  const totalVisitas = recs.reduce((t, r) => t + Number(r.visitas), 0);
+  const NOMBRES_ORIGEN: Record<string, string> = {
+    directo: "Llegaron solos (catálogo, búsqueda, links)",
+    "rec-complemento": "Para completar la obra",
+    "rec-busqueda": "Coincide con lo que busca",
+    "rec-etapa": "Próxima etapa de la obra",
+    "rec-viaje": "Mismo viaje de retiro",
+    "rec-colectiva": "Quienes vieron esto también vieron",
+    "rec-parecido": "Porque vio algo parecido",
+    "rec-zona": "Cerca suyo",
+    "rec-descuento": "Por descuento",
+    "rec-descubrir": "Para descubrir",
+    "rec-nuevo": "Recién publicado",
+  };
+
   return (
     <div className="contenedor space-y-10 py-10">
       <div>
@@ -76,6 +94,22 @@ export default async function Admin({ searchParams }: PageProps<"/admin">) {
           </div>
         ))}
       </section>
+
+      {totalVisitas > 0 && (
+        <details className="tarjeta p-5">
+          <summary className="cursor-pointer font-bold">Recomendaciones: de dónde llegan las visitas (últimos 30 días)</summary>
+          <p className="mt-2 text-sm text-stone-500">Solo usuarios con cuenta. Sirve para ver qué tipo de recomendación funciona.</p>
+          <ul className="mt-3 space-y-2 text-sm">
+            {recs.map((r) => (
+              <li key={r.origen} className="flex items-center gap-3">
+                <span className="w-64 shrink-0">{NOMBRES_ORIGEN[r.origen] ?? r.origen}</span>
+                <span className="h-2 rounded-full bg-celeste" style={{ width: `${Math.max(2, (Number(r.visitas) / totalVisitas) * 100)}%` }} />
+                <span className="shrink-0 text-stone-600">{r.visitas} ({Math.round((Number(r.visitas) / totalVisitas) * 100)}%)</span>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
 
       {reclamos.length > 0 && (
         <section>

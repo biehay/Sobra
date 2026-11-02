@@ -68,7 +68,7 @@ export default async function Inicio() {
     const deBusquedas: Recomendacion[] = ((coincidencias ?? []) as unknown as { lotes: Lote | null }[])
       .map((c) => c.lotes)
       .filter((l): l is Lote => !!l && l.estado === "publicado")
-      .map((l) => ({ lote: l, puntaje: 1, motivo: { tipo: "parecido", texto: "Coincide con lo que buscás" } }));
+      .map((l) => ({ lote: l, puntaje: 1, motivo: { tipo: "busqueda", texto: "Coincide con lo que buscás" }, complemento: null }));
     paraVos = [...new Map([...deBusquedas, ...recs].map((r) => [r.lote.id, r])).values()].slice(0, 6);
   }
 
@@ -152,7 +152,7 @@ export default async function Inicio() {
           {paraVos.length ? (
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {paraVos.map((r) => (
-                <TarjetaLote key={r.lote.id} lote={r.lote} motivo={r.motivo.texto} favorito={estadoFavorito(favoritos, r.lote)} volver="/" />
+                <TarjetaLote key={r.lote.id} lote={r.lote} motivo={r.motivo.texto} origen={`rec-${r.motivo.tipo}`} favorito={estadoFavorito(favoritos, r.lote)} volver="/" />
               ))}
             </div>
           ) : (

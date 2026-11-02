@@ -88,5 +88,42 @@ do $$ begin
   assert (select personas from popularidad_lotes() where lote_id = '10000000-0000-0000-0000-000000000001') = 3, 'popularidad mal contada';
 end $$;
 
+-- Origen de la visita: se guarda solo si tiene el formato de una recomendación.
+select pg_temp.como('00000000-0000-0000-0000-00000000000e');
+select registrar_vista('10000000-0000-0000-0000-000000000002', 'rec-complemento');
+do $$ begin
+  assert (select origen from vistas_usuario where lote_id = '10000000-0000-0000-0000-000000000002') = 'rec-complemento', 'no guardó el origen';
+end $$;
+select pg_temp.como('00000000-0000-0000-0000-00000000000d');
+select registrar_vista('10000000-0000-0000-0000-000000000003', 'cualquier cosa; drop table lotes');
+do $$ begin
+  assert (select origen from vistas_usuario where lote_id = '10000000-0000-0000-0000-000000000003') is null, 'guardó un origen inválido';
+end $$;
+
+-- Las métricas de recomendaciones son solo para el admin.
+select pg_temp.debe_fallar($$select * from metricas_recomendaciones()$$, 'un usuario ve las métricas');
+select pg_temp.como('00000000-0000-0000-0000-00000000000a');
+do $$ begin
+  assert (select visitas from metricas_recomendaciones() where origen = 'rec-complemento') = 1, 'métricas mal contadas';
+  assert (select sum(visitas) from metricas_recomendaciones()) = 8, 'no cuenta las visitas directas';
+end $$;
+
+-- Fichas técnicas: se ven las de lotes visibles y solo las escribe el servidor.
+reset role;
+select set_config('request.jwt.claim.sub', '', true), set_config('request.jwt.claims', '', true);
+insert into fichas_lote (lote_id, ficha, modelo) values
+  ('10000000-0000-0000-0000-000000000001', '{"material":"porcelanato"}', 'prueba'),
+  ('10000000-0000-0000-0000-000000000004', '{"material":"borrador"}', 'prueba');
+select pg_temp.como(null);
+do $$ begin
+  assert (select count(*) from fichas_lote) = 1, 'un visitante ve la ficha de un lote sin publicar';
+end $$;
+select pg_temp.como('00000000-0000-0000-0000-00000000000b');
+do $$ begin
+  assert (select count(*) from fichas_lote) = 2, 'la vendedora no ve la ficha de su borrador';
+end $$;
+select pg_temp.debe_fallar($$update fichas_lote set ficha = '{}'$$, 'un usuario cambia una ficha');
+select pg_temp.debe_fallar($$insert into fichas_lote values ('10000000-0000-0000-0000-000000000003', '{}', 'x', now())$$, 'un usuario inventa una ficha');
+
 select 'TODAS LAS PRUEBAS PASARON' as resultado;
 rollback;

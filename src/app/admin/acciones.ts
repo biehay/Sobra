@@ -7,6 +7,8 @@ import { crearClienteServidor } from "@/lib/supabase/server";
 import { mensajeParaUsuario } from "@/lib/errores";
 import { exigirRol } from "@/lib/sesion";
 import { notificar } from "@/lib/email/notificar";
+import { after } from "next/server";
+import { asegurarFichaPorId } from "@/lib/recomendaciones/fichas";
 
 function volver(tipo: "ok" | "error", mensaje: string): never {
   revalidatePath("/admin");
@@ -40,6 +42,8 @@ export async function revisarLote(formData: FormData) {
     notificar.loteRevisado(id);
     notificar.bajaDePrecio(id);
     notificar.coincidencias(id);
+    // La ficha técnica (qué es y qué complementos necesita) para las recomendaciones.
+    after(() => asegurarFichaPorId(id, true));
     volver("ok", "Lote publicado.");
   }
 

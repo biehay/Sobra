@@ -6,6 +6,7 @@ import { BotonFavorito } from "@/components/boton-favorito";
 import { estadoFavorito, idsFavoritos } from "@/lib/favoritos";
 import { registrarVisita, visitasDeMisLotes } from "@/lib/visitas";
 import { recomendacionesDeLote, registrarVista } from "@/lib/recomendaciones";
+import { asegurarFicha } from "@/lib/recomendaciones/fichas";
 import { TarjetaLote } from "@/components/tarjeta-lote";
 import { RecordarVista } from "@/components/recordar-vista";
 import { reputacionDe } from "@/lib/reputacion";
@@ -28,7 +29,7 @@ import { ofertar } from "./acciones";
 
 export default async function DetalleLote({ params, searchParams }: PageProps<"/lotes/[id]">) {
   const { id } = await params;
-  const { ok, error } = await searchParams;
+  const { ok, error, ref } = await searchParams;
   if (!/^[0-9a-f-]{36}$/.test(id)) notFound();
 
   const supabase = await crearClienteServidor();
@@ -56,8 +57,10 @@ export default async function DetalleLote({ params, searchParams }: PageProps<"/
   }
   const visitas = esMio ? (await visitasDeMisLotes([lote.id])).get(lote.id) : undefined;
   // Historial para recomendar (solo con cuenta; sin cuenta queda en el navegador).
-  if (perfil && !esMio && perfil.rol === "usuario") await registrarVista(lote.id);
+  if (perfil && !esMio && perfil.rol === "usuario") await registrarVista(lote.id, typeof ref === "string" ? ref : null);
   const { parecidos, complementos } = await recomendacionesDeLote(lote, perfil?.id ?? null, perfil?.zona ?? null);
+  // Si el lote todavía no tiene ficha técnica (lotes anteriores), se arma ahora en segundo plano.
+  if (["publicado", "reservado"].includes(lote.estado)) after(() => asegurarFicha(lote));
   const favoritos = await idsFavoritos();
   const reputacionVendedor = await reputacionDe(lote.vendedor_id);
 
@@ -262,7 +265,7 @@ export default async function DetalleLote({ params, searchParams }: PageProps<"/
           <p className="mb-5 text-sm text-stone-600">Lo que suele hacer falta junto con este material.</p>
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {complementos.map((r) => (
-              <TarjetaLote key={r.lote.id} lote={r.lote} motivo={r.motivo.texto} favorito={estadoFavorito(favoritos, r.lote)} volver={`/lotes/${lote.id}`} />
+              <TarjetaLote key={r.lote.id} lote={r.lote} motivo={r.motivo.texto} origen={`rec-${r.motivo.tipo}`} favorito={estadoFavorito(favoritos, r.lote)} volver={`/lotes/${lote.id}`} />
             ))}
           </div>
         </section>
@@ -273,7 +276,7 @@ export default async function DetalleLote({ params, searchParams }: PageProps<"/
           <h2 className="mb-5 text-2xl font-bold">También te puede interesar</h2>
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {parecidos.map((r) => (
-              <TarjetaLote key={r.lote.id} lote={r.lote} motivo={r.motivo.texto} favorito={estadoFavorito(favoritos, r.lote)} volver={`/lotes/${lote.id}`} />
+              <TarjetaLote key={r.lote.id} lote={r.lote} motivo={r.motivo.texto} origen={`rec-${r.motivo.tipo}`} favorito={estadoFavorito(favoritos, r.lote)} volver={`/lotes/${lote.id}`} />
             ))}
           </div>
         </section>

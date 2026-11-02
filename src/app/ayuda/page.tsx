@@ -46,7 +46,7 @@ const TEMAS: { titulo: string; preguntas: [string, React.ReactNode][] }[] = [
     preguntas: [
       ["No me llega el código por email", "Revisá la carpeta de spam y esperá un minuto antes de pedir otro. Si sigue sin llegar, escribinos."],
       ["¿Por qué me piden un código cada vez que entro desde otro dispositivo?", "Para que nadie pueda entrar a tu cuenta con tu contraseña sola. El código confirma que también tenés acceso a tu email."],
-      ["¿Por qué me recomiendan estos lotes?", "Según lo que viste, guardaste, ofertaste y compraste: lotes parecidos, cerca tuyo, lo que suele ir con lo que compraste (por ejemplo, pegamento y pastina si compraste porcelanato) y lo que miraron otras personas con intereses parecidos. Cada recomendación dice por qué aparece."],
+      ["¿Por qué me recomiendan estos lotes?", "Según lo que viste, guardaste, buscás, ofertaste y compraste. Sobrá piensa como alguien de obra: te sugiere lo que va con lo que compraste y en la cantidad que te alcanza (por ejemplo, el pegamento justo para tus m² de porcelanato), lo de la próxima etapa de tu obra, lo que podés retirar en el mismo viaje y lotes parecidos cerca tuyo. Funciona para cualquier rubro: cada lote tiene una ficha técnica que explica cómo se usa o instala y qué otras cosas hacen falta (por ejemplo, fibra óptica → conectores y empalmes). Cada recomendación dice por qué aparece."],
       ["Me olvidé la contraseña", <>Entrá a <Link href="/recuperar" className={enlace}>Recuperar contraseña</Link> y te mandamos un código para crear una nueva.</>],
       ["¿Puedo comprar y vender con la misma cuenta?", "Sí. Con una sola cuenta publicás tus sobrantes y comprás los de otros."],
     ],

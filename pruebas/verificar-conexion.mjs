@@ -86,6 +86,8 @@ if (urlValida) {
           ["20261103000000_impacto_y_reputacion.sql", "/rest/v1/constancias?select=codigo&limit=1"],
           ["20261104000000_busquedas_y_baja_automatica.sql", "/rest/v1/busquedas?select=id&limit=1"],
           ["20261106000000_recomendaciones.sql", "/rest/v1/vistas_usuario?select=id&limit=1"],
+          ["20261107000000_recomendaciones_afinadas.sql", "/rest/v1/vistas_usuario?select=origen&limit=1"],
+          ["20261108000000_fichas_tecnicas.sql", "/rest/v1/fichas_lote?select=lote_id&limit=1"],
         ];
         for (const [archivo, ruta] of migraciones) {
           const r = await pedir(ruta, servicio);
