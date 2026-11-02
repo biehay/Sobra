@@ -2,11 +2,15 @@ import type { Metadata } from "next";
 import { TarjetaLote } from "@/components/tarjeta-lote";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { estadoFavorito, idsFavoritos } from "@/lib/favoritos";
+import { obtenerPerfil } from "@/lib/sesion";
+import { ordenarParaUsuario, parecidosABusqueda } from "@/lib/recomendaciones";
 import { CATEGORIAS, CONDICIONES, ZONAS, descuento, type Condicion, type Lote } from "@/lib/datos";
 
 export const metadata: Metadata = { title: "Lotes disponibles" };
 
 const ORDENES = {
+  // Lo más relevante para esta persona primero (solo con cuenta; es el orden por defecto).
+  paravos: { columna: "publicado_at", ascendente: false, texto: "Para vos" },
   recientes: { columna: "publicado_at", ascendente: false, texto: "Más recientes" },
   barato: { columna: "precio_publicado", ascendente: true, texto: "Menor precio" },
   caro: { columna: "precio_publicado", ascendente: false, texto: "Mayor precio" },
@@ -20,7 +24,10 @@ export default async function Catalogo({ searchParams }: PageProps<"/lotes">) {
   const categoria = typeof filtros.categoria === "string" ? filtros.categoria : "";
   const zona = typeof filtros.zona === "string" ? filtros.zona : "";
   const condicion = typeof filtros.condicion === "string" && filtros.condicion in CONDICIONES ? (filtros.condicion as Condicion) : "";
-  const claveOrden = typeof filtros.orden === "string" && filtros.orden in ORDENES ? (filtros.orden as keyof typeof ORDENES) : "recientes";
+  const perfil = await obtenerPerfil();
+  const conCuenta = perfil?.rol === "usuario";
+  const pedido = typeof filtros.orden === "string" && filtros.orden in ORDENES ? (filtros.orden as keyof typeof ORDENES) : null;
+  const claveOrden = pedido === "paravos" && !conCuenta ? "recientes" : (pedido ?? (conCuenta ? "paravos" : "recientes"));
   const orden = ORDENES[claveOrden];
 
   const supabase = await crearClienteServidor();
@@ -29,7 +36,7 @@ export default async function Catalogo({ searchParams }: PageProps<"/lotes">) {
     .select("*")
     .in("estado", ["publicado", "reservado"])
     .order(orden.columna, { ascending: orden.ascendente })
-    .limit(claveOrden === "descuento" ? 300 : 60);
+    .limit(claveOrden === "descuento" || claveOrden === "paravos" ? 300 : 60);
   if (claveOrden === "descuento") consulta = consulta.not("precio_lista", "is", null);
   if (q) {
     // Saca los caracteres que tienen significado en el filtro de PostgREST.
@@ -50,6 +57,9 @@ export default async function Catalogo({ searchParams }: PageProps<"/lotes">) {
     const rebaja = (l: Lote) => descuento(l.precio_publicado ?? l.precio_pedido, l.precio_lista) ?? 0;
     lotes = lotes.filter((l) => rebaja(l) > 0).sort((a, b) => rebaja(b) - rebaja(a)).slice(0, 60);
   }
+  if (claveOrden === "paravos" && perfil) lotes = (await ordenarParaUsuario(lotes, perfil.id, perfil.zona)).slice(0, 60);
+  // Si no hay nada así, lo más parecido (entiende sinónimos y medidas) en vez de una página vacía.
+  const parecidos = !lotes.length && (q || categoria) ? await parecidosABusqueda(q, categoria || null, zona || null, perfil?.id ?? null) : [];
 
   return (
     <div className="contenedor py-10">
@@ -80,7 +90,9 @@ export default async function Catalogo({ searchParams }: PageProps<"/lotes">) {
         </select>
         <div className="flex gap-2">
           <select name="orden" defaultValue={claveOrden} className="campo" aria-label="Orden">
-            {Object.entries(ORDENES).map(([valor, o]) => (
+            {Object.entries(ORDENES)
+              .filter(([valor]) => valor !== "paravos" || conCuenta)
+              .map(([valor, o]) => (
               <option key={valor} value={valor}>
                 {o.texto}
               </option>
@@ -110,6 +122,17 @@ export default async function Catalogo({ searchParams }: PageProps<"/lotes">) {
         </div>
       ) : (
         <p className="tarjeta mt-8 p-10 text-center text-stone-500">No encontramos lotes con esos filtros.</p>
+      )}
+
+      {parecidos.length > 0 && (
+        <section className="mt-10">
+          <h2 className="mb-5 text-xl font-bold">Lo más parecido a lo que buscaste</h2>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {parecidos.map((r) => (
+              <TarjetaLote key={r.lote.id} lote={r.lote} motivo={r.motivo.texto} origen="rec-busqueda" favorito={estadoFavorito(favoritos, r.lote)} volver={volver} />
+            ))}
+          </div>
+        </section>
       )}
     </div>
   );

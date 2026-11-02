@@ -514,7 +514,10 @@ function azarEstable(semilla: string) {
   return ((h >>> 0) % 1000) / 1000;
 }
 
-export function recomendar(ctx: Contexto, cantidad = 6): Recomendacion[] {
+// Calcula el puntaje de cada candidato según el interés de la persona.
+// `descartarVistos`: para recomendar se sacan los lotes que ya vio; para ordenar
+// el catálogo, no.
+function puntuar(ctx: Contexto, descartarVistos: boolean) {
   const ahora = ctx.ahora ?? Date.now();
   const busquedas = ctx.busquedas ?? [];
   const fichas = ctx.fichas ?? new Map<string, Ficha>();
@@ -522,7 +525,7 @@ export function recomendar(ctx: Contexto, cantidad = 6): Recomendacion[] {
   const conHistorial = interes.total > 0;
   // No se recomienda lo que ya vio, guardó, ofertó o compró, lo propio ni lo que
   // no está disponible: la idea es mostrarle cosas nuevas.
-  const descartar = new Set(ctx.senales.map((s) => s.lote.id));
+  const descartar = new Set(descartarVistos ? ctx.senales.map((s) => s.lote.id) : []);
   const semillas = ctx.senales.map((s) => s.lote);
 
   // La categoría y las palabras pesan según cuánto del interés es "algo así":
@@ -659,7 +662,24 @@ export function recomendar(ctx: Contexto, cantidad = 6): Recomendacion[] {
         etapaLote,
       };
     })
-    .filter((r) => !conHistorial || r.puntaje > 0.05);
+  return { puntuados, interes, semillas, conHistorial, ahora };
+}
+
+// Para el catálogo: ordena una lista (por ejemplo, el resultado de una búsqueda)
+// según el interés de la persona, sin sacar lo que ya vio. Lo que no se puede
+// puntuar (reservado o propio) queda al final, en el orden en que vino.
+export function ordenar(ctx: Contexto): Lote[] {
+  const puntaje = new Map(puntuar(ctx, false).puntuados.map((r) => [r.lote.id, r.puntaje]));
+  return ctx.candidatos
+    .map((lote, i) => ({ lote, i, p: puntaje.get(lote.id) ?? -1 }))
+    .sort((a, b) => b.p - a.p || a.i - b.i)
+    .map((x) => x.lote);
+}
+
+export function recomendar(ctx: Contexto, cantidad = 6): Recomendacion[] {
+  const base = puntuar(ctx, true);
+  const { interes, semillas, conHistorial, ahora } = base;
+  const puntuados = base.puntuados.filter((r) => !conHistorial || r.puntaje > 0.05);
 
   // Con historial y lugar de sobra, uno queda para descubrir algo distinto.
   const lugarDescubrir = conHistorial && cantidad >= 6 ? 1 : 0;

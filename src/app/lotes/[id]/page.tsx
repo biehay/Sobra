@@ -180,9 +180,14 @@ export default async function DetalleLote({ params, searchParams }: PageProps<"/
           <Aviso ok={ok} error={error} />
 
           {!disponible ? (
-            <p className="tarjeta p-6 text-center font-semibold text-stone-600">
-              Este lote está {lote.estado === "vendido" ? "vendido" : "reservado"}.
-            </p>
+            <div className="tarjeta p-6 text-center">
+              <p className="font-semibold text-stone-600">Este lote está {lote.estado === "vendido" ? "vendido" : "reservado"}.</p>
+              {parecidos.length > 0 && (
+                <a href="#parecidos" className="mt-2 inline-block text-sm font-semibold text-marca hover:underline">
+                  Ver parecidos disponibles ↓
+                </a>
+              )}
+            </div>
           ) : !perfil ? (
             <div className="tarjeta space-y-3 p-6">
               <p className="font-semibold">¿Te interesa este lote?</p>
@@ -272,8 +277,8 @@ export default async function DetalleLote({ params, searchParams }: PageProps<"/
       )}
 
       {parecidos.length > 0 && (
-        <section className="mt-14">
-          <h2 className="mb-5 text-2xl font-bold">También te puede interesar</h2>
+        <section id="parecidos" className="mt-14 scroll-mt-24">
+          <h2 className="mb-5 text-2xl font-bold">{disponible ? "También te puede interesar" : "Parecidos disponibles"}</h2>
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {parecidos.map((r) => (
               <TarjetaLote key={r.lote.id} lote={r.lote} motivo={r.motivo.texto} origen={`rec-${r.motivo.tipo}`} favorito={estadoFavorito(favoritos, r.lote)} volver={`/lotes/${lote.id}`} />

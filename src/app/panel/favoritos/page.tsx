@@ -6,6 +6,9 @@ import { TarjetaLote } from "@/components/tarjeta-lote";
 import { BotonFavorito } from "@/components/boton-favorito";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { exigirRol } from "@/lib/sesion";
+import { alternativasA } from "@/lib/recomendaciones";
+import { SugerenciasCompactas } from "@/components/sugerencias-compactas";
+import type { Recomendacion } from "@/lib/recomendaciones/motor";
 import { pesos, type Lote } from "@/lib/datos";
 
 export const metadata: Metadata = { title: "Favoritos" };
@@ -13,7 +16,7 @@ export const metadata: Metadata = { title: "Favoritos" };
 type Favorito = { lote_id: string; precio_guardado: number | null; created_at: string; lotes: Lote | null };
 
 export default async function Favoritos({ searchParams }: PageProps<"/panel/favoritos">) {
-  await exigirRol("usuario");
+  const perfil = await exigirRol("usuario");
   const { ok, error } = await searchParams;
   const supabase = await crearClienteServidor();
   const { data } = await supabase
@@ -21,6 +24,14 @@ export default async function Favoritos({ searchParams }: PageProps<"/panel/favo
     .select("lote_id, precio_guardado, created_at, lotes(*)")
     .order("created_at", { ascending: false });
   const favoritos = (data ?? []) as unknown as Favorito[];
+  // Si un favorito se vendió o se reservó, alternativas parecidas que sí están disponibles.
+  const alternativas = new Map<string, Recomendacion[]>();
+  await Promise.all(
+    favoritos
+      .filter((f) => f.lotes && ["reservado", "vendido"].includes(f.lotes.estado))
+      .slice(0, 4)
+      .map(async (f) => alternativas.set(f.lote_id, await alternativasA(f.lotes!, perfil.id, perfil.zona))),
+  );
 
   return (
     <div className="contenedor py-10">
@@ -56,6 +67,10 @@ export default async function Favoritos({ searchParams }: PageProps<"/panel/favo
                     ↓ Bajó {pesos(antes - ahora)} ({Math.round((1 - ahora / antes) * 100)}%) desde que lo guardaste
                   </p>
                 )}
+                <SugerenciasCompactas
+                  titulo={lote.estado === "vendido" ? "Se vendió. Parecidos disponibles:" : "Está reservado. Por si no se libera:"}
+                  recs={alternativas.get(f.lote_id) ?? []}
+                />
               </div>
             );
           })}

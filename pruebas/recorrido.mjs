@@ -373,6 +373,10 @@ try {
   esperar((await anon.getAttribute("a:has-text('Ingresá')", "href")).includes("volver="), "Ingresá conserva la página de vuelta");
   await anon.goto(`${BASE}/lotes?q=inexistente`);
   esperar(await anon.locator("text=No encontramos lotes").isVisible(), "filtro sin resultados");
+  // Búsqueda sin resultados exactos: el algoritmo ofrece lo más parecido (entiende plurales y sinónimos).
+  await anon.goto(`${BASE}/lotes?q=${encodeURIComponent("porcelanatos grises")}`);
+  const sinExactos = (await anon.textContent("main")).replace(/\s/g, " ");
+  esperar(sinExactos.includes("Lo más parecido a lo que buscaste") && sinExactos.includes("Porcelanato 60x60 gris"), "si no hay resultados exactos, muestra lo más parecido");
   await anon.goto(`${BASE}/lotes`);
   await anon.click("a[href^='/lotes/']");
   await anon.waitForSelector("text=Qué incluye el lote");
@@ -498,6 +502,8 @@ try {
   paso("Impacto: kilos y CO₂ por operación, constancia emitida y verificada por un tercero, reputación del vendedor en el lote");
 
   // "Lo busco": Juan no encuentra inodoros y pide que le avisen.
+  await comp.goto(`${BASE}/lotes`);
+  esperar((await comp.locator("select[name=orden]").inputValue()) === "paravos", "con cuenta, el catálogo se ordena Para vos");
   await comp.goto(`${BASE}/lotes?q=inodoro`);
   await comp.click("a:has-text('Avisame cuando aparezca')");
   await comp.waitForURL("**/panel/busquedas?q=inodoro**");

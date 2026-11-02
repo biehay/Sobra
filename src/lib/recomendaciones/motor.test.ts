@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Lote } from "@/lib/datos";
-import { cantidadDe, medidas, palabras, parecido, recomendar, type Ficha, type Senal } from "./motor";
+import { cantidadDe, medidas, ordenar, palabras, parecido, recomendar, type Ficha, type Senal } from "./motor";
 
 const AHORA = new Date("2026-11-02T12:00:00Z").getTime();
 const hace = (dias: number) => new Date(AHORA - dias * 86_400_000).toISOString();
@@ -324,5 +324,23 @@ describe("recomendar", () => {
 
   it("dos lotes de la misma categoría y con palabras en común se parecen más que dos distintos", () => {
     expect(parecido(porcelanatoVisto, porcelanatoParecido)).toBeGreaterThan(parecido(porcelanatoVisto, cable));
+  });
+});
+
+describe("ordenar (catálogo Para vos)", () => {
+  it("pone primero lo que le interesa, no saca lo que ya vio y deja lo reservado al final", () => {
+    const visto = lote({ titulo: "Porcelanato 60x60 gris", categoria: "Cerámicos y porcelanatos" });
+    const cable = lote({ titulo: "Cable unipolar 2,5 mm", categoria: "Electricidad e iluminación" });
+    const reservado = lote({ titulo: "Porcelanato 60x60 beige", categoria: "Cerámicos y porcelanatos", estado: "reservado" });
+    const parecidoAlVisto = lote({ titulo: "Porcelanato 60x60 blanco", categoria: "Cerámicos y porcelanatos" });
+    const orden = ordenar({
+      senales: [{ lote: visto, tipo: "favorito", fecha: hace(1) }],
+      candidatos: [cable, reservado, parecidoAlVisto, visto],
+      ahora: AHORA,
+    });
+    expect(orden.map((l) => l.id)).toHaveLength(4);
+    expect(orden.indexOf(parecidoAlVisto)).toBeLessThan(orden.indexOf(cable));
+    expect(orden.indexOf(visto)).toBeLessThan(orden.indexOf(cable));
+    expect(orden[3]).toBe(reservado);
   });
 });

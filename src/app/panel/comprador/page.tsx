@@ -8,15 +8,22 @@ import { DatosOperacion } from "@/components/datos-operacion";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { exigirRol } from "@/lib/sesion";
 import { EstadoReclamo, FormReclamo } from "@/components/reclamo";
-import { MODOS_RETIRO, linkWhatsapp, pesos, type Oferta, type Reclamo } from "@/lib/datos";
+import { MODOS_RETIRO, linkWhatsapp, pesos, type Lote, type Oferta, type Reclamo } from "@/lib/datos";
 import { cancelarOferta } from "../acciones";
 import { TarjetaLote } from "@/components/tarjeta-lote";
-import { recomendacionesParaUsuario } from "@/lib/recomendaciones";
+import { alternativasA, paraElMismoRetiro, recomendacionesParaUsuario } from "@/lib/recomendaciones";
+import { SugerenciasCompactas } from "@/components/sugerencias-compactas";
+import type { Recomendacion } from "@/lib/recomendaciones/motor";
 import { estadoFavorito, idsFavoritos } from "@/lib/favoritos";
 
 export const metadata: Metadata = { title: "Mis compras" };
 
-type OfertaConLote = Oferta & { lotes: { titulo: string } | null };
+type OfertaConLote = Oferta & { lotes: Lote | null };
+
+// Rechazada hace menos de dos semanas (para ofrecer alternativas solo mientras sirve).
+function reciente(fecha: string) {
+  return Date.now() - new Date(fecha).getTime() < 14 * 86_400_000;
+}
 
 export default async function PanelComprador({ searchParams }: PageProps<"/panel/comprador">) {
   const perfil = await exigirRol("usuario");
@@ -24,7 +31,7 @@ export default async function PanelComprador({ searchParams }: PageProps<"/panel
   const supabase = await crearClienteServidor();
   const { data } = await supabase
     .from("ofertas")
-    .select("*, lotes(titulo)")
+    .select("*, lotes(*)")
     .eq("comprador_id", perfil.id)
     .order("created_at", { ascending: false });
   const ofertas = (data ?? []) as OfertaConLote[];
@@ -39,6 +46,19 @@ export default async function PanelComprador({ searchParams }: PageProps<"/panel
   const [paraCompletar, favoritos] = await Promise.all([
     compro ? recomendacionesParaUsuario(perfil.id, perfil.zona, 6) : Promise.resolve([]),
     idsFavoritos(),
+  ]);
+  // El algoritmo en cada operación: antes de pagar y al retirar, lo que conviene
+  // sumar al mismo viaje; si le rechazaron la oferta, alternativas parecidas.
+  const sugerencias = new Map<string, Recomendacion[]>();
+  await Promise.all([
+    ...ofertas
+      .filter((o) => o.lotes && ["aceptada", "pagada"].includes(o.estado))
+      .slice(0, 3)
+      .map(async (o) => sugerencias.set(o.id, await paraElMismoRetiro(o.lotes!, perfil.id, perfil.zona))),
+    ...ofertas
+      .filter((o) => o.lotes && o.estado === "rechazada" && reciente(o.created_at))
+      .slice(0, 2)
+      .map(async (o) => sugerencias.set(o.id, await alternativasA(o.lotes!, perfil.id, perfil.zona))),
   ]);
   const complementos = paraCompletar.flatMap((r) => (r.complemento ? [{ lote: r.lote, motivo: r.complemento }] : [])).slice(0, 3);
   const codigos = new Map((codigosData ?? []).map((c) => [c.oferta_id as string, c.codigo as string]));
@@ -105,6 +125,16 @@ export default async function PanelComprador({ searchParams }: PageProps<"/panel
                     Enviar comprobante por WhatsApp
                   </a>
                 </div>
+              )}
+
+              {oferta.estado === "aceptada" && (
+                <SugerenciasCompactas titulo="Antes de transferir: podés sumar esto al mismo retiro" recs={sugerencias.get(oferta.id) ?? []} />
+              )}
+              {oferta.estado === "pagada" && (
+                <SugerenciasCompactas titulo="Aprovechá el viaje del retiro" recs={sugerencias.get(oferta.id) ?? []} />
+              )}
+              {oferta.estado === "rechazada" && (
+                <SugerenciasCompactas titulo="No se dio, pero hay parecidos disponibles" recs={sugerencias.get(oferta.id) ?? []} />
               )}
 
               {(oferta.estado === "pagada" || oferta.estado === "completada") && (

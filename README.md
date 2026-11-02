@@ -67,6 +67,11 @@ Además:
   Así el motor sabe de cualquier rubro sin listas a mano: una consola → joysticks, fibra óptica → conectores y
   empalmes. Los lotes viejos la arman la primera vez que alguien los abre. Sin `ANTHROPIC_API_KEY` usa las reglas
   escritas a mano como respaldo.
+  **En todo el recorrido** (`index.ts`): catálogo ordenado "Para vos" (con cuenta, `ordenar()`), "Lo más
+  parecido a lo que buscaste" cuando una búsqueda no da resultados, "Antes de transferir: podés sumar esto al
+  mismo retiro" y "Aprovechá el viaje del retiro" en Mis compras, parecidos cuando rechazan una oferta o se
+  vende un favorito, y "Parecidos disponibles" en un lote vendido. En los momentos de pagar y retirar se
+  muestra en una lista chica (`sugerencias-compactas.tsx`), y solo si hay algo que valga la pena.
   El motor tiene pruebas en `motor.test.ts`.
 - **Lo busco**: el comprador guarda lo que necesita (también desde el catálogo, con "Avisame cuando aparezca")
   y le llega un email apenas se publica un lote que coincide. Los vendedores ven la demanda en

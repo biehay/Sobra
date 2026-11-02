@@ -2,7 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import type { Lote } from "@/lib/datos";
-import { recomendar, type Busqueda, type Colectiva, type Ficha, type Recomendacion, type Senal } from "./motor";
+import { ordenar, palabras, recomendar, type Busqueda, type Colectiva, type Ficha, type Recomendacion, type Senal } from "./motor";
 
 // Junta los datos que necesita el motor (motor.ts) y arma las recomendaciones
 // para cada lugar de la app. Los candidatos son los lotes publicados más
@@ -185,10 +185,103 @@ export async function recomendacionesDeLote(lote: Lote, usuarioId: string | null
       confianza: conf,
       fichas,
       ...extra,
+      // Lo del mismo vendedor se retira en el mismo viaje.
+      retiros: [{ vendedorId: lote.vendedor_id, zona: lote.zona, localidad: lote.localidad, titulo: lote.titulo }, ...extra.retiros],
     },
     6,
   );
   return { parecidos, complementos };
+}
+
+// El algoritmo en cada momento del recorrido del cliente.
+
+// Catálogo ordenado "Para vos": la misma lista que pidió (búsqueda y filtros),
+// con lo más relevante para esta persona primero.
+export async function ordenarParaUsuario(lotes: Lote[], usuarioId: string, zona: string | null): Promise<Lote[]> {
+  const senales = await senalesDe(usuarioId);
+  const semillas = [...new Set(senales.map((s) => s.lote.id))].slice(0, 30);
+  const [pop, col, conf, extra] = await Promise.all([popularidad(), colectivas(semillas, usuarioId), confianza(), contextoDe(usuarioId)]);
+  const fichas = await fichasDe(semillas);
+  return ordenar({ senales, candidatos: lotes, usuarioId, zonaUsuario: zona, colectivas: col, popularidad: pop, confianza: conf, fichas, ...extra });
+}
+
+// Búsqueda sin resultados: lo más parecido a lo que escribió (entiende sinónimos
+// y medidas), en vez de una página vacía. Sirve también sin cuenta.
+export async function parecidosABusqueda(texto: string, categoria: string | null, zona: string | null, usuarioId: string | null, cantidad = 3) {
+  if (!texto && !categoria) return [];
+  const buscado: Lote = {
+    id: "00000000-0000-0000-0000-000000000000",
+    vendedor_id: "",
+    titulo: texto || categoria || "",
+    descripcion: "",
+    categoria: categoria ?? "",
+    condicion: "sin_uso",
+    items: [],
+    zona: zona ?? "",
+    localidad: "",
+    precio_lista: null,
+    precio_pedido: 0,
+    precio_sugerido: null,
+    precio_publicado: null,
+    peso_kg: null,
+    baja_semanal_pct: null,
+    ultima_baja_at: null,
+    fotos: [],
+    estado: "publicado",
+    nota_admin: null,
+    publicado_at: null,
+    created_at: new Date().toISOString(),
+  };
+  const [lotes, conf] = await Promise.all([candidatos(), confianza()]);
+  // Que tenga algo que ver: al menos una palabra en común (con sinónimos) o la categoría.
+  const buscadas = new Set(palabras(texto));
+  const tieneQueVer = (l: Lote) =>
+    (categoria && l.categoria === categoria) ||
+    palabras(`${l.titulo} ${l.items.map((i) => i.nombre).join(" ")}`).some((p) => buscadas.has(p));
+  const corto = texto.length > 30 ? `${texto.slice(0, 28)}…` : texto;
+  return recomendar(
+    { senales: [{ lote: buscado, tipo: "favorito", fecha: new Date().toISOString() }], candidatos: lotes, usuarioId, zonaUsuario: zona, confianza: conf },
+    cantidad + 3,
+  )
+    .filter((r) => r.motivo.tipo !== "descubrir" && tieneQueVer(r.lote))
+    .slice(0, cantidad)
+    .map((r) => ({ ...r, motivo: { tipo: "parecido" as const, texto: corto ? `Parecido a “${corto}”` : `En ${categoria}` } }));
+}
+
+// Por pagar o por retirar: lo que conviene sumar al mismo retiro (del mismo
+// vendedor o de la misma localidad) y los complementos de lo que está comprando.
+export async function paraElMismoRetiro(lote: Lote, usuarioId: string, zona: string | null, cantidad = 3): Promise<Recomendacion[]> {
+  const [lotes, conf, extra] = await Promise.all([candidatos(), confianza(), contextoDe(usuarioId)]);
+  const fichas = await fichasDe([lote.id]);
+  const retiro = { vendedorId: lote.vendedor_id, zona: lote.zona, localidad: lote.localidad, titulo: lote.titulo };
+  return recomendar(
+    {
+      senales: [{ lote, tipo: "compra", fecha: new Date().toISOString() }],
+      candidatos: lotes.filter((l) => l.id !== lote.id),
+      usuarioId,
+      zonaUsuario: zona,
+      confianza: conf,
+      fichas,
+      retiros: [retiro, ...extra.retiros.filter((r) => r.vendedorId !== lote.vendedor_id)],
+    },
+    6,
+  )
+    .filter((r) => r.motivo.tipo === "viaje" || (r.complemento && r.puntaje > 0.15))
+    .slice(0, cantidad);
+}
+
+// Si un lote ya no está (se vendió o le rechazaron la oferta): reemplazos
+// parecidos que sí están disponibles.
+export async function alternativasA(lote: Lote, usuarioId: string | null, zona: string | null, cantidad = 3): Promise<Recomendacion[]> {
+  const [lotes, conf] = await Promise.all([candidatos(), confianza()]);
+  const fichas = await fichasDe([lote.id]);
+  return recomendar(
+    { senales: [{ lote, tipo: "favorito", fecha: new Date().toISOString() }], candidatos: lotes, usuarioId, zonaUsuario: zona, confianza: conf, fichas },
+    cantidad + 3,
+  )
+    .filter((r) => r.puntaje > 0.12 && (r.lote.categoria === lote.categoria || r.motivo.tipo === "parecido"))
+    .slice(0, cantidad)
+    .map((r) => ({ ...r, motivo: { tipo: "parecido" as const, texto: `Parecido a ${lote.titulo.length > 34 ? `${lote.titulo.slice(0, 32)}…` : lote.titulo}` } }));
 }
 
 // `origen`: si llegó desde una recomendación ("rec-complemento", "rec-etapa"...),
