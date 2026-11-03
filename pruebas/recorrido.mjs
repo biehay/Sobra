@@ -379,6 +379,18 @@ try {
   esperar((await anon.locator("a[href^='/lotes/']").count()) === 1, "el filtro encuentra el lote");
   // Buscador y desplegables del header.
   await anon.goto(`${BASE}/como-funciona`);
+  // Con lotes publicados, la franja para vender aparece debajo de los destacados y funciona.
+  await anon.goto(`${BASE}/`);
+  esperar(await anon.isVisible("[data-franja-vender]"), "la franja para vender está a la vista en la portada");
+  await anon.fill("#franja-precio", "300000");
+  await anon.click("[data-franja-vender] button:has-text('Publicarlo gratis')");
+  await anon.waitForURL("**/registro?volver=**");
+  esperar(decodeURIComponent(anon.url()).includes("lista=300000"), "la franja pasa el precio al registro");
+  // En el celular arranca plegada en una línea y se despliega al tocarla.
+  await comp.goto(`${BASE}/`);
+  esperar(!(await comp.isVisible("#franja-precio")), "en el celular la franja arranca plegada");
+  await comp.click("[data-franja-vender] button[aria-controls]");
+  esperar(await comp.isVisible("#franja-precio"), "en el celular la franja se despliega al tocarla");
   // Mientras escribe, el buscador sugiere lotes (con la palabra a medio escribir).
   await anon.locator("#buscar-escritorio").pressSequentially("porc", { delay: 60 });
   await anon.waitForSelector("[role=option]:has-text('Porcelanato 60x60')", { timeout: 5000 });

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Buscador } from "@/components/buscador";
 import { TarjetaLote } from "@/components/tarjeta-lote";
-import { CalculadoraSobrante } from "@/components/calculadora-sobrante";
+import { CalculadoraSobrante, FranjaVender } from "@/components/calculadora-sobrante";
 import { ParaVosVisitante } from "@/components/para-vos-visitante";
 import { recomendacionesParaUsuario } from "@/lib/recomendaciones";
 import type { Recomendacion } from "@/lib/recomendaciones/motor";
@@ -135,6 +135,10 @@ export default async function Inicio() {
           )}
         </div>
       </section>
+
+      {/* Para el que vende: la calculadora a la vista, justo debajo de los productos destacados
+          (si no hay lotes, ya está arriba). Las cuentas admin no publican. */}
+      {destacados.length > 0 && perfil?.rol !== "admin" && <FranjaVender cuenta={perfil ? "usuario" : "ninguna"} />}
 
       {/* 2. Lo que es para vos (con cuenta) o por qué crear una (sin cuenta). */}
       {perfil && perfil.rol === "usuario" ? (
@@ -271,11 +275,9 @@ export default async function Inicio() {
               </Link>
             )}
           </div>
-          {/* Si arriba no hay productos, la calculadora ya está en la primera pantalla. */}
-          {destacados.length > 0 ? (
-            <CalculadoraSobrante cuenta={!perfil ? "ninguna" : perfil.rol === "admin" ? "admin" : "usuario"} />
-          ) : perfil?.rol === "admin" ? null : (
-            <Link href={publicar} className="btn justify-self-start px-6 py-3 text-base">Publicar mi sobrante gratis</Link>
+          {/* La calculadora ya está arriba (en la franja o, sin lotes, en la primera pantalla). */}
+          {perfil?.rol !== "admin" && (
+            <Link href={publicar} className="btn justify-self-start px-6 py-3 text-base lg:justify-self-end">Publicar mi sobrante gratis</Link>
           )}
         </div>
       </section>
