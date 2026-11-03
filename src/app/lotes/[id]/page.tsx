@@ -118,7 +118,7 @@ export default async function DetalleLote({ params, searchParams }: PageProps<"/
           </section>
         </div>
 
-        <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
+        <aside className="space-y-4">
           <div className="tarjeta space-y-4 p-6">
             <p className="text-xs font-medium uppercase tracking-wide text-stone-500">{lote.categoria}</p>
             <h1 className="text-2xl font-bold leading-snug">{lote.titulo}</h1>
@@ -170,11 +170,6 @@ export default async function DetalleLote({ params, searchParams }: PageProps<"/
                 Tu lote tuvo <strong>{visitas.semana}</strong> {visitas.semana === 1 ? "visita" : "visitas"} en los últimos 7 días ({visitas.total} en total).
               </p>
             )}
-          </div>
-
-          <div className="tarjeta p-6">
-            <p className="mb-3 text-sm font-semibold text-stone-500">Sobre el vendedor</p>
-            <TarjetaReputacion r={reputacionVendedor} como="vendedor" />
           </div>
 
           <Aviso ok={ok} error={error} />
@@ -261,6 +256,12 @@ export default async function DetalleLote({ params, searchParams }: PageProps<"/
               </p>
             </form>
           )}
+
+          {/* El vendedor va después de la compra: lo primero que se ve es cómo ofertar. */}
+          <div className="tarjeta p-6">
+            <p className="mb-3 text-sm font-semibold text-stone-500">Sobre el vendedor</p>
+            <TarjetaReputacion r={reputacionVendedor} como="vendedor" />
+          </div>
         </aside>
       </div>
 
