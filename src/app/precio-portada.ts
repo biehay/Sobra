@@ -18,13 +18,8 @@ const esquema = z.object({
   condicion: z.enum(Object.keys(CONDICIONES) as [Condicion, ...Condicion[]]),
 });
 
-export type Tasacion = {
-  mercado: number;
-  sugerido: number;
-  motivo: string;
-  fuentes: { titulo: string; url: string }[];
-  referencia: Referencia;
-};
+// Solo lo que muestra la calculadora (no se mandan las fuentes al navegador).
+export type Tasacion = { mercado: number; sugerido: number; ajustadoASobra: boolean };
 
 // Lo parecido que hay en Sobrá (al instante, sin IA).
 // También devuelve de qué rubro parece ser (para usar el descuento de ese rubro).
@@ -75,9 +70,7 @@ export async function tasarDesdePortada(texto: unknown, condicion: unknown): Pro
     const tasacion: Tasacion = {
       mercado: informe.total_mercado_ars,
       sugerido: informe.sugerido,
-      motivo: informe.motivo,
-      fuentes: informe.fuentes.slice(0, 3).map((f) => ({ titulo: f.titulo, url: f.url })),
-      referencia: informe.referencia,
+      ajustadoASobra: informe.motivo.includes("más baratos"),
     };
     memoria.set(clave, { tasacion, hasta: ahora + 24 * 3_600_000 });
     return { ok: true, tasacion };

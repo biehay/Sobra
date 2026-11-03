@@ -217,18 +217,21 @@ try {
   await anon.fill("#password", "incorrecta");
   await tras(anon, "error=", () => anon.click("button:has-text('Ingresar')"));
   esperar((await aviso(anon)).includes("incorrectos"), "login con datos incorrectos muestra error");
-  // Calculadora de la portada: sin decir qué sobró no calcula; con el material y el precio
-  // nuevo hace la cuenta y lleva al registro (y después al formulario) con todo cargado.
+  // Calculadora de la portada (express): sin decir qué sobró no calcula; con el material y el
+  // estado busca cuánto cuesta nuevo (respuesta fija de prueba) y muestra a cuánto se puede vender.
   await anon.goto(`${BASE}/`);
-  await anon.locator("button:has-text('Calcular precio')").first().click();
+  await anon.locator("button:has-text('Calcular')").first().click();
   esperar(new URL(anon.url()).pathname === "/" && (await anon.locator("#calc-error").isVisible()), "la calculadora pide qué material sobró");
   await anon.fill("#calc-texto", "38 m² de porcelanato 60x60");
-  await anon.fill("#calc-precio", "500000");
-  await anon.click("button:has-text('Calcular precio')");
+  await anon.click("button:has-text('Calcular')");
+  await anon.waitForSelector("[data-resultado]");
+  const resultadoCalc = (await anon.textContent("[data-resultado]")).replace(/\s/g, " ");
+  esperar(resultadoCalc.includes("Nuevo, hoy cuesta") && resultadoCalc.includes("$ 600.000") && resultadoCalc.includes("lo podés vender a") && resultadoCalc.includes("$ 450.000"), "la calculadora muestra cuánto cuesta nuevo y a cuánto se puede vender");
+  esperar(!resultadoCalc.includes("Tienda de prueba"), "la calculadora no muestra de dónde saca los precios");
   await anon.click("button:has-text('Publicarlo gratis')");
   await anon.waitForURL("**/registro?volver=**");
   const volverCalc = decodeURIComponent(decodeURIComponent(anon.url()));
-  esperar(volverCalc.includes("lista=500000") && volverCalc.includes("titulo=38+m²+de+porcelanato+60x60") && volverCalc.includes("pedido=375000"), "la calculadora pasa el material, el precio y el sugerido al registro");
+  esperar(volverCalc.includes("lista=600000") && volverCalc.includes("titulo=38+m²+de+porcelanato+60x60") && volverCalc.includes("pedido=450000"), "la calculadora pasa el material, el precio y el sugerido al registro");
   paso("Visitante: portada, catálogo, páginas legales y de ayuda, botón de arrepentimiento, 404, protección de /panel y login incorrecto");
 
   // 2. Registro del vendedor con código -------------------------------------
@@ -399,9 +402,10 @@ try {
   esperar(await anon.isVisible("[data-franja-vender]"), "la franja para vender está a la vista en la portada");
   // Sin precio nuevo: busca el de mercado (respuesta fija de prueba) y compara con lo publicado en Sobrá.
   await anon.fill("#franja-texto", "38 m² de porcelanato 60x60");
-  await anon.click("[data-franja-vender] button:has-text('Calcular precio')");
-  await anon.waitForSelector("[data-franja-vender] [data-recuperas]");
-  esperar((await anon.textContent("[data-franja-vender] [data-en-sobra]")).includes("1 lote parecido"), "la franja compara con lo parecido publicado en Sobrá");
+  await anon.click("[data-franja-vender] button:has-text('Calcular')");
+  await anon.waitForSelector("[data-franja-vender] [data-resultado]");
+  const ventaFranja = (await anon.textContent("[data-franja-vender] [data-venta]")).replace(/\s/g, " ");
+  esperar(ventaFranja.includes("$ 450.000"), "la franja muestra a cuánto se puede vender: " + ventaFranja);
   await anon.click("[data-franja-vender] button:has-text('Publicarlo gratis')");
   await anon.waitForURL("**/registro?volver=**");
   esperar(decodeURIComponent(decodeURIComponent(anon.url())).includes("lista=600000"), "la franja pasa el precio de mercado al registro");

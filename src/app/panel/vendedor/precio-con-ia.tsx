@@ -27,7 +27,7 @@ export function PrecioConIA({ datosDelLote, alUsar }: { datosDelLote: () => unkn
         <div>
           <p className="font-semibold">¿No sabés a cuánto publicarlo?</p>
           <p className="text-sm text-petroleo/80">
-            La IA busca cuánto cuesta hoy este material nuevo en tiendas y corralones, lo compara con lo parecido que hay publicado y vendido en Sobrá y te sugiere un precio para que se venda rápido.
+            La IA busca cuánto cuesta hoy este material nuevo en tiendas, corralones y proveedores del rubro, lo compara con lo parecido que hay publicado y vendido en Sobrá y te sugiere un precio para que se venda rápido.
           </p>
         </div>
         <button type="button" onClick={consultar} disabled={buscando} className="btn-celeste shrink-0">
@@ -80,19 +80,6 @@ export function PrecioConIA({ datosDelLote, alUsar }: { datosDelLote: () => unkn
               ))}
             </ul>
           )}
-          <div className="text-sm">
-            <p className="font-semibold">Fuentes consultadas</p>
-            <ul className="mt-1 space-y-0.5">
-              {informe.fuentes.map((f, i) => (
-                <li key={i}>
-                  <a href={f.url} target="_blank" rel="noreferrer nofollow" className="text-celeste-oscuro underline">
-                    {f.titulo}
-                  </a>
-                  {f.precio_ars != null && <span className="text-stone-500"> · {pesos(f.precio_ars)}</span>}
-                </li>
-              ))}
-            </ul>
-          </div>
           <p className="text-xs text-stone-500">
             Confianza {informe.confianza}. {informe.notas} Es una estimación: revisala antes de usarla. Al revisar el lote te confirmamos el
             precio de publicación.

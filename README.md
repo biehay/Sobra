@@ -62,7 +62,9 @@ Además:
 - **Precio sugerido** (`src/lib/precio-sugerido.ts`, `precio-comparables.ts`): precio de mercado del material
   nuevo (búsqueda web) por el estado, comparado con los lotes parecidos publicados y vendidos en Sobrá (precio por
   unidad, llevado al mismo estado). Si lo parecido está más barato, sugiere apenas por debajo. La calculadora de la
-  portada pide qué sobró; sin precio nuevo lo busca (3 por día por persona sin cuenta, 10 con cuenta, 300 en total).
+  portada es express: qué sobró y el estado; muestra cuánto cuesta nuevo y a cuánto se puede vender (busca el precio
+  nuevo con 3 por día por persona sin cuenta, 10 con cuenta, 300 en total). Las fuentes de precios no se muestran ni
+  se mandan al navegador; el tasador prioriza proveedores y usa Mercado Libre solo como complemento.
 - **Estados y detalles** (`src/lib/depreciacion.ts`, migración 20261110): 6 estados (nuevo, sin uso, usado como
   nuevo, buen estado, con detalles, para reparar) y "detalles a tener en cuenta" según el rubro (vence pronto,
   sin probar, distintos lotes...). El descuento sugerido depende del rubro y el estado (tabla de referencia) y de

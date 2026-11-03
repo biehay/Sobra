@@ -49,7 +49,8 @@ export async function sugerirPrecioConIA(datos: unknown): Promise<ResultadoPreci
   usos.set(perfil.id, [...recientes, ahora]);
 
   try {
-    const informe = await precioSugeridoCompleto(lote.data);
+    // Las fuentes no se mandan al navegador: solo el resultado.
+    const informe = { ...(await precioSugeridoCompleto(lote.data)), fuentes: [] };
     memoria.set(clave, { informe, hasta: ahora + 12 * 3_600_000 });
     return { ok: true, informe };
   } catch (error) {
