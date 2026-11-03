@@ -69,7 +69,7 @@ export default function Privacidad() {
         <li><strong>El equipo de Sobrá:</strong> para revisar lotes, verificar usuarios y resolver reclamos.</li>
         <li>
           <strong>Proveedores que nos prestan servicios:</strong> Supabase (base de datos y archivos), Resend (envío de
-          emails), Anthropic (la IA que sugiere precios, arma la ficha técnica de cada lote publicado para
+          emails), Anthropic (la IA que sugiere precios, también desde la calculadora de la portada con lo que escribas ahí, arma la ficha técnica de cada lote publicado para
           recomendar complementos y, si usás “Completar con IA”, completa la publicación a partir de las fotos: recibe
           solo los datos y las fotos del lote, sin la ubicación GPS, nunca tus datos personales) y, cuando se habilite, Mercado Pago (pagos). Solo reciben lo necesario para prestar su servicio.
         </li>

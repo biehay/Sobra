@@ -3,7 +3,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { obtenerPerfil, sesionVerificada } from "@/lib/sesion";
-import { estimarPrecioMercado, type InformePrecio } from "@/lib/precio-mercado";
+import { precioSugeridoCompleto, type InformeCompleto } from "@/lib/precio-sugerido";
 import { CATEGORIAS, CONDICIONES, type Condicion } from "@/lib/datos";
 
 // Cada consulta usa la API de Anthropic (cuesta centavos). Para cuidar el saldo:
@@ -12,7 +12,7 @@ import { CATEGORIAS, CONDICIONES, type Condicion } from "@/lib/datos";
 // empezar; con muchos usuarios conviene pasarlo a la base.)
 const MAXIMO_POR_DIA = 15;
 const usos = new Map<string, number[]>();
-const memoria = new Map<string, { informe: InformePrecio; hasta: number }>();
+const memoria = new Map<string, { informe: InformeCompleto; hasta: number }>();
 
 const esquema = z.object({
   titulo: z.string().trim().min(5, "Escribí primero el título del lote").max(120),
@@ -24,7 +24,7 @@ const esquema = z.object({
     .max(30),
 });
 
-export type ResultadoPrecioIA = { ok: true; informe: InformePrecio } | { ok: false; error: string };
+export type ResultadoPrecioIA = { ok: true; informe: InformeCompleto } | { ok: false; error: string };
 
 export async function sugerirPrecioConIA(datos: unknown): Promise<ResultadoPrecioIA> {
   const perfil = await obtenerPerfil();
@@ -48,7 +48,7 @@ export async function sugerirPrecioConIA(datos: unknown): Promise<ResultadoPreci
   usos.set(perfil.id, [...recientes, ahora]);
 
   try {
-    const informe = await estimarPrecioMercado(lote.data);
+    const informe = await precioSugeridoCompleto(lote.data);
     memoria.set(clave, { informe, hasta: ahora + 12 * 3_600_000 });
     return { ok: true, informe };
   } catch (error) {

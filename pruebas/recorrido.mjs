@@ -217,14 +217,18 @@ try {
   await anon.fill("#password", "incorrecta");
   await tras(anon, "error=", () => anon.click("button:has-text('Ingresar')"));
   esperar((await aviso(anon)).includes("incorrectos"), "login con datos incorrectos muestra error");
-  // Calculadora de la portada: sin precio no avanza; con precio lleva al registro y después al formulario con los datos.
+  // Calculadora de la portada: sin decir qué sobró no calcula; con el material y el precio
+  // nuevo hace la cuenta y lleva al registro (y después al formulario) con todo cargado.
   await anon.goto(`${BASE}/`);
-  await anon.locator("button:has-text('Publicarlo gratis')").first().click();
-  esperar(new URL(anon.url()).pathname === "/" && (await anon.locator("#calc-error").isVisible()), "la calculadora sin precio no avanza y avisa");
-  await anon.locator("#calc-precio").first().fill("500000");
-  await anon.locator("button:has-text('Publicarlo gratis')").first().click();
+  await anon.locator("button:has-text('Calcular precio')").first().click();
+  esperar(new URL(anon.url()).pathname === "/" && (await anon.locator("#calc-error").isVisible()), "la calculadora pide qué material sobró");
+  await anon.fill("#calc-texto", "38 m² de porcelanato 60x60");
+  await anon.fill("#calc-precio", "500000");
+  await anon.click("button:has-text('Calcular precio')");
+  await anon.click("button:has-text('Publicarlo gratis')");
   await anon.waitForURL("**/registro?volver=**");
-  esperar(decodeURIComponent(anon.url()).includes("lista=500000&estado=nuevo"), "la calculadora pasa el precio al registro");
+  const volverCalc = decodeURIComponent(decodeURIComponent(anon.url()));
+  esperar(volverCalc.includes("lista=500000") && volverCalc.includes("titulo=38+m²+de+porcelanato+60x60") && volverCalc.includes("pedido=375000"), "la calculadora pasa el material, el precio y el sugerido al registro");
   paso("Visitante: portada, catálogo, páginas legales y de ayuda, botón de arrepentimiento, 404, protección de /panel y login incorrecto");
 
   // 2. Registro del vendedor con código -------------------------------------
@@ -391,15 +395,19 @@ try {
   // Con lotes publicados, la franja para vender aparece debajo de los destacados y funciona.
   await anon.goto(`${BASE}/`);
   esperar(await anon.isVisible("[data-franja-vender]"), "la franja para vender está a la vista en la portada");
-  await anon.fill("#franja-precio", "300000");
+  // Sin precio nuevo: busca el de mercado (respuesta fija de prueba) y compara con lo publicado en Sobrá.
+  await anon.fill("#franja-texto", "38 m² de porcelanato 60x60");
+  await anon.click("[data-franja-vender] button:has-text('Calcular precio')");
+  await anon.waitForSelector("[data-franja-vender] [data-recuperas]");
+  esperar((await anon.textContent("[data-franja-vender] [data-en-sobra]")).includes("1 lote parecido"), "la franja compara con lo parecido publicado en Sobrá");
   await anon.click("[data-franja-vender] button:has-text('Publicarlo gratis')");
   await anon.waitForURL("**/registro?volver=**");
-  esperar(decodeURIComponent(anon.url()).includes("lista=300000"), "la franja pasa el precio al registro");
+  esperar(decodeURIComponent(decodeURIComponent(anon.url())).includes("lista=600000"), "la franja pasa el precio de mercado al registro");
   // En el celular arranca plegada en una línea y se despliega al tocarla.
   await comp.goto(`${BASE}/`);
-  esperar(!(await comp.isVisible("#franja-precio")), "en el celular la franja arranca plegada");
+  esperar(!(await comp.isVisible("#franja-texto")), "en el celular la franja arranca plegada");
   await comp.click("[data-franja-vender] button[aria-controls]");
-  esperar(await comp.isVisible("#franja-precio"), "en el celular la franja se despliega al tocarla");
+  esperar(await comp.isVisible("#franja-texto"), "en el celular la franja se despliega al tocarla");
   // Mientras escribe, el buscador sugiere lotes (con la palabra a medio escribir).
   await anon.locator("#buscar-escritorio").pressSequentially("porc", { delay: 60 });
   await anon.waitForSelector("[role=option]:has-text('Porcelanato 60x60')", { timeout: 5000 });

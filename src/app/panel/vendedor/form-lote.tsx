@@ -30,7 +30,7 @@ export function FormLote({
   lote?: Lote;
   retiro?: Retiro | null;
   precioMinimo?: number | null;
-  inicial?: { precioLista?: string; condicion?: Condicion };
+  inicial?: { precioLista?: string; condicion?: Condicion; titulo?: string; precioPedido?: number };
   // Para la cuenta admin: ve el formulario entero pero no lo puede enviar.
   soloVista?: boolean;
 }) {
@@ -51,7 +51,7 @@ export function FormLote({
   const [analizando, analizar] = useTransition();
   const resumen = useRef<HTMLDivElement>(null);
   // Para la vista previa: una copia de los campos de texto, que se actualiza al cambiar algo.
-  const precioInicial = lote?.precio_pedido ?? precioSugerido(Number(inicial?.precioLista) || null, inicial?.condicion ?? "nuevo") ?? undefined;
+  const precioInicial = lote?.precio_pedido ?? inicial?.precioPedido ?? precioSugerido(Number(inicial?.precioLista) || null, inicial?.condicion ?? "nuevo") ?? undefined;
   const [campos, setCampos] = useState<Record<string, string>>({ precio_pedido: precioInicial ? String(precioInicial) : "" });
   const leerCampos = () => {
     if (!formulario.current) return;
@@ -268,7 +268,7 @@ export function FormLote({
         <h2 className="text-lg font-bold">2. Qué vendés</h2>
         <div>
           <label htmlFor="titulo" className="etiqueta">Título del lote</label>
-          <input id="titulo" name="titulo" required minLength={5} maxLength={120} defaultValue={lote?.titulo} className={`campo ${dudaDe("titulo") ? "border-amber-400 ring-2 ring-amber-200" : ""}`} placeholder="Ej.: Porcelanato 60x60 gris, 45 m² + pegamento" />
+          <input id="titulo" name="titulo" required minLength={5} maxLength={120} defaultValue={lote?.titulo ?? inicial?.titulo} className={`campo ${dudaDe("titulo") ? "border-amber-400 ring-2 ring-amber-200" : ""}`} placeholder="Ej.: Porcelanato 60x60 gris, 45 m² + pegamento" />
           <Duda duda={dudaDe("titulo")} alConfirmar={() => resolver("titulo")} />
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
