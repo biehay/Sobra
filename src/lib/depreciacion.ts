@@ -22,9 +22,11 @@ export const DEPRECIACION: Record<string, Tabla> = {
   // Durables, se venden por m²: el usado pierde porque se recupera de una obra.
   "Cerámicos y porcelanatos": t(0.75, 0.68, 0.55, 0.45, 0.3, 0.1),
   "Sanitarios y grifería": t(0.75, 0.68, 0.5, 0.4, 0.25, 0.08),
-  "Electricidad e iluminación": t(0.7, 0.62, 0.5, 0.4, 0.28, 0.12),
-  // Equipos electrónicos: quedan viejos rápido y el comprador desconfía del usado.
-  "Fibra óptica y telecomunicaciones": t(0.65, 0.58, 0.45, 0.35, 0.25, 0.1),
+  // El cable se cotiza casi como un commodity; los artefactos y tableros van aparte.
+  "Electricidad e iluminación": t(0.82, 0.76, 0.6, 0.5, 0.35, 0.12),
+  // Telecomunicaciones: el material pasivo (cable, conectores, herrajes) casi no
+  // pierde valor si está sin uso; los equipos activos van aparte (ver EQUIPOS).
+  "Fibra óptica y telecomunicaciones": t(0.88, 0.82, 0.68, 0.58, 0.42, 0.15),
   "Plomería y gas": t(0.74, 0.68, 0.55, 0.45, 0.3, 0.1),
   // Vencen o se humedecen: abierto vale mucho menos.
   "Cemento, cal y áridos": t(0.7, 0.55, 0.4, 0.35, 0.2, 0.05),
@@ -38,6 +40,21 @@ export const DEPRECIACION: Record<string, Tabla> = {
   "Herramientas y equipos": t(0.78, 0.72, 0.62, 0.52, 0.38, 0.18),
   Otros: t(0.7, 0.62, 0.5, 0.4, 0.28, 0.1),
 };
+
+// Equipos activos (electrónica): quedan viejos rápido y el comprador desconfía
+// del usado. Si el lote es uno de estos, se usa esta tabla en vez la del rubro.
+const TABLA_EQUIPOS = t(0.65, 0.58, 0.45, 0.35, 0.25, 0.1);
+const EQUIPOS: Record<string, string[]> = {
+  "Fibra óptica y telecomunicaciones": ["onu", "olt", "ont", "router", "switch", "sfp", "fusionadora", "otdr", "modem", "antena", "radio", "access", "inyector", "medidor"],
+  "Electricidad e iluminación": ["tablero", "termica", "disyuntor", "panel", "luminaria", "reflector", "variador", "contactor", "ups", "inversor"],
+};
+
+export function esEquipo(categoria: string | null | undefined, texto = "") {
+  const claves = EQUIPOS[categoria ?? ""];
+  if (!claves || !texto) return false;
+  const pal = new Set(palabras(texto));
+  return claves.some((c) => pal.has(palabras(c)[0] ?? c));
+}
 
 // Detalles que el vendedor puede marcar. Bajan el precio (ajuste) y el comprador
 // los ve en el lote. `categorias` vacío: aplica a todas.
@@ -64,8 +81,9 @@ export function detallesPara(categoria: string | null | undefined) {
 }
 
 // Fracción del precio nuevo según el rubro, el estado y los detalles marcados.
-export function factorPrecio(categoria: string | null | undefined, condicion: Condicion, detalles: string[] = []) {
-  const tabla = DEPRECIACION[categoria ?? ""] ?? DEPRECIACION.Otros;
+// `texto` (título y materiales): para distinguir equipos de material dentro del rubro.
+export function factorPrecio(categoria: string | null | undefined, condicion: Condicion, detalles: string[] = [], texto = "") {
+  const tabla = esEquipo(categoria, texto) ? TABLA_EQUIPOS : (DEPRECIACION[categoria ?? ""] ?? DEPRECIACION.Otros);
   const ajuste = detallesPara(categoria)
     .filter((d) => detalles.includes(d.id))
     .reduce((f, d) => f * d.ajuste, 1);
@@ -75,10 +93,10 @@ export function factorPrecio(categoria: string | null | undefined, condicion: Co
 // Por debajo de esto, el precio de lista seguramente está mal cargado (por ejemplo "5").
 export const PRECIO_LISTA_MINIMO = 1000;
 
-export function precioSugerido(precioLista: number | null, condicion: Condicion, categoria?: string | null, detalles: string[] = []): number | null {
+export function precioSugerido(precioLista: number | null, condicion: Condicion, categoria?: string | null, detalles: string[] = [], texto = ""): number | null {
   if (!precioLista || precioLista < PRECIO_LISTA_MINIMO) return null;
   // Redondeo a múltiplos de 1.000 para que el precio quede prolijo.
-  return Math.max(1000, Math.round((precioLista * factorPrecio(categoria, condicion, detalles)) / 1000) * 1000);
+  return Math.max(1000, Math.round((precioLista * factorPrecio(categoria, condicion, detalles, texto)) / 1000) * 1000);
 }
 
 // Para la calculadora de la portada (solo hay un texto): de qué rubro es.

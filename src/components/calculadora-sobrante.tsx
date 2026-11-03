@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { CONDICIONES, PRECIO_LISTA_MINIMO, TASA_COMISION, pesos, precioSugerido, type Condicion } from "@/lib/datos";
-import { combinarPrecio } from "@/lib/precio-comparables";
+import { cantidadPrincipal, combinarPrecio } from "@/lib/precio-comparables";
 import { compararEnSobra, tasarDesdePortada } from "@/app/precio-portada";
 
 // "¿Cuánto vale lo que te sobró?": una cuenta express para quien todavía no
@@ -15,10 +15,15 @@ import { compararEnSobra, tasarDesdePortada } from "@/app/precio-portada";
 type Cuenta = "ninguna" | "usuario" | "admin";
 type Resultado = { nuevo: number | null; venta: number; ajustadoASobra: boolean };
 
+// Unidades de la cantidad (el valor es como lo entiende el resto de la app).
+const UNIDADES: Record<string, string> = { m2: "m²", m: "metros", u: "unidades", kg: "kg", bolsas: "bolsas", cajas: "cajas", rollos: "rollos", l: "litros" };
+
 // `idTexto`: el campo "¿Qué te sobró?", para llevar el foco ahí si falta.
 function useCalculadora(cuenta: Cuenta, idTexto: string) {
   const router = useRouter();
   const [texto, setTexto] = useState("");
+  const [cantidad, setCantidad] = useState("");
+  const [unidad, setUnidad] = useState("u");
   const [precio, setPrecio] = useState("");
   const [condicion, setCondicion] = useState<Condicion>("nuevo");
   const [error, setError] = useState("");
@@ -39,6 +44,15 @@ function useCalculadora(cuenta: Cuenta, idTexto: string) {
       document.getElementById(idTexto)?.focus();
       return;
     }
+    // Sin cantidad no hay cuenta posible (salvo que ya esté en el texto).
+    const cant = Number(cantidad.replace(",", ".")) || null;
+    if (!cant && !cantidadPrincipal(texto)) {
+      setError("¿Cuánto tenés? Poné la cantidad (metros, m², unidades...).");
+      document.getElementById(`${idTexto}-cantidad`)?.focus();
+      return;
+    }
+    // Lo que se busca y se compara: "4000 metros de fibra óptica ADSS 6 hilos".
+    const consulta = cant ? `${cant} ${UNIDADES[unidad]} de ${texto.trim()}` : texto.trim();
     const lista = Number(precio) || null;
     if (lista !== null && lista < PRECIO_LISTA_MINIMO) {
       setError(`El precio nuevo tiene que ser de al menos ${pesos(PRECIO_LISTA_MINIMO)}.`);
@@ -46,21 +60,21 @@ function useCalculadora(cuenta: Cuenta, idTexto: string) {
     }
     setError("");
     buscar(async () => {
-      const enSobra = await compararEnSobra(texto, condicion);
+      const enSobra = await compararEnSobra(consulta, condicion);
       if (!enSobra.ok) {
         setError(enSobra.error);
         return;
       }
       // Con el precio nuevo que puso la persona, o con el que buscamos.
       if (lista) {
-        const r = combinarPrecio(precioSugerido(lista, condicion, enSobra.categoria), enSobra.referencia);
+        const r = combinarPrecio(precioSugerido(lista, condicion, enSobra.categoria, [], consulta), enSobra.referencia);
         if (r.sugerido) setResultado({ nuevo: lista, venta: r.sugerido, ajustadoASobra: r.motivo.includes("más baratos") });
         return;
       }
-      const r = await tasarDesdePortada(texto, condicion);
+      const r = await tasarDesdePortada(consulta, condicion);
       if (!r.ok) {
         setPedirPrecio(true);
-        setError("No pudimos buscar el precio ahora. Poné cuánto cuesta nuevo y te hacemos la cuenta.");
+        setError(`${r.error}${r.detalle ? ` (${r.detalle})` : ""} Mientras tanto, poné cuánto cuesta nuevo y te hacemos la cuenta.`);
         return;
       }
       setResultado({ nuevo: r.tasacion.mercado, venta: r.tasacion.sugerido, ajustadoASobra: r.tasacion.ajustadoASobra });
@@ -69,7 +83,10 @@ function useCalculadora(cuenta: Cuenta, idTexto: string) {
 
   function publicar() {
     if (!resultado) return calcular();
+    const cant = Number(cantidad.replace(",", ".")) || null;
     const datos: Record<string, string> = { titulo: texto.trim(), estado: condicion, pedido: String(resultado.venta) };
+    // El material con su cantidad, para que el formulario ya lo tenga cargado.
+    if (cant) Object.assign(datos, { cant: String(cant), unidad: UNIDADES[unidad] === "metros" ? "m" : UNIDADES[unidad] });
     if (resultado.nuevo) datos.lista = String(Math.round(resultado.nuevo));
     const formulario = `/panel/vendedor/lotes/nuevo?${new URLSearchParams(datos)}`;
     router.push(cuenta === "ninguna" ? `/registro?volver=${encodeURIComponent(formulario)}` : formulario);
@@ -78,6 +95,10 @@ function useCalculadora(cuenta: Cuenta, idTexto: string) {
   return {
     texto,
     setTexto: cambio(setTexto),
+    cantidad,
+    setCantidad: cambio(setCantidad),
+    unidad,
+    setUnidad: cambio(setUnidad),
     precio,
     setPrecio: cambio(setPrecio),
     condicion,
@@ -92,6 +113,31 @@ function useCalculadora(cuenta: Cuenta, idTexto: string) {
 }
 
 type Calc = ReturnType<typeof useCalculadora>;
+
+function CampoCantidad({ c, id, clase }: { c: Calc; id: string; clase: string }) {
+  return (
+    <div className={`flex gap-1 ${clase}`}>
+      <input
+        id={`${id}-cantidad`}
+        type="number"
+        min={0}
+        step="any"
+        inputMode="decimal"
+        value={c.cantidad}
+        onChange={(e) => c.setCantidad(e.target.value)}
+        onKeyDown={(e) => e.key === "Enter" && c.calcular()}
+        aria-label="Cantidad"
+        placeholder="Cantidad"
+        className={`w-24 min-w-0 flex-1 rounded-lg border border-stone-200 px-3 py-2.5 text-sm ${sinFlechas}`}
+      />
+      <select value={c.unidad} onChange={(e) => c.setUnidad(e.target.value)} aria-label="Unidad" className="rounded-lg border border-stone-200 px-2 py-2.5 text-sm">
+        {Object.entries(UNIDADES).map(([valor, texto]) => (
+          <option key={valor} value={valor}>{texto}</option>
+        ))}
+      </select>
+    </div>
+  );
+}
 const sinFlechas = "[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none";
 
 // Los dos números: cuánto cuesta nuevo y a cuánto lo puede vender.
@@ -168,11 +214,15 @@ export function CalculadoraSobrante({ cuenta }: { cuenta: Cuenta }) {
           onChange={(e) => c.setTexto(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && c.calcular()}
           maxLength={120}
-          placeholder="Ej.: 38 m² de porcelanato 60x60"
+          placeholder="Ej.: porcelanato 60x60 gris, bobina de fibra óptica 6 hilos"
           aria-invalid={!!c.error}
           aria-describedby={c.error ? "calc-error" : undefined}
           className="campo"
         />
+      </div>
+      <div>
+        <p className="etiqueta">¿Cuánto tenés?</p>
+        <CampoCantidad c={c} id="calc-texto" clase="" />
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
@@ -232,10 +282,11 @@ export function FranjaVender({ cuenta }: { cuenta: Cuenta }) {
               onKeyDown={(e) => e.key === "Enter" && c.calcular()}
               maxLength={120}
               aria-label="¿Qué te sobró?"
-              placeholder="¿Qué te sobró? Ej.: 38 m² de porcelanato 60x60"
+              placeholder="¿Qué te sobró? Ej.: porcelanato 60x60 gris"
               aria-describedby={c.error ? "franja-error" : undefined}
               className="min-w-0 flex-[2] px-3 py-2.5 text-base outline-none"
             />
+            <CampoCantidad c={c} id="franja-texto" clase="lg:w-56" />
             <select value={c.condicion} onChange={(e) => c.setCondicion(e.target.value as Condicion)} aria-label="Estado" className="rounded-lg border border-stone-200 px-3 py-2.5 text-sm">
               {Object.entries(ESTADO_CORTO).map(([valor, texto]) => (
                 <option key={valor} value={valor}>{texto}</option>

@@ -31,11 +31,11 @@ export function FormLote({
   lote?: Lote;
   retiro?: Retiro | null;
   precioMinimo?: number | null;
-  inicial?: { precioLista?: string; condicion?: Condicion; titulo?: string; precioPedido?: number };
+  inicial?: { precioLista?: string; condicion?: Condicion; titulo?: string; precioPedido?: number; item?: Item };
   // Para la cuenta admin: ve el formulario entero pero no lo puede enviar.
   soloVista?: boolean;
 }) {
-  const [items, setItems] = useState<Item[]>(lote?.items.length ? lote.items : [{ nombre: "", cantidad: 1, unidad: "u" }]);
+  const [items, setItems] = useState<Item[]>(lote?.items.length ? lote.items : inicial?.item ? [inicial.item] : [{ nombre: "", cantidad: 1, unidad: "u" }]);
   const [fotos, setFotos] = useState<string[]>(lote?.fotos ?? []);
   const [subiendo, setSubiendo] = useState(false);
   const [errorFotos, setErrorFotos] = useState("");
@@ -58,7 +58,8 @@ export function FormLote({
   const categoriaActual = campos.categoria || null;
   const opcionesDetalle = detallesPara(categoriaActual);
   const detallesValidos = detalles.filter((d) => opcionesDetalle.some((o) => o.id === d));
-  const sugerido = precioSugerido(Number(precioLista) || null, condicion, categoriaActual, detallesValidos);
+  const textoLote = `${campos.titulo ?? lote?.titulo ?? ""} ${items.map((i) => i.nombre).join(" ")}`;
+  const sugerido = precioSugerido(Number(precioLista) || null, condicion, categoriaActual, detallesValidos, textoLote);
   const leerCampos = () => {
     if (!formulario.current) return;
     const f = new FormData(formulario.current);

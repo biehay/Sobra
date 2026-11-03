@@ -1,6 +1,5 @@
 "use server";
 
-import Anthropic from "@anthropic-ai/sdk";
 import { headers } from "next/headers";
 import { z } from "zod";
 import { CONDICIONES, type Condicion } from "@/lib/datos";
@@ -8,6 +7,7 @@ import { obtenerPerfil } from "@/lib/sesion";
 import { precioSugeridoCompleto, referenciaEnSobra } from "@/lib/precio-sugerido";
 import type { Referencia } from "@/lib/precio-comparables";
 import { adivinarCategoria } from "@/lib/depreciacion";
+import { explicarErrorIA } from "@/lib/errores-ia";
 
 // La calculadora "¿Te sobró material?" de la portada. La puede usar cualquiera,
 // así que la búsqueda de precios con IA (que cuesta) tiene límites: por persona,
@@ -40,7 +40,10 @@ const usos = new Map<string, number[]>();
 let delDia: number[] = [];
 const memoria = new Map<string, { tasacion: Tasacion; hasta: number }>();
 
-export async function tasarDesdePortada(texto: unknown, condicion: unknown): Promise<{ ok: true; tasacion: Tasacion } | { ok: false; error: string }> {
+export async function tasarDesdePortada(
+  texto: unknown,
+  condicion: unknown,
+): Promise<{ ok: true; tasacion: Tasacion } | { ok: false; error: string; detalle?: string; limite?: boolean }> {
   const datos = esquema.safeParse({ texto, condicion });
   if (!datos.success) return { ok: false, error: datos.error.issues[0].message };
   const { texto: t, condicion: c } = datos.data;
@@ -50,7 +53,10 @@ export async function tasarDesdePortada(texto: unknown, condicion: unknown): Pro
   if (guardada && guardada.hasta > Date.now()) return { ok: true, tasacion: guardada.tasacion };
 
   const dePrueba = process.env.SOBRA_IA_DE_PRUEBA === "1";
-  if (!dePrueba && !process.env.ANTHROPIC_API_KEY) return { ok: false, error: "Poné cuánto cuesta nuevo y te hacemos la cuenta." };
+  if (!dePrueba && !process.env.ANTHROPIC_API_KEY) {
+    console.error("[Sobrá] Falta ANTHROPIC_API_KEY: la calculadora no puede buscar precios.");
+    return { ok: false, error: "La búsqueda de precios no está configurada (falta ANTHROPIC_API_KEY)." };
+  }
 
   const perfil = await obtenerPerfil();
   const h = await headers();
@@ -59,7 +65,7 @@ export async function tasarDesdePortada(texto: unknown, condicion: unknown): Pro
   const recientes = (usos.get(quien) ?? []).filter((x) => ahora - x < 86_400_000);
   delDia = delDia.filter((x) => ahora - x < 86_400_000);
   if (recientes.length >= (perfil ? POR_PERSONA_CON_CUENTA : POR_PERSONA_SIN_CUENTA) || delDia.length >= TOPE_DIARIO) {
-    return { ok: false, error: "Ya buscamos muchos precios hoy. Poné cuánto cuesta nuevo y te hacemos la cuenta." };
+    return { ok: false, limite: true, error: "Llegaste al límite de búsquedas de precios por hoy." };
   }
   usos.set(quien, [...recientes, ahora]);
   delDia.push(ahora);
@@ -75,11 +81,8 @@ export async function tasarDesdePortada(texto: unknown, condicion: unknown): Pro
     memoria.set(clave, { tasacion, hasta: ahora + 24 * 3_600_000 });
     return { ok: true, tasacion };
   } catch (error) {
-    console.error("[Sobrá] No se pudo tasar desde la portada", error);
-    if (error instanceof Anthropic.APIError && /credit|balance/i.test(error.message)) {
-      return { ok: false, error: "Ahora no podemos buscar precios. Poné cuánto cuesta nuevo y te hacemos la cuenta." };
-    }
-    return { ok: false, error: "No pudimos buscar precios ahora. Poné cuánto cuesta nuevo y te hacemos la cuenta." };
+    const { mensaje, detalle } = explicarErrorIA(error);
+    return { ok: false, error: mensaje, detalle };
   }
 }
 
@@ -90,6 +93,6 @@ async function tasacionDePrueba(lote: { titulo: string; condicion: Condicion }) 
   const { factorPrecio, adivinarCategoria } = await import("@/lib/depreciacion");
   const referencia = await referenciaEnSobra({ texto: lote.titulo, condicion: lote.condicion, categoria: adivinarCategoria(lote.titulo) });
   const mercado = 600000;
-  const { sugerido, motivo } = combinarPrecio(mercado * factorPrecio(adivinarCategoria(lote.titulo), lote.condicion), referencia);
+  const { sugerido, motivo } = combinarPrecio(mercado * factorPrecio(adivinarCategoria(lote.titulo), lote.condicion, [], lote.titulo), referencia);
   return { total_mercado_ars: mercado, sugerido: sugerido ?? 0, motivo, fuentes: [{ titulo: "Tienda de prueba", url: "https://example.com" }], referencia };
 }

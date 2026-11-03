@@ -182,7 +182,7 @@ export default async function Admin({ searchParams }: PageProps<"/admin">) {
         {enRevision.length ? (
           <div className="space-y-4">
             {enRevision.map((lote) => {
-              const sugerido = precioSugerido(lote.precio_lista, lote.condicion, lote.categoria, lote.detalles);
+              const sugerido = precioSugerido(lote.precio_lista, lote.condicion, lote.categoria, lote.detalles, `${lote.titulo} ${lote.items.map((i) => i.nombre).join(" ")}`);
               return (
                 <div key={lote.id} className="tarjeta grid gap-5 p-5 lg:grid-cols-[2fr_1fr]">
                   <div className="space-y-3">

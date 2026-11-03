@@ -22,12 +22,14 @@ export default async function NuevoLote({ searchParams }: PageProps<"/panel/vend
   if (!(await obtenerPerfil())) redirect(`/registro?volver=${encodeURIComponent(aca)}`);
   if (!(await sesionVerificada())) redirect(`/seguridad/verificar?volver=${encodeURIComponent(aca)}`);
   const perfil = await exigirRol("usuario", "admin");
-  const { error, lista, estado, titulo, pedido } = parametros;
+  const { error, lista, estado, titulo, pedido, cant, unidad } = parametros;
   // Lo que cargó en la calculadora de la portada llega ya puesto.
   const precioLista = typeof lista === "string" && /^\d{1,12}$/.test(lista) ? lista : undefined;
   const condicion = typeof estado === "string" && estado in CONDICIONES ? (estado as Condicion) : undefined;
   const tituloInicial = typeof titulo === "string" ? titulo.trim().slice(0, 120) : undefined;
   const precioPedido = typeof pedido === "string" && /^\d{1,12}$/.test(pedido) ? Number(pedido) : undefined;
+  const cantidad = typeof cant === "string" && /^\d{1,9}(\.\d{1,3})?$/.test(cant) ? Number(cant) : undefined;
+  const item = tituloInicial && cantidad ? { nombre: tituloInicial, cantidad, unidad: typeof unidad === "string" ? unidad.slice(0, 20) : "u" } : undefined;
 
   return (
     <div className="contenedor max-w-3xl py-10">
@@ -44,7 +46,7 @@ export default async function NuevoLote({ searchParams }: PageProps<"/panel/vend
       {perfil.rol === "admin" && (
         <AvisoAdmin>Las cuentas admin no publican: podés ver y probar el formulario, pero no enviarlo.</AvisoAdmin>
       )}
-      <FormLote usuarioId={perfil.id} inicial={{ precioLista, condicion, titulo: tituloInicial, precioPedido }} soloVista={perfil.rol === "admin"} />
+      <FormLote usuarioId={perfil.id} inicial={{ precioLista, condicion, titulo: tituloInicial, precioPedido, item }} soloVista={perfil.rol === "admin"} />
     </div>
   );
 }

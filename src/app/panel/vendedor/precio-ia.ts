@@ -1,8 +1,8 @@
 "use server";
 
-import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { obtenerPerfil, sesionVerificada } from "@/lib/sesion";
+import { explicarErrorIA } from "@/lib/errores-ia";
 import { precioSugeridoCompleto, type InformeCompleto } from "@/lib/precio-sugerido";
 import { CATEGORIAS, CONDICIONES, type Condicion } from "@/lib/datos";
 
@@ -54,25 +54,9 @@ export async function sugerirPrecioConIA(datos: unknown): Promise<ResultadoPreci
     memoria.set(clave, { informe, hasta: ahora + 12 * 3_600_000 });
     return { ok: true, informe };
   } catch (error) {
-    if (error instanceof Anthropic.AuthenticationError) {
-      console.error("[Sobrá] La clave ANTHROPIC_API_KEY no es válida.");
-      return { ok: false, error: "La clave de la IA no es válida. Revisá ANTHROPIC_API_KEY." };
-    }
-    if (error instanceof Anthropic.RateLimitError) {
-      return { ok: false, error: "La IA está con mucha demanda. Probá de nuevo en un minuto." };
-    }
-    if (error instanceof Anthropic.APIError) {
-      console.error(`[Sobrá] Error de la API de Anthropic ${error.status}:`, error.message);
-      return {
-        ok: false,
-        error: error.status === 400 && /credit|balance/i.test(error.message)
-          ? "La cuenta de Anthropic no tiene saldo. Cargá crédito en console.anthropic.com."
-          : "No pudimos consultar la IA. Probá de nuevo.",
-      };
-    }
-    console.error("[Sobrá] No se pudo estimar el precio con IA", error);
     // Si la IA devolvió algo con otro formato, no se lo mostramos al usuario.
     if (error instanceof z.ZodError) return { ok: false, error: "La IA devolvió una respuesta incompleta. Probá de nuevo." };
-    return { ok: false, error: error instanceof Error ? error.message : "No pudimos estimar el precio." };
+    const { mensaje, detalle } = explicarErrorIA(error);
+    return { ok: false, error: detalle ? `${mensaje} (${detalle})` : mensaje };
   }
 }

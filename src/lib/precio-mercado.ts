@@ -169,12 +169,13 @@ export async function estimarPrecioMercado(lote: LoteParaTasar): Promise<Informe
     );
     if (!llamada) throw new Error("La IA no devolvió un precio.");
     const informe = esquemaInforme.parse(llamada.input);
-    const factor = factorPrecio(lote.categoria, lote.condicion, lote.detalles);
+    const texto = `${lote.titulo} ${lote.items.map((i) => i.nombre).join(" ")}`;
+    const factor = factorPrecio(lote.categoria, lote.condicion, lote.detalles, texto);
     const porTabla = informe.total_mercado_ars * factor;
     // Si es usado y hay usados en venta parecidos, se promedian las dos cosas
     // (los usados se toman con los detalles que marcó el vendedor).
     const usadoValido = lote.condicion !== "nuevo" && lote.condicion !== "sin_uso" && informe.usados_mercado_ars && informe.usados_mercado_ars < informe.total_mercado_ars;
-    const ajusteDetalles = factor / factorPrecio(lote.categoria, lote.condicion);
+    const ajusteDetalles = factor / factorPrecio(lote.categoria, lote.condicion, [], texto);
     const base = usadoValido ? (porTabla + informe.usados_mercado_ars! * ajusteDetalles) / 2 : porTabla;
     return {
       ...informe,

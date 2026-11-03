@@ -417,7 +417,11 @@ try {
   await anon.goto(`${BASE}/`);
   esperar(await anon.isVisible("[data-franja-vender]"), "la franja para vender está a la vista en la portada");
   // Sin precio nuevo: busca el de mercado (respuesta fija de prueba) y compara con lo publicado en Sobrá.
-  await anon.fill("#franja-texto", "38 m² de porcelanato 60x60");
+  await anon.fill("#franja-texto", "porcelanato 60x60");
+  await anon.click("[data-franja-vender] button:has-text('Calcular')");
+  esperar((await anon.textContent("#franja-error")).includes("¿Cuánto tenés?"), "la franja pide la cantidad si no la puso");
+  await anon.fill("#franja-texto-cantidad", "38");
+  await anon.selectOption("[data-franja-vender] select[aria-label=Unidad]", "m2");
   await anon.click("[data-franja-vender] button:has-text('Calcular')");
   await anon.waitForSelector("[data-franja-vender] [data-resultado]");
   const ventaFranja = (await anon.textContent("[data-franja-vender] [data-venta]")).replace(/\s/g, " ");

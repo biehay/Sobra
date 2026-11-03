@@ -75,9 +75,10 @@ export function buscarComparables(
     if (comunes / buscadas.size < 0.5) continue;
     const precio = Number(l.precio_publicado ?? l.precio_pedido);
     // Llevado al mismo estado (y detalles) que el que se quiere tasar, con la tabla de su rubro.
+    const suTexto = `${l.titulo} ${l.items.map((i) => i.nombre).join(" ")}`;
     const porUnidad =
       (precio / suyo.cantidad) *
-      (factorPrecio(l.categoria, objetivo.condicion, objetivo.detalles) / factorPrecio(l.categoria, l.condicion, l.detalles));
+      (factorPrecio(l.categoria, objetivo.condicion, objetivo.detalles, suTexto) / factorPrecio(l.categoria, l.condicion, l.detalles, suTexto));
     comparables.push({ id: l.id, titulo: l.titulo, precio, porUnidad, vendido: l.estado === "vendido" });
   }
   if (!comparables.length) return vacia;

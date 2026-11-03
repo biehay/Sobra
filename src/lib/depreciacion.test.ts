@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CATEGORIAS, CONDICIONES, type Condicion } from "./datos";
-import { DEPRECIACION, DETALLES, adivinarCategoria, detallesPara, factorPrecio, precioSugerido } from "./depreciacion";
+import { DEPRECIACION, DETALLES, adivinarCategoria, detallesPara, esEquipo, factorPrecio, precioSugerido } from "./depreciacion";
 
 describe("depreciación por rubro", () => {
   it("cada categoría tiene su tabla, y cuanto peor el estado, menos vale", () => {
@@ -14,7 +14,7 @@ describe("depreciación por rubro", () => {
   });
 
   it("no es lineal: un equipo de telecomunicaciones usado vale menos que una herramienta usada", () => {
-    expect(factorPrecio("Fibra óptica y telecomunicaciones", "usado_buen_estado")).toBeLessThan(factorPrecio("Herramientas y equipos", "usado_buen_estado"));
+    expect(factorPrecio("Fibra óptica y telecomunicaciones", "usado_buen_estado", [], "25 ONU GPON con WiFi")).toBeLessThan(factorPrecio("Herramientas y equipos", "usado_buen_estado"));
     expect(factorPrecio("Hierros y perfiles", "usado_buen_estado")).toBeGreaterThan(factorPrecio("Cerámicos y porcelanatos", "usado_buen_estado"));
     // Abierto, el cemento pierde mucho más que un porcelanato.
     const caida = (c: string) => factorPrecio(c, "sin_uso") / factorPrecio(c, "nuevo");
@@ -39,5 +39,15 @@ describe("depreciación por rubro", () => {
     expect(adivinarCategoria("40 bolsas de cemento")).toBe("Cemento, cal y áridos");
     expect(adivinarCategoria("hormigonera 130 litros")).toBe("Herramientas y equipos");
     expect(adivinarCategoria("cosa rara")).toBeNull();
+  });
+
+  it("dentro del rubro, el material pasivo vale más que los equipos (una bobina sin uso se vende cerca de nuevo)", () => {
+    const FO = "Fibra óptica y telecomunicaciones";
+    expect(esEquipo(FO, "Bobina de fibra óptica ADSS 6 hilos 4000 m")).toBe(false);
+    expect(esEquipo(FO, "ONU GPON con WiFi")).toBe(true);
+    expect(esEquipo(FO, "Fusionadora de fibra óptica")).toBe(true);
+    expect(precioSugerido(3_500_000, "sin_uso", FO, [], "4000 m de fibra óptica ADSS 6 hilos")).toBe(2_870_000);
+    expect(factorPrecio(FO, "sin_uso", [], "Bobina de fibra")).toBeGreaterThan(factorPrecio(FO, "sin_uso", [], "Router WiFi") + 0.2);
+    expect(factorPrecio("Electricidad e iluminación", "nuevo", [], "Cable unipolar 2,5 mm")).toBeGreaterThan(factorPrecio("Electricidad e iluminación", "nuevo", [], "Tablero con térmicas"));
   });
 });
