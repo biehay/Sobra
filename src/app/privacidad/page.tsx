@@ -5,7 +5,7 @@ export const metadata: Metadata = { title: "Privacidad y cookies" };
 
 export default function Privacidad() {
   return (
-    <PaginaLegal titulo="Política de privacidad y cookies" actualizada="2 de noviembre de 2026">
+    <PaginaLegal titulo="Política de privacidad y cookies" actualizada="3 de noviembre de 2026">
       <p>
         En Sobrá cuidamos los datos de las personas y empresas que usan el marketplace. Esta política explica qué datos
         juntamos, para qué los usamos, quién los ve y qué derechos tenés, de acuerdo con la Ley 25.326 de Protección de
@@ -69,9 +69,9 @@ export default function Privacidad() {
         <li><strong>El equipo de Sobrá:</strong> para revisar lotes, verificar usuarios y resolver reclamos.</li>
         <li>
           <strong>Proveedores que nos prestan servicios:</strong> Supabase (base de datos y archivos), Resend (envío de
-          emails), Anthropic (la IA que sugiere precios y arma la ficha técnica de cada lote publicado para
-          recomendar complementos: recibe solo el título, la categoría, el estado, los materiales y la descripción del
-          lote, nunca tus datos personales) y, cuando se habilite, Mercado Pago (pagos). Solo reciben lo necesario para prestar su servicio.
+          emails), Anthropic (la IA que sugiere precios, arma la ficha técnica de cada lote publicado para
+          recomendar complementos y, si usás “Completar con IA”, completa la publicación a partir de las fotos: recibe
+          solo los datos y las fotos del lote, sin la ubicación GPS, nunca tus datos personales) y, cuando se habilite, Mercado Pago (pagos). Solo reciben lo necesario para prestar su servicio.
         </li>
       </ul>
 

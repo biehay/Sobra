@@ -299,6 +299,23 @@ try {
 
   // 5. Vendedor carga un lote con fotos ------------------------------------
   const fotos = await crearFotos(browser);
+  // Publicar con fotos: la IA completa (respuesta fija de prueba), muestra lo que completó,
+  // marca lo dudoso para confirmar y la vista previa refleja los datos. No envía nada sola.
+  await vend.goto(`${BASE}/panel/vendedor/lotes/nuevo`);
+  await vend.setInputFiles("input[type=file]", fotos[0]);
+  await vend.click("button:has-text('Completar con IA')");
+  await vend.waitForSelector("[data-resumen-ia]");
+  esperar((await vend.inputValue("#titulo")) === "Porcelanato 60x60 gris, 38 m²" && (await vend.inputValue("#categoria")) === "Cerámicos y porcelanatos", "la IA completa el formulario con las fotos");
+  esperar((await vend.inputValue("input[aria-label='Cantidad']")) === "38" && (await vend.inputValue("#peso_kg")) === "870", "la IA completa materiales, cantidades y peso");
+  const resumenIA = await vend.textContent("[data-resumen-ia]");
+  esperar(resumenIA.includes("Corregimos una cuenta: 19 cajas × 2 m² = 38 m²") && resumenIA.includes("Peso coherente"), "los controles corrigen la cuenta de la IA y se los muestra al vendedor");
+  esperar((await vend.locator("[data-duda]").count()) === 1 && (await vend.textContent("[data-duda]")).includes("contamos 36 m²"), "si la segunda revisión no coincide, se lo pregunta al vendedor");
+  await vend.click("[data-duda] button:has-text('Sí, es correcto')");
+  esperar((await vend.locator("[data-duda]").count()) === 0 && (await vend.isVisible("text=Todo revisado")), "el vendedor confirma la duda");
+  await vend.fill("#titulo", "Porcelanato gris de prueba");
+  esperar((await vend.locator("section:has-text('Así se va a ver')").textContent()).includes("Porcelanato gris de prueba"), "la vista previa se actualiza mientras edita");
+  await captura(vend, "publicar-con-fotos");
+  esperar(new URL(vend.url()).pathname === "/panel/vendedor/lotes/nuevo", "no se envía nada sin que el vendedor lo decida");
   await vend.goto(`${BASE}/panel/vendedor/lotes/nuevo?lista=900000&estado=sin_uso`);
   esperar((await vend.inputValue("#precio_lista")) === "900000" && (await vend.inputValue("#condicion")) === "sin_uso" && Number(await vend.inputValue("#precio_pedido")) > 0, "el formulario llega con lo que cargó en la calculadora");
   await vend.fill("#titulo", "Porcelanato 60x60 gris, 45 m² + pegamento");

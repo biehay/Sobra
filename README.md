@@ -51,6 +51,11 @@ Además:
   invitación a crear la cuenta para visitantes, una sección "Para vos" para quien ya tiene cuenta (lo nuevo para
   sus búsquedas y su zona) y lo que diferencia a Sobrá. Al tocar el corazón o "Avisame cuando aparezca" sin
   cuenta, el registro explica para qué es y vuelve al mismo lugar.
+- **Publicar con fotos** (`src/lib/lote-desde-fotos.ts`, `src/app/panel/vendedor/fotos-ia.ts`): el vendedor sube
+  fotos y "Completar con IA" llena título, categoría, estado, materiales, cantidades, peso y descripción. Muestra
+  un resumen, marca en amarillo lo dudoso (máx. 3 preguntas) y una vista previa en vivo. Nada se envía solo.
+  Máximo 20 análisis por usuario por día. En el recorrido se usa una respuesta fija (`SOBRA_IA_DE_PRUEBA=1`,
+  nunca en producción).
 - **Buscador con sugerencias** (`src/components/buscador.tsx`, `src/lib/sugerencias.ts`): mientras se escribe
   muestra lotes (foto, precio) y categorías. Entiende tildes, plurales, sinónimos de obra y la palabra a medio
   escribir; si nada coincide con todo, muestra lo parecido. Se maneja con el teclado.
@@ -293,7 +298,6 @@ Cosas que quedaron a propósito sin definir y hay que completar antes de tener u
 
 - Vista previa al compartir un lote (foto, título, precio y descuento en WhatsApp y redes), botón
   "Compartir por WhatsApp" y mapa del sitio para Google. Se prueba con la app publicada (no con localhost).
-- Publicar sacando fotos: la IA completa título, categoría, materiales, cantidades y precio sugerido.
 - Preguntas públicas al vendedor en cada lote (filtrando teléfonos y emails).
 - Cobro online con Mercado Pago (hoy el pago es por transferencia y lo confirma el admin).
 - Avisos por WhatsApp además del email.

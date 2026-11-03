@@ -1,12 +1,15 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useTransition } from "react";
 import { crearClienteNavegador } from "@/lib/supabase/client";
 import { limpiarFoto } from "@/lib/limpiar-foto";
 import { CATEGORIAS, CONDICIONES, ZONAS, pesos, precioSugerido, urlFoto, type Condicion, type Item, type Lote } from "@/lib/datos";
 import { BotonEnviar } from "@/components/boton-enviar";
 import { guardarLote } from "../acciones";
 import { PrecioConIA } from "./precio-con-ia";
+import { completarConFotos } from "./fotos-ia";
+import { TarjetaLote } from "@/components/tarjeta-lote";
+import type { CampoDuda, PropuestaLote } from "@/lib/lote-desde-fotos";
 
 type Retiro = { direccion: string; horarios: string; indicaciones: string };
 
@@ -38,6 +41,55 @@ export function FormLote({
   const sugerido = precioSugerido(Number(precioLista) || null, condicion);
   const formulario = useRef<HTMLFormElement>(null);
   const precioPedido = useRef<HTMLInputElement>(null);
+  // Completar con fotos: lo que propuso la IA y lo que el vendedor tiene que confirmar.
+  const [propuesta, setPropuesta] = useState<PropuestaLote | null>(null);
+  const [dudas, setDudas] = useState<{ campo: CampoDuda; pregunta: string }[]>([]);
+  const [errorIA, setErrorIA] = useState("");
+  const [analizando, analizar] = useTransition();
+  const resumen = useRef<HTMLDivElement>(null);
+  // Para la vista previa: una copia de los campos de texto, que se actualiza al cambiar algo.
+  const precioInicial = lote?.precio_pedido ?? precioSugerido(Number(inicial?.precioLista) || null, inicial?.condicion ?? "nuevo") ?? undefined;
+  const [campos, setCampos] = useState<Record<string, string>>({ precio_pedido: precioInicial ? String(precioInicial) : "" });
+  const leerCampos = () => {
+    if (!formulario.current) return;
+    const f = new FormData(formulario.current);
+    setCampos(Object.fromEntries(["titulo", "categoria", "zona", "precio_pedido"].map((c) => [c, String(f.get(c) ?? "")])));
+  };
+
+  const resolver = (campo: CampoDuda) => setDudas((d) => d.filter((x) => x.campo !== campo));
+  const dudaDe = (campo: CampoDuda) => dudas.find((d) => d.campo === campo);
+
+  function completarConIA() {
+    setErrorIA("");
+    const titulo = (formulario.current?.elements.namedItem("titulo") as HTMLInputElement | null)?.value ?? "";
+    analizar(async () => {
+      const r = await completarConFotos(fotos, titulo);
+      if (!r.ok) {
+        setErrorIA(r.error);
+        return;
+      }
+      const p = r.propuesta;
+      const campos = formulario.current!.elements;
+      (campos.namedItem("titulo") as HTMLInputElement).value = p.titulo;
+      (campos.namedItem("categoria") as HTMLSelectElement).value = p.categoria;
+      (campos.namedItem("peso_kg") as HTMLInputElement).value = p.peso_kg ? String(p.peso_kg) : "";
+      (campos.namedItem("descripcion") as HTMLTextAreaElement).value = p.descripcion;
+      setCondicion(p.condicion);
+      if (p.materiales.length) setItems(p.materiales.map((m) => ({ nombre: m.nombre, cantidad: m.cantidad, unidad: m.unidad })));
+      setPropuesta(p);
+      setDudas(p.dudas);
+      leerCampos();
+      setTimeout(() => resumen.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+    });
+  }
+
+  // Si el vendedor cambia un campo que estaba en duda, ya lo revisó.
+  function alCambiar(e: React.FormEvent<HTMLFormElement>) {
+    const nombre = (e.target as HTMLInputElement).name;
+    const campo = ({ titulo: "titulo", categoria: "categoria", condicion: "condicion", peso_kg: "peso" } as Record<string, CampoDuda>)[nombre];
+    if (campo) resolver(campo);
+    leerCampos();
+  }
 
   // Lo que la IA necesita para tasar: lo que ya está escrito en el formulario.
   function datosDelLote() {
@@ -54,6 +106,7 @@ export function FormLote({
   function usarPrecioIA(mercado: number, sugeridoIA: number) {
     setPrecioLista(String(mercado));
     if (precioPedido.current) precioPedido.current.value = String(sugeridoIA);
+    leerCampos();
   }
 
   async function subirFotos(archivos: FileList | null) {
@@ -88,80 +141,44 @@ export function FormLote({
   }
 
   function cambiarItem(i: number, cambio: Partial<Item>) {
+    resolver("materiales");
     setItems((actuales) => actuales.map((item, j) => (j === i ? { ...item, ...cambio } : item)));
   }
 
   const itemsValidos = items.filter((item) => item.nombre.trim() && item.cantidad > 0);
+  const valor = (campo: string, otro = "") => campos[campo] || otro;
+  const vistaPrevia: Lote = {
+    id: lote?.id ?? "vista-previa",
+    vendedor_id: usuarioId,
+    titulo: valor("titulo", lote?.titulo ?? "Título del lote"),
+    descripcion: "",
+    categoria: valor("categoria", lote?.categoria ?? "Categoría"),
+    condicion,
+    items: itemsValidos,
+    zona: valor("zona", lote?.zona ?? "Zona"),
+    localidad: "",
+    precio_lista: Number(precioLista) || null,
+    precio_pedido: Number(valor("precio_pedido")) || lote?.precio_pedido || 0,
+    precio_sugerido: null,
+    precio_publicado: Number(valor("precio_pedido")) || lote?.precio_pedido || null,
+    peso_kg: null,
+    baja_semanal_pct: null,
+    ultima_baja_at: null,
+    fotos,
+    estado: "publicado",
+    nota_admin: null,
+    publicado_at: null,
+    created_at: "",
+  };
 
   return (
-    <form ref={formulario} action={guardarLote} className="space-y-6">
+    <form ref={formulario} action={guardarLote} onChange={alCambiar} className="space-y-6">
       {lote && <input type="hidden" name="id" value={lote.id} />}
       <input type="hidden" name="items" value={JSON.stringify(itemsValidos)} />
       <input type="hidden" name="fotos" value={JSON.stringify(fotos)} />
 
       <section className="tarjeta space-y-4 p-6">
-        <h2 className="text-lg font-bold">1. Qué vendés</h2>
-        <div>
-          <label htmlFor="titulo" className="etiqueta">Título del lote</label>
-          <input id="titulo" name="titulo" required minLength={5} maxLength={120} defaultValue={lote?.titulo} className="campo" placeholder="Ej.: Porcelanato 60x60 gris, 45 m² + pegamento" />
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label htmlFor="categoria" className="etiqueta">Categoría</label>
-            <select id="categoria" name="categoria" required defaultValue={lote?.categoria ?? ""} className="campo">
-              <option value="" disabled>Elegí una categoría</option>
-              {CATEGORIAS.map((c) => (
-                <option key={c}>{c}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label htmlFor="condicion" className="etiqueta">Estado del material</label>
-            <select id="condicion" name="condicion" value={condicion} onChange={(e) => setCondicion(e.target.value as Condicion)} className="campo">
-              {Object.entries(CONDICIONES).map(([valor, texto]) => (
-                <option key={valor} value={valor}>{texto}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div>
-          <p className="etiqueta">Materiales incluidos</p>
-          <div className="space-y-2">
-            {items.map((item, i) => (
-              <div key={i} className="grid grid-cols-[1fr_5rem_5rem_auto] gap-2">
-                <input aria-label="Material" value={item.nombre} onChange={(e) => cambiarItem(i, { nombre: e.target.value })} className="campo" placeholder="Material" />
-                <input aria-label="Cantidad" type="number" min={0} step="any" value={item.cantidad} onChange={(e) => cambiarItem(i, { cantidad: Number(e.target.value) })} className="campo" />
-                <input aria-label="Unidad" value={item.unidad} onChange={(e) => cambiarItem(i, { unidad: e.target.value })} className="campo" placeholder="m², u, kg" />
-                <button type="button" onClick={() => setItems(items.filter((_, j) => j !== i))} className="px-2 text-stone-400 hover:text-red-600" aria-label="Quitar material">
-                  ✕
-                </button>
-              </div>
-            ))}
-          </div>
-          <button type="button" onClick={() => setItems([...items, { nombre: "", cantidad: 1, unidad: "u" }])} className="mt-2 text-sm font-semibold text-marca hover:underline">
-            + Agregar material
-          </button>
-        </div>
-
-        <div>
-          <label htmlFor="peso_kg" className="etiqueta">Peso aproximado del lote (kg)</label>
-          <input id="peso_kg" name="peso_kg" type="number" min={1} step="any" defaultValue={lote?.peso_kg ?? ""} className="campo max-w-48" placeholder="Ej.: 900" />
-          <p className="mt-1 text-sm text-stone-500">
-            Con esto calculamos cuánto material salvaste de ir a residuos (y lo ves en tu constancia de impacto). Referencias:
-            porcelanato o cerámico, unos 20 kg por m²; una bolsa de cemento, 50 kg; un inodoro, unos 25 kg; una placa de durlock,
-            unos 20 kg. Lo confirmamos al revisar el lote.
-          </p>
-        </div>
-
-        <div>
-          <label htmlFor="descripcion" className="etiqueta">Descripción (opcional)</label>
-          <textarea id="descripcion" name="descripcion" rows={4} maxLength={3000} defaultValue={lote?.descripcion} className="campo" placeholder="Marca, modelo, por qué sobró, si está en su embalaje original..." />
-        </div>
-      </section>
-
-      <section className="tarjeta space-y-4 p-6">
-        <h2 className="text-lg font-bold">2. Fotos</h2>
+        <h2 className="text-lg font-bold">1. Fotos</h2>
         <p className="text-sm text-stone-600">Hasta {MAX_FOTOS} fotos. La primera es la portada. Mostrá el material completo y el estado.</p>
         {fotos.length > 0 && (
           <div className="grid grid-cols-3 gap-3 sm:grid-cols-5">
@@ -183,6 +200,131 @@ export function FormLote({
           </label>
         )}
         {errorFotos && <p className="text-sm text-red-700">{errorFotos}</p>}
+
+        {fotos.length > 0 && (
+          <div className="rounded-lg border border-celeste/50 bg-celeste-claro p-4 text-petroleo">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="font-semibold">¿Te completamos el resto con tus fotos?</p>
+                <p className="text-sm text-petroleo/80">
+                  La IA mira las fotos y completa título, categoría, estado, materiales, cantidades y peso. Vos revisás todo antes de enviarlo.
+                </p>
+              </div>
+              <button type="button" onClick={completarConIA} disabled={analizando || subiendo} className="btn-celeste shrink-0">
+                {analizando ? "Mirando las fotos..." : propuesta ? "Volver a completar" : "Completar con IA"}
+              </button>
+            </div>
+            {analizando && (
+              <p className="mt-3 text-sm">
+                Mirando las fotos, revisándolas una segunda vez y controlando las cuentas. Tarda alrededor de un minuto.
+              </p>
+            )}
+            {errorIA && <p role="alert" className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">{errorIA}</p>}
+          </div>
+        )}
+      </section>
+
+      {propuesta && (
+        <div ref={resumen} data-resumen-ia className="scroll-mt-24 rounded-xl border-2 border-celeste bg-white p-5">
+          <p className="font-bold">Esto completamos con tus fotos</p>
+          <p className="text-sm text-stone-600">Revisalo y cambiá lo que haga falta: vos decidís si lo enviás.</p>
+          <dl className="mt-3 grid gap-x-6 gap-y-1 text-sm sm:grid-cols-[auto_1fr]">
+            <dt className="text-stone-500">Título</dt>
+            <dd className="font-medium">{propuesta.titulo}</dd>
+            <dt className="text-stone-500">Categoría</dt>
+            <dd>{propuesta.categoria}</dd>
+            <dt className="text-stone-500">Estado</dt>
+            <dd>{CONDICIONES[propuesta.condicion]}</dd>
+            <dt className="text-stone-500">Materiales</dt>
+            <dd>{propuesta.materiales.map((m) => `${m.nombre}: ${m.cantidad.toLocaleString("es-AR")} ${m.unidad === "m2" ? "m²" : m.unidad}`).join(" · ") || "—"}</dd>
+            <dt className="text-stone-500">Peso</dt>
+            <dd>{propuesta.peso_kg ? `${propuesta.peso_kg} kg aprox.` : "Sin estimar"}</dd>
+          </dl>
+          {propuesta.verificaciones.length > 0 && (
+            <div className="mt-3 text-sm">
+              <p className="font-semibold">Controles que hicimos</p>
+              <ul className="mt-1 space-y-0.5 text-green-800">
+                {propuesta.verificaciones.map((v) => (
+                  <li key={v}>✓ {v}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {dudas.length > 0 ? (
+            <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
+              {dudas.length === 1 ? "Hay 1 dato" : `Hay ${dudas.length} datos`} que no pudimos ver bien: están marcados en amarillo abajo.
+            </p>
+          ) : (
+            <p className="mt-3 text-sm text-green-800">✓ Todo revisado. Falta el precio y el retiro.</p>
+          )}
+        </div>
+      )}
+
+
+      <section className="tarjeta space-y-4 p-6">
+        <h2 className="text-lg font-bold">2. Qué vendés</h2>
+        <div>
+          <label htmlFor="titulo" className="etiqueta">Título del lote</label>
+          <input id="titulo" name="titulo" required minLength={5} maxLength={120} defaultValue={lote?.titulo} className={`campo ${dudaDe("titulo") ? "border-amber-400 ring-2 ring-amber-200" : ""}`} placeholder="Ej.: Porcelanato 60x60 gris, 45 m² + pegamento" />
+          <Duda duda={dudaDe("titulo")} alConfirmar={() => resolver("titulo")} />
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label htmlFor="categoria" className="etiqueta">Categoría</label>
+            <select id="categoria" name="categoria" required defaultValue={lote?.categoria ?? ""} className={`campo ${dudaDe("categoria") ? "border-amber-400 ring-2 ring-amber-200" : ""}`}>
+              <option value="" disabled>Elegí una categoría</option>
+              {CATEGORIAS.map((c) => (
+                <option key={c}>{c}</option>
+              ))}
+            </select>
+            <Duda duda={dudaDe("categoria")} alConfirmar={() => resolver("categoria")} />
+          </div>
+          <div>
+            <label htmlFor="condicion" className="etiqueta">Estado del material</label>
+            <select id="condicion" name="condicion" value={condicion} onChange={(e) => setCondicion(e.target.value as Condicion)} className={`campo ${dudaDe("condicion") ? "border-amber-400 ring-2 ring-amber-200" : ""}`}>
+              {Object.entries(CONDICIONES).map(([valor, texto]) => (
+                <option key={valor} value={valor}>{texto}</option>
+              ))}
+            </select>
+            <Duda duda={dudaDe("condicion")} alConfirmar={() => resolver("condicion")} />
+          </div>
+        </div>
+
+        <div>
+          <p className="etiqueta">Materiales incluidos</p>
+          <div className={`space-y-2 ${dudaDe("materiales") ? "rounded-lg p-2 ring-2 ring-amber-200" : ""}`}>
+            {items.map((item, i) => (
+              <div key={i} className="grid grid-cols-[1fr_5rem_5rem_auto] gap-2">
+                <input aria-label="Material" value={item.nombre} onChange={(e) => cambiarItem(i, { nombre: e.target.value })} className="campo" placeholder="Material" />
+                <input aria-label="Cantidad" type="number" min={0} step="any" value={item.cantidad} onChange={(e) => cambiarItem(i, { cantidad: Number(e.target.value) })} className="campo" />
+                <input aria-label="Unidad" value={item.unidad} onChange={(e) => cambiarItem(i, { unidad: e.target.value })} className="campo" placeholder="m², u, kg" />
+                <button type="button" onClick={() => setItems(items.filter((_, j) => j !== i))} className="px-2 text-stone-400 hover:text-red-600" aria-label="Quitar material">
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+          <button type="button" onClick={() => setItems([...items, { nombre: "", cantidad: 1, unidad: "u" }])} className="mt-2 text-sm font-semibold text-marca hover:underline">
+            + Agregar material
+          </button>
+          <Duda duda={dudaDe("materiales")} alConfirmar={() => resolver("materiales")} />
+        </div>
+
+        <div>
+          <label htmlFor="peso_kg" className="etiqueta">Peso aproximado del lote (kg)</label>
+          <input id="peso_kg" name="peso_kg" type="number" min={1} step="any" defaultValue={lote?.peso_kg ?? ""} className={`campo max-w-48 ${dudaDe("peso") ? "border-amber-400 ring-2 ring-amber-200" : ""}`} placeholder="Ej.: 900" />
+          <Duda duda={dudaDe("peso")} alConfirmar={() => resolver("peso")} />
+          <p className="mt-1 text-sm text-stone-500">
+            Con esto calculamos cuánto material salvaste de ir a residuos (y lo ves en tu constancia de impacto). Referencias:
+            porcelanato o cerámico, unos 20 kg por m²; una bolsa de cemento, 50 kg; un inodoro, unos 25 kg; una placa de durlock,
+            unos 20 kg. Lo confirmamos al revisar el lote.
+          </p>
+        </div>
+
+        <div>
+          <label htmlFor="descripcion" className="etiqueta">Descripción (opcional)</label>
+          <textarea id="descripcion" name="descripcion" rows={4} maxLength={3000} defaultValue={lote?.descripcion} className="campo" placeholder="Marca, modelo, por qué sobró, si está en su embalaje original..." />
+        </div>
       </section>
 
       <section className="tarjeta space-y-4 p-6">
@@ -194,7 +336,7 @@ export function FormLote({
           </div>
           <div>
             <label htmlFor="precio_pedido" className="etiqueta">¿Cuánto querés recuperar?</label>
-            <input ref={precioPedido} id="precio_pedido" name="precio_pedido" type="number" min={1} required defaultValue={lote?.precio_pedido ?? precioSugerido(Number(inicial?.precioLista) || null, inicial?.condicion ?? "nuevo") ?? undefined} className="campo" />
+            <input ref={precioPedido} id="precio_pedido" name="precio_pedido" type="number" min={1} required defaultValue={precioInicial} className="campo" />
           </div>
         </div>
         {sugerido && (
@@ -269,6 +411,22 @@ export function FormLote({
         </div>
       </section>
 
+      {fotos.length > 0 && (
+        <section className="tarjeta space-y-3 p-6">
+          <h2 className="text-lg font-bold">Así se va a ver</h2>
+          <p className="text-sm text-stone-600">Se actualiza mientras editás. Antes de publicarlo lo revisa Sobrá.</p>
+          <div inert className="pointer-events-none max-w-xs">
+            <TarjetaLote lote={vistaPrevia} />
+          </div>
+        </section>
+      )}
+
+      {dudas.length > 0 && (
+        <p className="rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          Te {dudas.length === 1 ? "queda 1 dato" : `quedan ${dudas.length} datos`} por confirmar (marcados en amarillo). Podés enviarlo igual: vos decidís.
+        </p>
+      )}
+
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
         <BotonEnviar name="intencion" value="borrador" className="btn-sec" disabled={subiendo} pendiente="Guardando...">
           Guardar borrador
@@ -278,5 +436,19 @@ export function FormLote({
         </BotonEnviar>
       </div>
     </form>
+  );
+}
+
+// Lo que la IA no pudo ver bien: una pregunta corta y un botón para confirmarlo.
+// Si el vendedor cambia el campo, también queda revisado.
+function Duda({ duda, alConfirmar }: { duda?: { pregunta: string }; alConfirmar: () => void }) {
+  if (!duda) return null;
+  return (
+    <div data-duda className="mt-2 flex flex-wrap items-center gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
+      <span className="flex-1">{duda.pregunta}</span>
+      <button type="button" onClick={alConfirmar} className="rounded-md bg-white px-2.5 py-1 font-semibold ring-1 ring-amber-300 hover:bg-amber-100">
+        Sí, es correcto
+      </button>
+    </div>
   );
 }
