@@ -5,6 +5,7 @@ import { crearClienteServidor } from "@/lib/supabase/server";
 import { CATEGORIAS, pesos, type Perfil } from "@/lib/datos";
 import { Desplegable } from "@/components/desplegable";
 import { Logo } from "@/components/logo";
+import { Buscador } from "@/components/buscador";
 import { BotonPublicarFlotante } from "@/components/boton-publicar-flotante";
 
 const PUBLICAR = "/panel/vendedor/lotes/nuevo";
@@ -67,7 +68,7 @@ export async function Encabezado() {
             )}
           </nav>
 
-            <Buscador clase="mx-2 hidden max-w-md flex-1 md:flex" />
+            <Buscador variante="encabezado" id="buscar-escritorio" className="mx-2 hidden max-w-md flex-1 md:block" />
 
           <div className="ml-auto flex items-center gap-2 sm:gap-3">
             {perfil?.rol !== "admin" && (
@@ -93,36 +94,12 @@ export async function Encabezado() {
         </div>
         {/* En el celular el buscador va en una segunda fila, a todo el ancho. */}
         <div className="contenedor pb-3 md:hidden">
-          <Buscador clase="flex" />
+          <Buscador variante="encabezado" id="buscar-celular" className="block" />
         </div>
       </header>
       {/* Afuera del header: su desenfoque de fondo haría que "fixed" se ubique dentro de él. */}
       {perfil?.rol !== "admin" && <BotonPublicarFlotante href={publicar} />}
     </>
-  );
-}
-
-// Busca en el catálogo desde cualquier pantalla (es un formulario común que va a /lotes?q=...).
-function Buscador({ clase }: { clase: string }) {
-  return (
-    <form action="/lotes" role="search" className={`${clase} items-center rounded-lg border border-stone-300 bg-white focus-within:border-marca focus-within:ring-2 focus-within:ring-marca/20`}>
-      <label htmlFor={`buscar-${clase.includes("hidden") ? "escritorio" : "celular"}`} className="sr-only">
-        Buscar materiales
-      </label>
-      <input
-        id={`buscar-${clase.includes("hidden") ? "escritorio" : "celular"}`}
-        name="q"
-        type="search"
-        placeholder="Buscar porcelanato, caños, cemento..."
-        className="min-w-0 flex-1 bg-transparent px-3 py-2 text-sm outline-none"
-      />
-      <button aria-label="Buscar" className="px-3 py-2 text-stone-500 hover:text-marca">
-        <svg aria-hidden viewBox="0 0 20 20" className="size-5" fill="none" stroke="currentColor" strokeWidth={2}>
-          <circle cx="9" cy="9" r="6" />
-          <path strokeLinecap="round" d="m14 14 3.5 3.5" />
-        </svg>
-      </button>
-    </form>
   );
 }
 

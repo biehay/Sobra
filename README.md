@@ -51,6 +51,9 @@ Además:
   invitación a crear la cuenta para visitantes, una sección "Para vos" para quien ya tiene cuenta (lo nuevo para
   sus búsquedas y su zona) y lo que diferencia a Sobrá. Al tocar el corazón o "Avisame cuando aparezca" sin
   cuenta, el registro explica para qué es y vuelve al mismo lugar.
+- **Buscador con sugerencias** (`src/components/buscador.tsx`, `src/lib/sugerencias.ts`): mientras se escribe
+  muestra lotes (foto, precio) y categorías. Entiende tildes, plurales, sinónimos de obra y la palabra a medio
+  escribir; si nada coincide con todo, muestra lo parecido. Se maneja con el teclado.
 - **Recomendaciones** (`src/lib/recomendaciones/`): según lo que cada persona vio, guardó, ofertó y compró (lo
   reciente pesa más). Mezcla parecido (categoría, palabras, zona, precio), "quienes vieron esto también vieron"
   (solo con 2 personas o más, para no revelar a nadie) y complementos de obra (porcelanato → pegamento y

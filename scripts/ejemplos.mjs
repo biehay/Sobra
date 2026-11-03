@@ -144,18 +144,15 @@ function dibujo(categoria, oscuro, claro) {
   return r.join("");
 }
 
-const escapar = (t) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
 async function foto(lote, variante) {
   const [oscuro, claro] = COLORES[lote.categoria] ?? COLORES.Otros;
-  const titulo = lote.titulo.length > 38 ? `${lote.titulo.slice(0, 37).trim()}…` : lote.titulo;
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900">
     <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${oscuro}"/><stop offset="1" stop-color="${variante ? claro : oscuro}" stop-opacity="${variante ? 0.8 : 0.7}"/></linearGradient></defs>
     <rect width="1200" height="900" fill="url(#g)"/>
     <g transform="${variante ? "translate(600 330) rotate(-8) translate(-600 -330)" : ""}">${dibujo(lote.categoria, oscuro, claro)}</g>
-    <rect y="690" width="1200" height="210" fill="#062a3a" opacity=".88"/>
-    <text x="60" y="785" font-family="Arial, Helvetica, sans-serif" font-size="52" font-weight="700" fill="#fff">${escapar(titulo)}</text>
-    <text x="60" y="850" font-family="Arial, Helvetica, sans-serif" font-size="32" fill="#7dd3fc">Foto de ejemplo · ${escapar(lote.categoria)}</text>
+    <rect x="420" y="770" width="360" height="64" rx="32" fill="#062a3a" opacity=".85"/>
+    <text x="600" y="812" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="700" fill="#fff">Foto de ejemplo</text>
   </svg>`;
   return sharp(Buffer.from(svg)).jpeg({ quality: 82 }).toBuffer();
 }

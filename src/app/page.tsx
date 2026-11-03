@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Buscador } from "@/components/buscador";
 import { TarjetaLote } from "@/components/tarjeta-lote";
 import { CalculadoraSobrante } from "@/components/calculadora-sobrante";
 import { ParaVosVisitante } from "@/components/para-vos-visitante";
@@ -93,11 +94,7 @@ export default async function Inicio() {
               Sobrantes nuevos y sin uso de constructoras y corralones, verificados por Sobrá. Pagás protegido: el vendedor cobra
               recién cuando retirás.
             </p>
-            <form action="/lotes" role="search" className="mt-6 hidden max-w-xl gap-2 rounded-xl bg-white p-1.5 shadow-lg sm:flex">
-              <label htmlFor="buscar-portada" className="sr-only">Qué material buscás</label>
-              <input id="buscar-portada" name="q" type="search" placeholder="¿Qué necesitás? Porcelanato, caños, cemento..." className="min-w-0 flex-1 rounded-lg px-3 text-base text-petroleo outline-none" />
-              <button className="btn px-5 py-3">Buscar</button>
-            </form>
+            <Buscador variante="portada" id="buscar-portada" className="mt-6 hidden max-w-xl sm:block" />
             <p className="mt-3 text-white/80 sm:hidden">Sobrantes verificados, con pago protegido.</p>
             <div className="mt-4 hidden flex-wrap gap-2 text-sm sm:flex">
               {categorias.slice(0, 5).map((c) => (

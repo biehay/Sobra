@@ -353,6 +353,10 @@ try {
   esperar((await anon.locator("a[href^='/lotes/']").count()) === 1, "el filtro encuentra el lote");
   // Buscador y desplegables del header.
   await anon.goto(`${BASE}/como-funciona`);
+  // Mientras escribe, el buscador sugiere lotes (con la palabra a medio escribir).
+  await anon.locator("#buscar-escritorio").pressSequentially("porc", { delay: 60 });
+  await anon.waitForSelector("[role=option]:has-text('Porcelanato 60x60')", { timeout: 5000 });
+  esperar(await anon.isVisible("[role=option]:has-text('Ver todos los resultados')"), "el buscador sugiere mientras se escribe");
   await anon.fill("#buscar-escritorio", "porcelanato");
   await anon.press("#buscar-escritorio", "Enter");
   await anon.waitForURL("**/lotes?q=porcelanato");
