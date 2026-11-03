@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Aviso } from "@/components/aviso";
-import { exigirRol } from "@/lib/sesion";
+import { redirect } from "next/navigation";
+import { exigirRol, obtenerPerfil, sesionVerificada } from "@/lib/sesion";
 import { AvisoAdmin } from "@/components/aviso-admin";
 import { FormLote } from "../../form-lote";
 import { CONDICIONES, type Condicion } from "@/lib/datos";
@@ -11,8 +12,17 @@ export const maxDuration = 180;
 export const metadata: Metadata = { title: "Publicar lote" };
 
 export default async function NuevoLote({ searchParams }: PageProps<"/panel/vendedor/lotes/nuevo">) {
+  const parametros = await searchParams;
+  // Si viene de la calculadora sin sesión (o sin el código confirmado), lo que
+  // cargó tiene que seguir acá después de ingresar: se vuelve a esta misma dirección.
+  const datos = new URLSearchParams(
+    Object.entries(parametros).filter((e): e is [string, string] => typeof e[1] === "string" && e[0] !== "error"),
+  );
+  const aca = `/panel/vendedor/lotes/nuevo${datos.size ? `?${datos}` : ""}`;
+  if (!(await obtenerPerfil())) redirect(`/registro?volver=${encodeURIComponent(aca)}`);
+  if (!(await sesionVerificada())) redirect(`/seguridad/verificar?volver=${encodeURIComponent(aca)}`);
   const perfil = await exigirRol("usuario", "admin");
-  const { error, lista, estado, titulo, pedido } = await searchParams;
+  const { error, lista, estado, titulo, pedido } = parametros;
   // Lo que cargó en la calculadora de la portada llega ya puesto.
   const precioLista = typeof lista === "string" && /^\d{1,12}$/.test(lista) ? lista : undefined;
   const condicion = typeof estado === "string" && estado in CONDICIONES ? (estado as Condicion) : undefined;
@@ -26,6 +36,11 @@ export default async function NuevoLote({ searchParams }: PageProps<"/panel/vend
       <div className="mb-4">
         <Aviso error={error} />
       </div>
+      {tituloInicial && precioPedido && (
+        <p data-desde-calculadora className="mb-4 rounded-lg border border-celeste/50 bg-celeste-claro px-4 py-3 text-sm text-petroleo">
+          <strong>Te trajimos lo que calculaste.</strong> Revisá el título y el precio, y sumá las fotos y los datos de retiro.
+        </p>
+      )}
       {perfil.rol === "admin" && (
         <AvisoAdmin>Las cuentas admin no publican: podés ver y probar el formulario, pero no enviarlo.</AvisoAdmin>
       )}

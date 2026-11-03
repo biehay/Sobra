@@ -131,8 +131,9 @@ async function crearFotos(browser) {
 }
 
 // --- Registro con código por email -------------------------------------------
+// `volver: "aca"`: ya está en la pantalla de registro (por ejemplo, llegó desde la calculadora).
 async function registrar(pg, { nombre, empresa, email, zona = "GBA Sur", telefono, volver }) {
-  await pg.goto(`${BASE}/registro${volver ? `?volver=${encodeURIComponent(volver)}` : ""}`);
+  if (volver !== "aca") await pg.goto(`${BASE}/registro${volver ? `?volver=${encodeURIComponent(volver)}` : ""}`);
   esperar(!(await pg.locator("text=Quiero comprar").count()), "el registro es un solo formulario (sin elegir comprador o vendedor)");
   await pg.fill("#nombre", nombre);
   if (empresa) await pg.fill("#empresa", empresa);
@@ -253,9 +254,16 @@ try {
   esperar((await vend.locator("#password-reglas li", { hasText: "Un signo" }).getAttribute("class")).includes("stone"), "la lista marca que falta el signo");
   await tras(vend, "error=", () => vend.click("button:has-text('Crear cuenta')"));
   esperar((await aviso(vend)).includes("un signo"), "el registro rechaza una contraseña sin signo");
+  // Marta llega desde la calculadora de la portada, sin cuenta: lo que calculó tiene que
+  // seguir en el formulario después de registrarse y poner el código.
+  await vend.goto(`${BASE}/`);
+  await vend.fill("#calc-texto", "45 m² de porcelanato gris");
+  await vend.click("button:has-text('Calcular')");
+  await vend.click("button:has-text('Publicarlo gratis')");
+  await vend.waitForURL("**/registro?volver=**");
   const codigoV = await registrar(vend, {
     nombre: "Marta Gómez", empresa: "Constructora del Sur", email: "marta@constructora.test", telefono: "11 2345 6789",
-    volver: "/panel/vendedor/lotes/nuevo",
+    volver: "aca",
   });
   await captura(vend, "verificar-codigo");
   await tras(vend, "error=", () => escribirCodigo(vend, codigoV === "000000" ? "111111" : "000000"));
@@ -267,9 +275,17 @@ try {
   await tras(vend, "ok=", () => vend.click("button:has-text('pedí otro código')"));
   const codigoV2 = (await ultimoEmail("marta@constructora.test", "Tu código de Sobrá", Date.now() - 5000)).Subject.match(/\d{6}/)[0];
   await escribirCodigo(vend, codigoV2);
-  await vend.waitForURL("**/panel/vendedor/lotes/nuevo").catch(async () => {
+  await vend.waitForURL("**/panel/vendedor/lotes/nuevo?**").catch(async () => {
     throw new Error(`El código nuevo (${codigoV2}, el anterior era ${codigoV}) no entró. Aviso: "${await aviso(vend)}"`);
   });
+  esperar(
+    (await vend.inputValue("#titulo")) === "45 m² de porcelanato gris" &&
+      (await vend.inputValue("#precio_lista")) === "600000" &&
+      (await vend.inputValue("#precio_pedido")) === "450000" &&
+      (await vend.inputValue("#condicion")) === "nuevo",
+    "después de registrarse, el formulario tiene lo que calculó sin cuenta",
+  );
+  esperar(await vend.isVisible("[data-desde-calculadora]"), "el formulario avisa que trae lo que calculó");
   await vend.goto(`${BASE}/panel/vendedor`);
   esperar(await vend.locator("nav a:has-text('Mis compras')").isVisible(), "el panel tiene pestañas de ventas y compras");
   await captura(vend, "panel-vendedor-vacio");
