@@ -25,7 +25,7 @@ export default async function Catalogo({ searchParams }: PageProps<"/lotes">) {
   const zona = typeof filtros.zona === "string" ? filtros.zona : "";
   const condicion = typeof filtros.condicion === "string" && filtros.condicion in CONDICIONES ? (filtros.condicion as Condicion) : "";
   const perfil = await obtenerPerfil();
-  const conCuenta = perfil?.rol === "usuario";
+  const conCuenta = !!perfil;
   const pedido = typeof filtros.orden === "string" && filtros.orden in ORDENES ? (filtros.orden as keyof typeof ORDENES) : null;
   const claveOrden = pedido === "paravos" && !conCuenta ? "recientes" : (pedido ?? (conCuenta ? "paravos" : "recientes"));
   const orden = ORDENES[claveOrden];

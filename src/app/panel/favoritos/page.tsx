@@ -6,6 +6,7 @@ import { TarjetaLote } from "@/components/tarjeta-lote";
 import { BotonFavorito } from "@/components/boton-favorito";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { exigirRol } from "@/lib/sesion";
+import { AvisoAdmin } from "@/components/aviso-admin";
 import { alternativasA } from "@/lib/recomendaciones";
 import { SugerenciasCompactas } from "@/components/sugerencias-compactas";
 import type { Recomendacion } from "@/lib/recomendaciones/motor";
@@ -16,7 +17,7 @@ export const metadata: Metadata = { title: "Favoritos" };
 type Favorito = { lote_id: string; precio_guardado: number | null; created_at: string; lotes: Lote | null };
 
 export default async function Favoritos({ searchParams }: PageProps<"/panel/favoritos">) {
-  const perfil = await exigirRol("usuario");
+  const perfil = await exigirRol("usuario", "admin");
   const { ok, error } = await searchParams;
   const supabase = await crearClienteServidor();
   const { data } = await supabase
@@ -36,6 +37,7 @@ export default async function Favoritos({ searchParams }: PageProps<"/panel/favo
   return (
     <div className="contenedor py-10">
       <PestanasPanel activa="favoritos" />
+      {perfil.rol === "admin" && <AvisoAdmin>Podés guardar favoritos para probar.</AvisoAdmin>}
       <h1 className="text-3xl font-bold">Favoritos</h1>
       <p className="text-stone-600">Los lotes que guardaste. Si alguno baja de precio, te avisamos por email.</p>
 

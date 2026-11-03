@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Aviso } from "@/components/aviso";
 import { exigirRol } from "@/lib/sesion";
+import { AvisoAdmin } from "@/components/aviso-admin";
 import { FormLote } from "../../form-lote";
 import { CONDICIONES, type Condicion } from "@/lib/datos";
 
@@ -10,7 +11,7 @@ export const maxDuration = 180;
 export const metadata: Metadata = { title: "Publicar lote" };
 
 export default async function NuevoLote({ searchParams }: PageProps<"/panel/vendedor/lotes/nuevo">) {
-  const perfil = await exigirRol("usuario");
+  const perfil = await exigirRol("usuario", "admin");
   const { error, lista, estado } = await searchParams;
   // Lo que cargó en la calculadora de la portada llega ya puesto.
   const precioLista = typeof lista === "string" && /^\d{1,12}$/.test(lista) ? lista : undefined;
@@ -23,7 +24,10 @@ export default async function NuevoLote({ searchParams }: PageProps<"/panel/vend
       <div className="mb-4">
         <Aviso error={error} />
       </div>
-      <FormLote usuarioId={perfil.id} inicial={{ precioLista, condicion }} />
+      {perfil.rol === "admin" && (
+        <AvisoAdmin>Las cuentas admin no publican: podés ver y probar el formulario, pero no enviarlo.</AvisoAdmin>
+      )}
+      <FormLote usuarioId={perfil.id} inicial={{ precioLista, condicion }} soloVista={perfil.rol === "admin"} />
     </div>
   );
 }

@@ -61,7 +61,7 @@ export default async function Inicio() {
   // Para quien ya tiene cuenta: recomendaciones según lo que vio, guardó,
   // ofertó y compró (ver lib/recomendaciones), más lo nuevo para sus búsquedas.
   let paraVos: Recomendacion[] = [];
-  if (perfil && perfil.rol === "usuario") {
+  if (perfil) {
     const [recs, { data: coincidencias }] = await Promise.all([
       recomendacionesParaUsuario(perfil.id, perfil.zona, 6),
       supabase.from("busqueda_coincidencias").select("lotes(*)").order("created_at", { ascending: false }).limit(6),
@@ -141,7 +141,7 @@ export default async function Inicio() {
       {destacados.length > 0 && <FranjaVender cuenta={!perfil ? "ninguna" : perfil.rol === "admin" ? "admin" : "usuario"} />}
 
       {/* 2. Lo que es para vos (con cuenta) o por qué crear una (sin cuenta). */}
-      {perfil && perfil.rol === "usuario" ? (
+      {perfil ? (
         <section className="contenedor pt-10">
           <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
             <div>
@@ -276,9 +276,7 @@ export default async function Inicio() {
             )}
           </div>
           {/* La calculadora ya está arriba (en la franja o, sin lotes, en la primera pantalla). */}
-          {perfil?.rol !== "admin" && (
-            <Link href={publicar} className="btn justify-self-start px-6 py-3 text-base lg:justify-self-end">Publicar mi sobrante gratis</Link>
-          )}
+          <Link href={publicar} className="btn justify-self-start px-6 py-3 text-base lg:justify-self-end">Publicar mi sobrante gratis</Link>
         </div>
       </section>
 

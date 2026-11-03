@@ -7,11 +7,10 @@ import { obtenerPerfil } from "@/lib/sesion";
 // invitamos a crear la cuenta (es uno de los momentos de más interés).
 type Favoritos = { usuarioId: string | null; guardados: Set<string> };
 
-// Lotes que guardó el usuario logueado, vacío para visitantes, null para el admin.
+// Lotes que guardó el usuario logueado (también el admin), vacío para visitantes.
 export const idsFavoritos = cache(async (): Promise<Favoritos | null> => {
   const perfil = await obtenerPerfil();
   if (!perfil) return { usuarioId: null, guardados: new Set() };
-  if (perfil.rol === "admin") return null;
   const supabase = await crearClienteServidor();
   const { data } = await supabase.from("favoritos").select("lote_id");
   return { usuarioId: perfil.id, guardados: new Set((data ?? []).map((f) => f.lote_id as string)) };

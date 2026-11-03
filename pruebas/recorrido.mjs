@@ -295,6 +295,15 @@ try {
   await adm.goto(`${BASE}/admin`);
   await adm.waitForSelector("h1:has-text('Administración')");
   await captura(adm, "admin-inicial");
+  // El admin ve todo (para revisar cómo queda), con un aviso donde no puede hacer algo.
+  await adm.goto(`${BASE}/panel/vendedor/lotes/nuevo`);
+  esperar(
+    (await adm.isVisible("[data-aviso-admin]")) && (await adm.isDisabled("button:has-text('Enviar a revisión')")),
+    "el admin ve el formulario de publicar con el aviso y sin poder enviarlo",
+  );
+  await adm.goto(`${BASE}/panel/comprador`);
+  esperar(await adm.isVisible("[data-aviso-admin]"), "el admin ve las secciones de usuario con su aviso");
+  await adm.goto(`${BASE}/admin`);
   paso("Admin: la sesión confirmada con el código del email ya entra al panel de admin");
 
   // 5. Vendedor carga un lote con fotos ------------------------------------

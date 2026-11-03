@@ -4,13 +4,14 @@ import { Aviso } from "@/components/aviso";
 import { BotonEnviar } from "@/components/boton-enviar";
 import { PestanasPanel } from "@/components/pestanas-panel";
 import { exigirRol } from "@/lib/sesion";
+import { AvisoAdmin } from "@/components/aviso-admin";
 import { anioDe, miImpacto, misConstancias, peso } from "@/lib/impacto";
 import { emitirConstancia } from "./acciones";
 
 export const metadata: Metadata = { title: "Mi impacto" };
 
 export default async function Impacto({ searchParams }: PageProps<"/panel/impacto">) {
-  await exigirRol("usuario");
+  const perfil = await exigirRol("usuario", "admin");
   const { ok, error, anio: anioParam } = await searchParams;
   const [operaciones, constancias] = await Promise.all([miImpacto(), misConstancias()]);
 
@@ -24,6 +25,7 @@ export default async function Impacto({ searchParams }: PageProps<"/panel/impact
   return (
     <div className="contenedor py-10">
       <PestanasPanel activa="impacto" />
+      {perfil.rol === "admin" && <AvisoAdmin>Las cuentas admin no tienen operaciones propias: acá ves cómo es esta sección.</AvisoAdmin>}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold">Mi impacto</h1>

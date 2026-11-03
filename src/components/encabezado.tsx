@@ -71,11 +71,9 @@ export async function Encabezado() {
             <Buscador variante="encabezado" id="buscar-escritorio" className="mx-2 hidden max-w-md flex-1 md:block" />
 
           <div className="ml-auto flex items-center gap-2 sm:gap-3">
-            {perfil?.rol !== "admin" && (
-              <Link href={publicar} className="btn hidden sm:inline-flex">
-                + Publicar sobrante
-              </Link>
-            )}
+            <Link href={publicar} className="btn hidden sm:inline-flex">
+              + Publicar sobrante
+            </Link>
             {perfil ? (
               <>
                 {perfil.rol === "admin" && (
@@ -98,7 +96,7 @@ export async function Encabezado() {
         </div>
       </header>
       {/* Afuera del header: su desenfoque de fondo haría que "fixed" se ubique dentro de él. */}
-      {perfil?.rol !== "admin" && <BotonPublicarFlotante href={publicar} />}
+      <BotonPublicarFlotante href={publicar} />
     </>
   );
 }
@@ -154,10 +152,13 @@ async function MenuUsuario({ perfil }: { perfil: Perfil }) {
       {resumen && <ResumenCuenta resumen={resumen} mes={mes} />}
 
       <nav aria-label="Mi cuenta" className="border-t border-stone-100 p-2 text-sm">
-        {perfil.rol === "admin" ? (
-          <Link href="/admin" className="block rounded-lg px-3 py-2 hover:bg-stone-100">Panel de admin</Link>
-        ) : (
+        {perfil.rol === "admin" && (
           <>
+            <Link href="/admin" className="block rounded-lg px-3 py-2 font-semibold hover:bg-stone-100">Panel de admin</Link>
+            <p className="px-3 pb-1 pt-3 text-xs font-semibold uppercase tracking-wide text-stone-400">Secciones de usuario (para ver cómo quedan)</p>
+          </>
+        )}
+        <>
               <Link href="/panel/vendedor" className="block rounded-lg px-3 py-2 hover:bg-stone-100">Mis ventas y lotes</Link>
               <Link href="/panel/comprador" className="block rounded-lg px-3 py-2 hover:bg-stone-100">Mis compras</Link>
               <Link href="/panel/favoritos" className="block rounded-lg px-3 py-2 hover:bg-stone-100">Favoritos</Link>
@@ -165,8 +166,7 @@ async function MenuUsuario({ perfil }: { perfil: Perfil }) {
               <Link href="/panel/cobros" className="block rounded-lg px-3 py-2 hover:bg-stone-100">Cobros y comprobantes</Link>
             <Link href="/panel/impacto" className="block rounded-lg px-3 py-2 hover:bg-stone-100">Mi impacto y constancias</Link>
               <Link href="/panel/perfil" className="block rounded-lg px-3 py-2 hover:bg-stone-100">Mis datos</Link>
-          </>
-        )}
+        </>
         <form action="/salir" method="post">
           <button className="w-full rounded-lg px-3 py-2 text-left text-stone-500 hover:bg-stone-100">Salir</button>
         </form>

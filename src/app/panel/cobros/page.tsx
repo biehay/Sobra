@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Aviso } from "@/components/aviso";
 import { PestanasPanel } from "@/components/pestanas-panel";
 import { exigirRol } from "@/lib/sesion";
+import { AvisoAdmin } from "@/components/aviso-admin";
 import { resumenUsuario } from "@/lib/resumen";
 import { cobrosDelVendedor, fecha } from "@/lib/cobros";
 import { pesos } from "@/lib/datos";
@@ -10,7 +11,7 @@ import { pesos } from "@/lib/datos";
 export const metadata: Metadata = { title: "Cobros" };
 
 export default async function Cobros({ searchParams }: PageProps<"/panel/cobros">) {
-  const perfil = await exigirRol("usuario");
+  const perfil = await exigirRol("usuario", "admin");
   const { ok, error } = await searchParams;
   const [cobros, resumen] = await Promise.all([cobrosDelVendedor(perfil.id), resumenUsuario(perfil.id)]);
 
@@ -22,6 +23,7 @@ export default async function Cobros({ searchParams }: PageProps<"/panel/cobros"
   return (
     <div className="contenedor py-10">
       <PestanasPanel activa="cobros" />
+      {perfil.rol === "admin" && <AvisoAdmin>Las cuentas admin no cobran ventas: acá ves cómo es esta sección.</AvisoAdmin>}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold">Cobros</h1>

@@ -7,6 +7,7 @@ import { EtiquetaEstado } from "@/components/etiqueta-estado";
 import { DatosOperacion } from "@/components/datos-operacion";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { exigirRol } from "@/lib/sesion";
+import { AvisoAdmin } from "@/components/aviso-admin";
 import { EstadoReclamo, FormReclamo } from "@/components/reclamo";
 import { MODOS_RETIRO, linkWhatsapp, pesos, type Lote, type Oferta, type Reclamo } from "@/lib/datos";
 import { cancelarOferta } from "../acciones";
@@ -26,7 +27,7 @@ function reciente(fecha: string) {
 }
 
 export default async function PanelComprador({ searchParams }: PageProps<"/panel/comprador">) {
-  const perfil = await exigirRol("usuario");
+  const perfil = await exigirRol("usuario", "admin");
   const { ok, error } = await searchParams;
   const supabase = await crearClienteServidor();
   const { data } = await supabase
@@ -69,6 +70,7 @@ export default async function PanelComprador({ searchParams }: PageProps<"/panel
   return (
     <div className="contenedor py-10">
       <PestanasPanel activa="compras" />
+      {perfil.rol === "admin" && <AvisoAdmin>Las cuentas admin no compran: acá ves cómo es esta sección.</AvisoAdmin>}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <h1 className="text-3xl font-bold">Mis compras</h1>
         <Link href="/lotes" className="btn">Buscar lotes</Link>

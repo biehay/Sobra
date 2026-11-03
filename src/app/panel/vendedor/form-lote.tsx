@@ -24,12 +24,15 @@ export function FormLote({
   retiro,
   precioMinimo,
   inicial,
+  soloVista = false,
 }: {
   usuarioId: string;
   lote?: Lote;
   retiro?: Retiro | null;
   precioMinimo?: number | null;
   inicial?: { precioLista?: string; condicion?: Condicion };
+  // Para la cuenta admin: ve el formulario entero pero no lo puede enviar.
+  soloVista?: boolean;
 }) {
   const [items, setItems] = useState<Item[]>(lote?.items.length ? lote.items : [{ nombre: "", cantidad: 1, unidad: "u" }]);
   const [fotos, setFotos] = useState<string[]>(lote?.fotos ?? []);
@@ -428,10 +431,10 @@ export function FormLote({
       )}
 
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-        <BotonEnviar name="intencion" value="borrador" className="btn-sec" disabled={subiendo} pendiente="Guardando...">
+        <BotonEnviar name="intencion" value="borrador" className="btn-sec" disabled={subiendo || soloVista} pendiente="Guardando...">
           Guardar borrador
         </BotonEnviar>
-        <BotonEnviar name="intencion" value="revision" className="btn" disabled={subiendo}>
+        <BotonEnviar name="intencion" value="revision" className="btn" disabled={subiendo || soloVista}>
           Enviar a revisión
         </BotonEnviar>
       </div>

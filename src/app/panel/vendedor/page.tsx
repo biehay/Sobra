@@ -6,6 +6,7 @@ import { EtiquetaEstado } from "@/components/etiqueta-estado";
 import { DatosOperacion } from "@/components/datos-operacion";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { exigirRol } from "@/lib/sesion";
+import { AvisoAdmin } from "@/components/aviso-admin";
 import { visitasDeMisLotes } from "@/lib/visitas";
 import { busquedasPublicas } from "@/lib/busquedas";
 import { reputacionDe } from "@/lib/reputacion";
@@ -18,7 +19,7 @@ import { cambiarEstadoLote, confirmarRetiro, responderOferta } from "../acciones
 export const metadata: Metadata = { title: "Mis ventas" };
 
 export default async function PanelVendedor({ searchParams }: PageProps<"/panel/vendedor">) {
-  const perfil = await exigirRol("usuario");
+  const perfil = await exigirRol("usuario", "admin");
   const { ok, error } = await searchParams;
   const supabase = await crearClienteServidor();
 
@@ -53,6 +54,7 @@ export default async function PanelVendedor({ searchParams }: PageProps<"/panel/
   return (
     <div className="contenedor py-10">
       <PestanasPanel activa="ventas" />
+      {perfil.rol === "admin" && <AvisoAdmin>Las cuentas admin no publican ni venden: acá ves cómo es esta sección.</AvisoAdmin>}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold">Mis ventas</h1>

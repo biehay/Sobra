@@ -5,6 +5,7 @@ import { BotonEnviar } from "@/components/boton-enviar";
 import { PestanasPanel } from "@/components/pestanas-panel";
 import { TarjetaLote } from "@/components/tarjeta-lote";
 import { exigirRol } from "@/lib/sesion";
+import { AvisoAdmin } from "@/components/aviso-admin";
 import { misBusquedas } from "@/lib/busquedas";
 import { estadoFavorito, idsFavoritos } from "@/lib/favoritos";
 import { CATEGORIAS, ZONAS, pesos } from "@/lib/datos";
@@ -13,7 +14,7 @@ import { cambiarBusqueda, crearBusqueda } from "./acciones";
 export const metadata: Metadata = { title: "Lo busco" };
 
 export default async function Busquedas({ searchParams }: PageProps<"/panel/busquedas">) {
-  await exigirRol("usuario");
+  const perfil = await exigirRol("usuario", "admin");
   const { ok, error, q, categoria, zona } = await searchParams;
   const [busquedas, favoritos] = await Promise.all([misBusquedas(), idsFavoritos()]);
   const texto = (v: unknown) => (typeof v === "string" ? v : "");
@@ -21,6 +22,7 @@ export default async function Busquedas({ searchParams }: PageProps<"/panel/busq
   return (
     <div className="contenedor py-10">
       <PestanasPanel activa="busquedas" />
+      {perfil.rol === "admin" && <AvisoAdmin>Las cuentas admin no guardan búsquedas: acá ves cómo es esta sección.</AvisoAdmin>}
       <h1 className="text-3xl font-bold">Lo busco</h1>
       <p className="text-stone-600">
         Contanos qué material necesitás y te avisamos por email apenas se publique un lote que coincida. No tenés que entrar
