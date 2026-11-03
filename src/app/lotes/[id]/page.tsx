@@ -269,7 +269,7 @@ export default async function DetalleLote({ params, searchParams }: PageProps<"/
         <section className="mt-14">
           <h2 className="text-2xl font-bold">Para completar la obra</h2>
           <p className="mb-5 text-sm text-stone-600">Lo que suele hacer falta junto con este material.</p>
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
             {complementos.map((r) => (
               <TarjetaLote key={r.lote.id} lote={r.lote} motivo={r.motivo.texto} origen={`rec-${r.motivo.tipo}`} favorito={estadoFavorito(favoritos, r.lote)} volver={`/lotes/${lote.id}`} />
             ))}
@@ -280,7 +280,7 @@ export default async function DetalleLote({ params, searchParams }: PageProps<"/
       {parecidos.length > 0 && (
         <section id="parecidos" className="mt-14 scroll-mt-24">
           <h2 className="mb-5 text-2xl font-bold">{disponible ? "También te puede interesar" : "Parecidos disponibles"}</h2>
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
             {parecidos.map((r) => (
               <TarjetaLote key={r.lote.id} lote={r.lote} motivo={r.motivo.texto} origen={`rec-${r.motivo.tipo}`} favorito={estadoFavorito(favoritos, r.lote)} volver={`/lotes/${lote.id}`} />
             ))}

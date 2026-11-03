@@ -29,7 +29,7 @@ export function ParaVosVisitante() {
     <section className="contenedor pt-10">
       <h2 className="mb-1 text-2xl font-bold">Basado en lo que viste</h2>
       <p className="mb-5 text-sm text-stone-600">Lotes parecidos y lo que suele ir con ellos.</p>
-      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
         {recs.map((r) => (
           <TarjetaLote key={r.lote.id} lote={r.lote} motivo={r.motivo} favorito={false} volver="/" />
         ))}

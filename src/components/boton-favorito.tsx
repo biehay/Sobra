@@ -26,7 +26,7 @@ export function BotonFavorito({
         className={
           conTexto
             ? "btn-sec w-full"
-            : "flex size-9 items-center justify-center rounded-full bg-white/95 shadow-sm ring-1 ring-stone-200 transition hover:scale-105"
+            : "flex size-8 items-center justify-center rounded-full sm:size-9 bg-white/95 shadow-sm ring-1 ring-stone-200 transition hover:scale-105"
         }
       >
         <Corazon lleno={guardado} />

@@ -52,6 +52,7 @@ export default async function Catalogo({ searchParams }: PageProps<"/lotes">) {
   const avisame = favoritos?.usuarioId === null ? `/registro?motivo=busqueda&volver=${encodeURIComponent(rutaBusqueda)}` : rutaBusqueda;
   // Para volver a esta misma búsqueda después de tocar el corazón.
   const volver = `/lotes?${new URLSearchParams(Object.entries({ q, categoria, zona, condicion, orden: claveOrden }).filter(([, v]) => v))}`;
+  const filtrosActivos = [q, categoria, zona, condicion].filter(Boolean).length;
   let lotes = (data ?? []) as Lote[];
   if (claveOrden === "descuento") {
     const rebaja = (l: Lote) => descuento(l.precio_publicado ?? l.precio_pedido, l.precio_lista) ?? 0;
@@ -66,7 +67,19 @@ export default async function Catalogo({ searchParams }: PageProps<"/lotes">) {
       <h1 className="text-3xl font-bold">Lotes disponibles</h1>
       <p className="mt-1 text-stone-600">Materiales sobrantes verificados, con retiro en el AMBA.</p>
 
-      <form className="tarjeta mt-6 grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-6">
+      {/* En el celular los filtros se pliegan en un botón para que los lotes entren en la primera pantalla. */}
+      <input type="checkbox" id="ver-filtros" className="peer sr-only" />
+      <label
+        htmlFor="ver-filtros"
+        className="tarjeta mt-4 flex cursor-pointer items-center justify-between px-4 py-3 text-sm font-semibold peer-focus-visible:ring-2 peer-focus-visible:ring-marca sm:hidden"
+      >
+        <span>
+          Filtros y orden
+          {filtrosActivos > 0 && <span className="ml-2 rounded-full bg-marca px-2 py-0.5 text-xs text-white">{filtrosActivos}</span>}
+        </span>
+        <span aria-hidden className="text-stone-500">▾</span>
+      </label>
+      <form className="tarjeta mt-2 hidden gap-3 p-4 peer-checked:grid sm:mt-6 sm:grid sm:grid-cols-2 lg:grid-cols-6">
         <input name="q" defaultValue={q} placeholder="Buscar: porcelanato, caño, cemento..." className="campo lg:col-span-2" />
         <select name="categoria" defaultValue={categoria} className="campo" aria-label="Categoría">
           <option value="">Todas las categorías</option>
@@ -115,7 +128,7 @@ export default async function Catalogo({ searchParams }: PageProps<"/lotes">) {
       )}
 
       {lotes.length ? (
-        <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
           {lotes.map((lote) => (
             <TarjetaLote key={lote.id} lote={lote} favorito={estadoFavorito(favoritos, lote)} volver={volver} />
           ))}
@@ -127,7 +140,7 @@ export default async function Catalogo({ searchParams }: PageProps<"/lotes">) {
       {parecidos.length > 0 && (
         <section className="mt-10">
           <h2 className="mb-5 text-xl font-bold">Lo más parecido a lo que buscaste</h2>
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
             {parecidos.map((r) => (
               <TarjetaLote key={r.lote.id} lote={r.lote} motivo={r.motivo.texto} origen="rec-busqueda" favorito={estadoFavorito(favoritos, r.lote)} volver={volver} />
             ))}

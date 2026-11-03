@@ -147,7 +147,7 @@ export default async function Inicio() {
             <Link href="/panel/busquedas" className="text-sm font-semibold text-marca hover:underline">Avisame cuando aparezca algo →</Link>
           </div>
           {paraVos.length ? (
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
               {paraVos.map((r) => (
                 <TarjetaLote key={r.lote.id} lote={r.lote} motivo={r.motivo.texto} origen={`rec-${r.motivo.tipo}`} favorito={estadoFavorito(favoritos, r.lote)} volver="/" />
               ))}
@@ -196,7 +196,7 @@ export default async function Inicio() {
             <h2 className="text-2xl font-bold">Las mejores ofertas</h2>
             <Link href="/lotes?orden=descuento" className="text-sm font-semibold text-marca hover:underline">Ver todas</Link>
           </div>
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{masBaratos.slice(2, 8).map(tarjeta)}</div>
+          <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">{masBaratos.slice(2, 8).map(tarjeta)}</div>
         </section>
       )}
 
@@ -206,7 +206,7 @@ export default async function Inicio() {
           <Link href="/lotes" className="text-sm font-semibold text-marca hover:underline">Ver todos</Link>
         </div>
         {recientes.length ? (
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{recientes.map(tarjeta)}</div>
+          <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">{recientes.map(tarjeta)}</div>
         ) : (
           <p className="tarjeta p-8 text-center text-stone-500">
             Todavía no hay lotes publicados. ¿Tenés un sobrante?{" "}

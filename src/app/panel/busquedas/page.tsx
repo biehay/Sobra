@@ -100,7 +100,7 @@ export default async function Busquedas({ searchParams }: PageProps<"/panel/busq
                     <p className="mt-4 text-sm font-semibold text-celeste-oscuro">
                       {b.lotes.length === 1 ? "Ya hay 1 lote que coincide" : `Ya hay ${b.lotes.length} lotes que coinciden`}
                     </p>
-                    <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="mt-3 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
                       {b.lotes.slice(0, 6).map((lote) => (
                         <TarjetaLote key={lote.id} lote={lote} favorito={estadoFavorito(favoritos, lote)} volver="/panel/busquedas" />
                       ))}

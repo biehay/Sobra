@@ -183,7 +183,7 @@ export default async function PanelComprador({ searchParams }: PageProps<"/panel
         <section className="mt-12">
           <h2 className="text-xl font-bold">Para completar tu obra</h2>
           <p className="mb-4 text-sm text-stone-600">Lo que suele hacer falta junto con lo que compraste.</p>
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
             {complementos.map((r) => (
               <TarjetaLote key={r.lote.id} lote={r.lote} motivo={r.motivo.texto} origen={`rec-${r.motivo.tipo}`} favorito={estadoFavorito(favoritos, r.lote)} volver="/panel/comprador" />
             ))}

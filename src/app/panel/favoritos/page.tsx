@@ -44,7 +44,7 @@ export default async function Favoritos({ searchParams }: PageProps<"/panel/favo
       </div>
 
       {favoritos.length ? (
-        <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
           {favoritos.map((f) => {
             const lote = f.lotes;
             // Pausado o en revisión: la base ya no lo muestra.
