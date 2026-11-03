@@ -1,4 +1,5 @@
 import "server-only";
+import { nombreConMarca } from "@/lib/datos";
 import { cache } from "react";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import type { Lote } from "@/lib/datos";
@@ -237,7 +238,7 @@ export async function parecidosABusqueda(texto: string, categoria: string | null
   const buscadas = new Set(palabras(texto));
   const tieneQueVer = (l: Lote) =>
     (categoria && l.categoria === categoria) ||
-    palabras(`${l.titulo} ${l.items.map((i) => i.nombre).join(" ")}`).some((p) => buscadas.has(p));
+    palabras(`${l.titulo} ${l.items.map((i) => nombreConMarca(i)).join(" ")}`).some((p) => buscadas.has(p));
   const corto = texto.length > 30 ? `${texto.slice(0, 28)}…` : texto;
   return recomendar(
     { senales: [{ lote: buscado, tipo: "favorito", fecha: new Date().toISOString() }], candidatos: lotes, usuarioId, zonaUsuario: zona, confianza: conf },

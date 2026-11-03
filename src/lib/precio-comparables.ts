@@ -1,3 +1,4 @@
+import { nombreConMarca } from "@/lib/datos";
 import type { Condicion, Item } from "@/lib/datos";
 import { factorPrecio } from "@/lib/depreciacion";
 import { palabras } from "@/lib/recomendaciones/motor";
@@ -60,7 +61,7 @@ export function buscarComparables(
   const principal = cantidadPrincipal(objetivo.texto, objetivo.items);
   const vacia: Referencia = { unidad: principal?.unidad ?? null, cantidad: principal?.cantidad ?? null, comparables: [], medianaPorUnidad: null, estimado: null, confiable: false };
   if (!principal) return vacia;
-  const buscadas = delProducto(`${objetivo.texto} ${(objetivo.items ?? []).map((i) => i.nombre).join(" ")}`);
+  const buscadas = delProducto(`${objetivo.texto} ${(objetivo.items ?? []).map((i) => nombreConMarca(i)).join(" ")}`);
   if (!buscadas.size) return vacia;
 
   const comparables: Comparable[] = [];
@@ -69,13 +70,13 @@ export function buscarComparables(
     if (objetivo.categoria && l.categoria !== objetivo.categoria) continue;
     const suyo = cantidadPrincipal(l.titulo, l.items);
     if (!suyo || suyo.unidad !== principal.unidad || suyo.cantidad <= 0) continue;
-    const pal = delProducto(`${l.titulo} ${l.items.map((i) => i.nombre).join(" ")}`);
+    const pal = delProducto(`${l.titulo} ${l.items.map((i) => nombreConMarca(i)).join(" ")}`);
     const comunes = [...buscadas].filter((p) => pal.has(p)).length;
     // Que sea lo mismo: la mayoría de lo que se busca tiene que estar en el lote.
     if (comunes / buscadas.size < 0.5) continue;
     const precio = Number(l.precio_publicado ?? l.precio_pedido);
     // Llevado al mismo estado (y detalles) que el que se quiere tasar, con la tabla de su rubro.
-    const suTexto = `${l.titulo} ${l.items.map((i) => i.nombre).join(" ")}`;
+    const suTexto = `${l.titulo} ${l.items.map((i) => nombreConMarca(i)).join(" ")}`;
     const porUnidad =
       (precio / suyo.cantidad) *
       (factorPrecio(l.categoria, objetivo.condicion, objetivo.detalles, suTexto) / factorPrecio(l.categoria, l.condicion, l.detalles, suTexto));

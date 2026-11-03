@@ -18,6 +18,7 @@ export type Observacion = {
   detalles?: string[];
   materiales: {
     nombre: string;
+    marca?: string | null;
     presentacion: string;
     unidades_contadas: number | null;
     contenido_por_unidad: number | null;
@@ -44,7 +45,7 @@ export type PropuestaLote = {
   titulo: string;
   categoria: string;
   condicion: Condicion;
-  materiales: { nombre: string; cantidad: number; unidad: string }[];
+  materiales: { nombre: string; cantidad: number; unidad: string; marca?: string }[];
   peso_kg: number | null;
   descripcion: string;
   detalles: string[];
@@ -201,7 +202,12 @@ export function unificar(obs: Observacion, rev: Revision | null): PropuestaLote 
     titulo: obs.titulo.trim().slice(0, 120),
     categoria: obs.categoria,
     condicion: obs.condicion,
-    materiales: materiales.map((m) => ({ nombre: m.nombre.trim().slice(0, 120), cantidad: m.cantidad, unidad: m.unidad.slice(0, 20) })),
+    materiales: materiales.map((m) => ({
+      nombre: m.nombre.trim().slice(0, 120),
+      cantidad: m.cantidad,
+      unidad: m.unidad.slice(0, 20),
+      ...(m.marca?.trim() ? { marca: m.marca.trim().slice(0, 60) } : {}),
+    })),
     peso_kg: peso,
     descripcion: obs.descripcion.trim().slice(0, 1000),
     // Solo los detalles que corresponden al rubro.

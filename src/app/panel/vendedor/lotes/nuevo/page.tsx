@@ -5,6 +5,7 @@ import { exigirRol, obtenerPerfil, sesionVerificada } from "@/lib/sesion";
 import { AvisoAdmin } from "@/components/aviso-admin";
 import { FormLote } from "../../form-lote";
 import { CONDICIONES, type Condicion } from "@/lib/datos";
+import { cantidadPrincipal } from "@/lib/precio-comparables";
 
 // La sugerencia de precio con IA busca en la web: puede tardar hasta un par de minutos.
 export const maxDuration = 180;
@@ -22,14 +23,20 @@ export default async function NuevoLote({ searchParams }: PageProps<"/panel/vend
   if (!(await obtenerPerfil())) redirect(`/registro?volver=${encodeURIComponent(aca)}`);
   if (!(await sesionVerificada())) redirect(`/seguridad/verificar?volver=${encodeURIComponent(aca)}`);
   const perfil = await exigirRol("usuario", "admin");
-  const { error, lista, estado, titulo, pedido, cant, unidad } = parametros;
+  const { error, lista, estado, titulo, pedido, cant, unidad, marca } = parametros;
   // Lo que cargó en la calculadora de la portada llega ya puesto.
   const precioLista = typeof lista === "string" && /^\d{1,12}$/.test(lista) ? lista : undefined;
   const condicion = typeof estado === "string" && estado in CONDICIONES ? (estado as Condicion) : undefined;
   const tituloInicial = typeof titulo === "string" ? titulo.trim().slice(0, 120) : undefined;
   const precioPedido = typeof pedido === "string" && /^\d{1,12}$/.test(pedido) ? Number(pedido) : undefined;
-  const cantidad = typeof cant === "string" && /^\d{1,9}(\.\d{1,3})?$/.test(cant) ? Number(cant) : undefined;
-  const item = tituloInicial && cantidad ? { nombre: tituloInicial, cantidad, unidad: typeof unidad === "string" ? unidad.slice(0, 20) : "u" } : undefined;
+  // El material con su cantidad: la del campo o, si no, la que está escrita en el texto.
+  const enTexto = tituloInicial ? cantidadPrincipal(tituloInicial) : null;
+  const cantidad = typeof cant === "string" && /^\d{1,9}(\.\d{1,3})?$/.test(cant) ? Number(cant) : enTexto?.cantidad;
+  const unidadItem = typeof unidad === "string" ? unidad.slice(0, 20) : enTexto?.unidad === "m2" ? "m²" : (enTexto?.unidad ?? "u");
+  const item =
+    tituloInicial && cantidad
+      ? { nombre: tituloInicial, cantidad, unidad: unidadItem, marca: typeof marca === "string" ? marca.trim().slice(0, 60) : undefined }
+      : undefined;
 
   return (
     <div className="contenedor max-w-3xl py-10">

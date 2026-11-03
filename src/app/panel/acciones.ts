@@ -30,6 +30,7 @@ const esquemaItem = z.object({
   nombre: z.string().trim().min(1),
   cantidad: z.number().positive(),
   unidad: z.string().trim().max(20),
+  marca: z.string().trim().max(60).optional(),
 });
 
 const esquemaLote = z.object({

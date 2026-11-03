@@ -258,6 +258,7 @@ try {
   // seguir en el formulario después de registrarse y poner el código.
   await vend.goto(`${BASE}/`);
   await vend.fill("#calc-texto", "45 m² de porcelanato gris");
+  await vend.fill("#calc-texto-marca", "Marca de prueba");
   await vend.click("button:has-text('Calcular')");
   await vend.click("button:has-text('Publicarlo gratis')");
   await vend.waitForURL("**/registro?volver=**");
@@ -286,6 +287,10 @@ try {
     "después de registrarse, el formulario tiene lo que calculó sin cuenta",
   );
   esperar(await vend.isVisible("[data-desde-calculadora]"), "el formulario avisa que trae lo que calculó");
+  esperar(
+    (await vend.inputValue("input[aria-label=Cantidad]")) === "45" && (await vend.inputValue("input[aria-label=Marca]")) === "Marca de prueba",
+    "el material llega con su cantidad y su marca",
+  );
   await vend.goto(`${BASE}/panel/vendedor`);
   esperar(await vend.locator("nav a:has-text('Mis compras')").isVisible(), "el panel tiene pestañas de ventas y compras");
   await captura(vend, "panel-vendedor-vacio");

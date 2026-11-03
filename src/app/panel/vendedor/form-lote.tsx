@@ -1,4 +1,5 @@
 "use client";
+import { nombreConMarca } from "@/lib/datos";
 
 import { useRef, useState, useTransition } from "react";
 import { crearClienteNavegador } from "@/lib/supabase/client";
@@ -58,7 +59,7 @@ export function FormLote({
   const categoriaActual = campos.categoria || null;
   const opcionesDetalle = detallesPara(categoriaActual);
   const detallesValidos = detalles.filter((d) => opcionesDetalle.some((o) => o.id === d));
-  const textoLote = `${campos.titulo ?? lote?.titulo ?? ""} ${items.map((i) => i.nombre).join(" ")}`;
+  const textoLote = `${campos.titulo ?? lote?.titulo ?? ""} ${items.map((i) => nombreConMarca(i)).join(" ")}`;
   const sugerido = precioSugerido(Number(precioLista) || null, condicion, categoriaActual, detallesValidos, textoLote);
   const leerCampos = () => {
     if (!formulario.current) return;
@@ -86,7 +87,7 @@ export function FormLote({
       (campos.namedItem("descripcion") as HTMLTextAreaElement).value = p.descripcion;
       setCondicion(p.condicion);
       setDetalles(p.detalles);
-      if (p.materiales.length) setItems(p.materiales.map((m) => ({ nombre: m.nombre, cantidad: m.cantidad, unidad: m.unidad })));
+      if (p.materiales.length) setItems(p.materiales.map((m) => ({ nombre: m.nombre, cantidad: m.cantidad, unidad: m.unidad, marca: m.marca })));
       setPropuesta(p);
       setDudas(p.dudas);
       leerCampos();
@@ -327,8 +328,17 @@ export function FormLote({
           <p className="etiqueta">Materiales incluidos</p>
           <div className={`space-y-2 ${dudaDe("materiales") ? "rounded-lg p-2 ring-2 ring-amber-200" : ""}`}>
             {items.map((item, i) => (
-              <div key={i} className="grid grid-cols-[1fr_5rem_5rem_auto] gap-2">
+              <div key={i} className="grid grid-cols-[1fr_5rem_5rem_auto] gap-2 sm:grid-cols-[1fr_8rem_5rem_5rem_auto]">
                 <input aria-label="Material" value={item.nombre} onChange={(e) => cambiarItem(i, { nombre: e.target.value })} className="campo" placeholder="Material" />
+                {/* La marca cambia mucho el precio: en el celular va en su propia fila. */}
+                <input
+                  aria-label="Marca"
+                  value={item.marca ?? ""}
+                  onChange={(e) => cambiarItem(i, { marca: e.target.value })}
+                  maxLength={60}
+                  className="campo order-last col-span-4 sm:order-none sm:col-span-1"
+                  placeholder="Marca (opcional)"
+                />
                 <input aria-label="Cantidad" type="number" min={0} step="any" value={item.cantidad} onChange={(e) => cambiarItem(i, { cantidad: Number(e.target.value) })} className="campo" />
                 <input aria-label="Unidad" value={item.unidad} onChange={(e) => cambiarItem(i, { unidad: e.target.value })} className="campo" placeholder="m², u, kg" />
                 <button type="button" onClick={() => setItems(items.filter((_, j) => j !== i))} className="px-2 text-stone-400 hover:text-red-600" aria-label="Quitar material">
@@ -340,6 +350,7 @@ export function FormLote({
           <button type="button" onClick={() => setItems([...items, { nombre: "", cantidad: 1, unidad: "u" }])} className="mt-2 text-sm font-semibold text-marca hover:underline">
             + Agregar material
           </button>
+          <p className="mt-1 text-xs text-stone-500">La marca es opcional, pero ayuda: cambia el precio y los compradores la buscan.</p>
           <Duda duda={dudaDe("materiales")} alConfirmar={() => resolver("materiales")} />
         </div>
 

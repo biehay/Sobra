@@ -1,3 +1,4 @@
+import { nombreConMarca } from "@/lib/datos";
 import { palabras } from "@/lib/recomendaciones/motor";
 
 // Sugerencias mientras se escribe en el buscador. Entiende tildes, plurales,
@@ -10,7 +11,7 @@ export type LoteBuscable = {
   titulo: string;
   categoria: string;
   zona: string;
-  items: { nombre: string }[];
+  items: { nombre: string; marca?: string }[];
   fotos: string[];
   precio_publicado: number | null;
   precio_pedido: number;
@@ -43,9 +44,9 @@ export function sugerir(consulta: string, lotes: LoteBuscable[], categorias: rea
 
   const puntuados = lotes.map((lote) => {
     const titulo = crudas(lote.titulo);
-    const resto = crudas(`${lote.items.map((i) => i.nombre).join(" ")} ${lote.categoria}`);
+    const resto = crudas(`${lote.items.map((i) => nombreConMarca(i)).join(" ")} ${lote.categoria}`);
     const enterasTitulo = new Set(palabras(lote.titulo));
-    const enterasResto = new Set(palabras(`${lote.items.map((i) => i.nombre).join(" ")} ${lote.categoria}`));
+    const enterasResto = new Set(palabras(`${lote.items.map((i) => nombreConMarca(i)).join(" ")} ${lote.categoria}`));
     let encontrados = 0;
     let puntaje = 0;
     terminos.forEach((t, i) => {

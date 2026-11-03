@@ -1,3 +1,4 @@
+import { nombreConMarca } from "@/lib/datos";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Aviso } from "@/components/aviso";
@@ -182,7 +183,7 @@ export default async function Admin({ searchParams }: PageProps<"/admin">) {
         {enRevision.length ? (
           <div className="space-y-4">
             {enRevision.map((lote) => {
-              const sugerido = precioSugerido(lote.precio_lista, lote.condicion, lote.categoria, lote.detalles, `${lote.titulo} ${lote.items.map((i) => i.nombre).join(" ")}`);
+              const sugerido = precioSugerido(lote.precio_lista, lote.condicion, lote.categoria, lote.detalles, `${lote.titulo} ${lote.items.map((i) => nombreConMarca(i)).join(" ")}`);
               return (
                 <div key={lote.id} className="tarjeta grid gap-5 p-5 lg:grid-cols-[2fr_1fr]">
                   <div className="space-y-3">
@@ -209,7 +210,7 @@ export default async function Admin({ searchParams }: PageProps<"/admin">) {
                     {lote.items.length > 0 && (
                       <ul className="text-sm text-stone-700">
                         {lote.items.map((item, i) => (
-                          <li key={i}>• {item.nombre}: {item.cantidad} {item.unidad}</li>
+                          <li key={i}>• {item.nombre}{item.marca ? ` (${item.marca})` : ""}: {item.cantidad} {item.unidad}</li>
                         ))}
                       </ul>
                     )}

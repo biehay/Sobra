@@ -1,8 +1,12 @@
 import "server-only";
+import { nombreConMarca } from "@/lib/datos";
 import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { CONDICIONES, type Condicion, type Item } from "@/lib/datos";
 import { detallesPara, factorPrecio } from "@/lib/depreciacion";
+import { consolidarPrecios } from "@/lib/precio-consolidar";
+import { cantidadPrincipal } from "@/lib/precio-comparables";
+import { dolarDelDia } from "@/lib/dolar";
 
 // Precio de mercado de un lote con IA: Claude busca en la web cuánto cuesta hoy
 // el material nuevo en Argentina (tiendas, corralones, Mercado Libre) y arma el
@@ -23,8 +27,20 @@ export type LoteParaTasar = {
   detalles?: string[];
 };
 
+const esquemaPrecio = z.object({
+  descripcion: z.string().max(200),
+  tipo_vendedor: z.enum(["proveedor", "minorista"]),
+  moneda: z.enum(["ARS", "USD"]),
+  precio: z.number().positive(),
+  por_cantidad: z.number().positive(),
+  unidad: z.string().max(20),
+  incluye_iva: z.boolean().nullable(),
+});
+
 const esquemaInforme = z.object({
   total_mercado_ars: z.number().int().positive(),
+  precios_encontrados: z.array(esquemaPrecio).max(15).default([]),
+  tipo_cambio_usd_ars: z.number().positive().nullable().default(null),
   usados_mercado_ars: z.number().int().positive().nullable(),
   detalle: z
     .array(
@@ -60,8 +76,27 @@ const herramientaInforme: Anthropic.Beta.BetaTool = {
   input_schema: {
     type: "object",
     additionalProperties: false,
-    required: ["total_mercado_ars", "usados_mercado_ars", "detalle", "fuentes", "confianza", "notas"],
+    required: ["total_mercado_ars", "precios_encontrados", "tipo_cambio_usd_ars", "usados_mercado_ars", "detalle", "fuentes", "confianza", "notas"],
     properties: {
+      precios_encontrados: {
+        type: "array",
+        description: "Cada precio que encontraste del mismo producto (o equivalente), tal como lo publica el vendedor. No conviertas monedas ni hagas cuentas: copiá el precio, la moneda y por cuánta cantidad es.",
+        items: {
+          type: "object",
+          additionalProperties: false,
+          required: ["descripcion", "tipo_vendedor", "moneda", "precio", "por_cantidad", "unidad", "incluye_iva"],
+          properties: {
+            descripcion: { type: "string", description: "Producto tal como se publica, sin nombrar la tienda." },
+            tipo_vendedor: { type: "string", enum: ["proveedor", "minorista"], description: "proveedor: distribuidor, mayorista, fabricante o corralón; minorista: tienda al público o marketplace." },
+            moneda: { type: "string", enum: ["ARS", "USD"] },
+            precio: { type: "number", description: "El precio tal cual está publicado, en su moneda." },
+            por_cantidad: { type: "number", description: "Cuántas unidades cubre ese precio: 1 si es por metro o por unidad, 1000 si es por km, 4000 si es la bobina de 4000 m, 2 si es la caja de 2 m²." },
+            unidad: { type: "string", description: "Unidad de por_cantidad: m, km, m2, u, kg, l." },
+            incluye_iva: { type: ["boolean", "null"], description: "true si el precio incluye IVA, false si es más IVA, null si no se sabe." },
+          },
+        },
+      },
+      tipo_cambio_usd_ars: { type: ["number", "null"], description: "Dólar oficial (venta) de hoy en pesos, si lo encontraste. null si no." },
       total_mercado_ars: { type: "integer", description: "Lo que costaría comprar hoy TODO el lote nuevo, en pesos argentinos." },
       usados_mercado_ars: {
         type: ["integer", "null"],
@@ -106,8 +141,9 @@ Tu tarea: estimar cuánto cuesta HOY comprar NUEVO, en Argentina y en pesos, tod
 
 Cómo hacerlo:
 - Buscá en la web precios actuales de productos iguales o equivalentes (misma medida, tipo y calidad) en Argentina. Priorizá proveedores: corralones, distribuidores, mayoristas, sitios de fabricantes y cadenas como Easy o Sodimac. Usá Mercado Libre solo como complemento o si no encontrás otra fuente.
+- Si se indica la marca, buscá esa marca y modelo exactos: la marca cambia mucho el precio. Si no la encontrás, usá un producto equivalente de calidad parecida y aclaralo en las notas.
 - Para fibra óptica, redes y equipos de telecomunicaciones, buscá primero en distribuidores y mayoristas del rubro (FTTH, cableado estructurado, equipos de red).
-- Usá al menos dos fuentes distintas cuando se pueda.
+- Usá al menos dos fuentes distintas cuando se pueda, y anotá cada precio en precios_encontrados tal como está publicado: no conviertas dólares a pesos ni hagas cuentas, de eso se encarga Sobrá. Fijate bien si el precio es por metro, por kilómetro, por bobina o por caja.
 - Usá varias fuentes y tomá un valor típico (la mediana), descartando ofertas raras o precios de otros países.
 - Tené en cuenta las cantidades y las unidades: si el lote es de 45 m² y el producto se vende por caja de 1,44 m², calculá cuántas cajas son. Si no se informan cantidades, estimalas con el título y la descripción y aclaralo en las notas.
 - No apliques ningún descuento: queremos el precio de mercado del material nuevo.
@@ -118,7 +154,7 @@ Cuando termines, llamá a la herramienta informar_precio una sola vez con el res
 
 function describirLote(lote: LoteParaTasar) {
   const materiales = lote.items.length
-    ? lote.items.map((i) => `- ${i.nombre}: ${i.cantidad} ${i.unidad}`).join("\n")
+    ? lote.items.map((i) => `- ${i.nombre}${i.marca ? ` (marca ${i.marca})` : ""}: ${i.cantidad} ${i.unidad}`).join("\n")
     : "(no se cargaron materiales)";
   const detalles = detallesPara(lote.categoria)
     .filter((d) => lote.detalles?.includes(d.id))
@@ -168,8 +204,12 @@ export async function estimarPrecioMercado(lote: LoteParaTasar): Promise<Informe
       (b): b is Anthropic.Beta.BetaToolUseBlock => b.type === "tool_use" && b.name === "informar_precio",
     );
     if (!llamada) throw new Error("La IA no devolvió un precio.");
-    const informe = esquemaInforme.parse(llamada.input);
-    const texto = `${lote.titulo} ${lote.items.map((i) => i.nombre).join(" ")}`;
+    const crudo = esquemaInforme.parse(llamada.input);
+    // Las cuentas las hace el código: precio por unidad en pesos, priorizando
+    // proveedores. Si no se puede (unidades que no coinciden), queda el total de la IA.
+    const consolidado = consolidarPrecios(crudo.precios_encontrados, cantidadPrincipal(lote.titulo, lote.items), (await dolarDelDia()) ?? crudo.tipo_cambio_usd_ars);
+    const informe = consolidado ? { ...crudo, total_mercado_ars: consolidado.total } : crudo;
+    const texto = `${lote.titulo} ${lote.items.map((i) => nombreConMarca(i)).join(" ")}`;
     const factor = factorPrecio(lote.categoria, lote.condicion, lote.detalles, texto);
     const porTabla = informe.total_mercado_ars * factor;
     // Si es usado y hay usados en venta parecidos, se promedian las dos cosas

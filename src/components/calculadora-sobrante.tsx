@@ -23,6 +23,7 @@ function useCalculadora(cuenta: Cuenta, idTexto: string) {
   const router = useRouter();
   const [texto, setTexto] = useState("");
   const [cantidad, setCantidad] = useState("");
+  const [marca, setMarca] = useState("");
   const [unidad, setUnidad] = useState("u");
   const [precio, setPrecio] = useState("");
   const [condicion, setCondicion] = useState<Condicion>("nuevo");
@@ -52,7 +53,9 @@ function useCalculadora(cuenta: Cuenta, idTexto: string) {
       return;
     }
     // Lo que se busca y se compara: "4000 metros de fibra óptica ADSS 6 hilos".
-    const consulta = cant ? `${cant} ${UNIDADES[unidad]} de ${texto.trim()}` : texto.trim();
+    // Con la marca se busca ese producto exacto (cambia mucho el precio).
+    const base = cant ? `${cant} ${UNIDADES[unidad]} de ${texto.trim()}` : texto.trim();
+    const consulta = marca.trim() ? `${base}, marca ${marca.trim()}` : base;
     const lista = Number(precio) || null;
     if (lista !== null && lista < PRECIO_LISTA_MINIMO) {
       setError(`El precio nuevo tiene que ser de al menos ${pesos(PRECIO_LISTA_MINIMO)}.`);
@@ -87,6 +90,7 @@ function useCalculadora(cuenta: Cuenta, idTexto: string) {
     const datos: Record<string, string> = { titulo: texto.trim(), estado: condicion, pedido: String(resultado.venta) };
     // El material con su cantidad, para que el formulario ya lo tenga cargado.
     if (cant) Object.assign(datos, { cant: String(cant), unidad: UNIDADES[unidad] === "metros" ? "m" : UNIDADES[unidad] });
+    if (marca.trim()) datos.marca = marca.trim();
     if (resultado.nuevo) datos.lista = String(Math.round(resultado.nuevo));
     const formulario = `/panel/vendedor/lotes/nuevo?${new URLSearchParams(datos)}`;
     router.push(cuenta === "ninguna" ? `/registro?volver=${encodeURIComponent(formulario)}` : formulario);
@@ -97,6 +101,8 @@ function useCalculadora(cuenta: Cuenta, idTexto: string) {
     setTexto: cambio(setTexto),
     cantidad,
     setCantidad: cambio(setCantidad),
+    marca,
+    setMarca: cambio(setMarca),
     unidad,
     setUnidad: cambio(setUnidad),
     precio,
@@ -105,6 +111,11 @@ function useCalculadora(cuenta: Cuenta, idTexto: string) {
     setCondicion: cambio(setCondicion),
     error,
     pedirPrecio,
+    // "¿Lo compraste a otro precio?": muestra el campo para poner lo que le costó.
+    usarMiPrecio: () => {
+      setPedirPrecio(true);
+      setTimeout(() => document.getElementById(`${idTexto.replace("-texto", "")}-precio`)?.focus(), 0);
+    },
     resultado,
     buscando,
     calcular,
@@ -113,6 +124,21 @@ function useCalculadora(cuenta: Cuenta, idTexto: string) {
 }
 
 type Calc = ReturnType<typeof useCalculadora>;
+
+function CampoMarca({ c, id, clase }: { c: Calc; id: string; clase: string }) {
+  return (
+    <input
+      id={`${id}-marca`}
+      value={c.marca}
+      onChange={(e) => c.setMarca(e.target.value)}
+      onKeyDown={(e) => e.key === "Enter" && c.calcular()}
+      maxLength={60}
+      aria-label="Marca (opcional)"
+      placeholder="Marca (opcional)"
+      className={`min-w-0 rounded-lg border border-stone-200 px-3 py-2.5 text-sm ${clase}`}
+    />
+  );
+}
 
 function CampoCantidad({ c, id, clase }: { c: Calc; id: string; clase: string }) {
   return (
@@ -160,6 +186,11 @@ function ResultadoCalc({ c, cuenta }: { c: Calc; cuenta: Cuenta }) {
           {menos !== null && `${menos}% menos que nuevo, para que se venda rápido. `}
           {r.ajustadoASobra && "Ajustado a lo parecido que ya hay publicado."}
         </p>
+        {!c.pedirPrecio && (
+          <button type="button" onClick={c.usarMiPrecio} className="mt-1 text-xs font-semibold text-celeste-oscuro underline">
+            ¿Lo compraste a otro precio? Poné cuánto te costó
+          </button>
+        )}
       </div>
       <div className="space-y-1 sm:text-right">
         {cuenta === "admin" ? (
@@ -220,9 +251,15 @@ export function CalculadoraSobrante({ cuenta }: { cuenta: Cuenta }) {
           className="campo"
         />
       </div>
-      <div>
-        <p className="etiqueta">¿Cuánto tenés?</p>
-        <CampoCantidad c={c} id="calc-texto" clase="" />
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div>
+          <p className="etiqueta">¿Cuánto tenés?</p>
+          <CampoCantidad c={c} id="calc-texto" clase="" />
+        </div>
+        <div>
+          <label htmlFor="calc-texto-marca" className="etiqueta">Marca (opcional)</label>
+          <CampoMarca c={c} id="calc-texto" clase="w-full" />
+        </div>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
@@ -235,7 +272,7 @@ export function CalculadoraSobrante({ cuenta }: { cuenta: Cuenta }) {
         </div>
         {c.pedirPrecio && (
           <div>
-            <label htmlFor="calc-precio" className="etiqueta">Cuánto cuesta nuevo</label>
+            <label htmlFor="calc-precio" className="etiqueta">Cuánto te costó nuevo</label>
             <input id="calc-precio" type="number" min={0} inputMode="numeric" value={c.precio} onChange={(e) => c.setPrecio(e.target.value)} placeholder="$ 500.000" className={`campo ${sinFlechas}`} />
           </div>
         )}
@@ -287,6 +324,7 @@ export function FranjaVender({ cuenta }: { cuenta: Cuenta }) {
               className="min-w-0 flex-[2] px-3 py-2.5 text-base outline-none"
             />
             <CampoCantidad c={c} id="franja-texto" clase="lg:w-56" />
+            <CampoMarca c={c} id="franja-texto" clase="lg:w-36" />
             <select value={c.condicion} onChange={(e) => c.setCondicion(e.target.value as Condicion)} aria-label="Estado" className="rounded-lg border border-stone-200 px-3 py-2.5 text-sm">
               {Object.entries(ESTADO_CORTO).map(([valor, texto]) => (
                 <option key={valor} value={valor}>{texto}</option>
@@ -300,8 +338,8 @@ export function FranjaVender({ cuenta }: { cuenta: Cuenta }) {
                 inputMode="numeric"
                 value={c.precio}
                 onChange={(e) => c.setPrecio(e.target.value)}
-                aria-label="Cuánto cuesta nuevo"
-                placeholder="¿Cuánto cuesta nuevo?"
+                aria-label="Cuánto te costó nuevo"
+                placeholder="¿Cuánto te costó nuevo?"
                 className={`min-w-0 rounded-lg border border-stone-200 px-3 py-2.5 text-sm lg:w-48 ${sinFlechas}`}
               />
             )}

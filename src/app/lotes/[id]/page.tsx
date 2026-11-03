@@ -105,7 +105,10 @@ export default async function DetalleLote({ params, searchParams }: PageProps<"/
                 <tbody>
                   {lote.items.map((item, i) => (
                     <tr key={i} className="border-b border-stone-100 last:border-0">
-                      <td className="py-2">{item.nombre}</td>
+                      <td className="py-2">
+                        {item.nombre}
+                        {item.marca && <span className="ml-1 text-stone-500">· {item.marca}</span>}
+                      </td>
                       <td className="py-2 text-right">
                         {item.cantidad} {item.unidad}
                       </td>

@@ -27,7 +27,13 @@ export type Perfil = {
   created_at: string;
 };
 
-export type Item = { nombre: string; cantidad: number; unidad: string };
+// `marca`: opcional; cambia mucho el precio (calidad), y el buscador la encuentra.
+export type Item = { nombre: string; cantidad: number; unidad: string; marca?: string };
+
+// El material con su marca, para buscar, comparar y recomendar.
+export function nombreConMarca(i: Pick<Item, "nombre" | "marca">) {
+  return i.marca?.trim() ? `${i.nombre} ${i.marca.trim()}` : i.nombre;
+}
 
 export type Lote = {
   id: string;

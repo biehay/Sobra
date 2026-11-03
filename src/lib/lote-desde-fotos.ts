@@ -47,7 +47,8 @@ const esquemaObservacion = z.object({
   materiales: z
     .array(
       z.object({
-        nombre: z.string().describe("Material genérico con medida o modelo si se ve. Sin inventar marcas."),
+        nombre: z.string().describe("Material genérico con medida o modelo si se ve. Sin la marca (va aparte)."),
+        marca: z.string().nullable().describe("La marca, solo si se lee en la etiqueta o el producto. null si no se ve: nunca la inventes."),
         presentacion: z.string().describe("Cómo viene: cajas, bolsas, rollos, unidades sueltas, pallet..."),
         unidades_contadas: z.number().nullable().describe("Cuántas cajas/bolsas/rollos/unidades contaste en las fotos, o null."),
         contenido_por_unidad: z.number().nullable().describe("Cuánto trae cada una según la etiqueta (ej. 2 si dice 2 m² por caja), o null si no se lee."),
@@ -163,7 +164,7 @@ export const CONSULTAS_DE_PRUEBA: ConsultasIA = {
     condicion: "nuevo",
     condicion_evidencia: "Cajas cerradas con el film del fabricante.",
     detalles: ["embalaje_danado"],
-    materiales: [{ nombre: "Porcelanato 60x60 gris rectificado", presentacion: "cajas", unidades_contadas: 19, contenido_por_unidad: 2, unidad: "m2", cantidad: 40, evidencia: "19 cajas en la foto 1, etiqueta 2 m²/caja", seguro: true }],
+    materiales: [{ nombre: "Porcelanato 60x60 gris rectificado", marca: null, presentacion: "cajas", unidades_contadas: 19, contenido_por_unidad: 2, unidad: "m2", cantidad: 40, evidencia: "19 cajas en la foto 1, etiqueta 2 m²/caja", seguro: true }],
     peso_kg: 870,
     descripcion: "Cajas cerradas, sin golpes. Mismo lote de fabricación.",
     confianza: { titulo: "alta", categoria: "alta", condicion: "alta", materiales: "media", peso: "media" },

@@ -1,3 +1,4 @@
+import { nombreConMarca } from "@/lib/datos";
 // Motor de recomendaciones de Sobrá. Funciones puras (sin base de datos), para
 // poder probarlas: reciben las señales del usuario y los lotes candidatos y
 // devuelven los mejores, variados y con el motivo de cada uno.
@@ -330,7 +331,7 @@ function ajusteCantidad(ofrecido: number, necesario: number) {
 // que no hablan del producto.
 function palabrasDeProducto(lote: Lote, fichas: Map<string, Ficha>): string[] {
   const ficha = fichas.get(lote.id);
-  const texto = `${lote.titulo} ${lote.items.map((i) => i.nombre).join(" ")}${ficha ? ` ${ficha.material} ${ficha.palabras_clave.join(" ")}` : ""}`;
+  const texto = `${lote.titulo} ${lote.items.map((i) => nombreConMarca(i)).join(" ")}${ficha ? ` ${ficha.material} ${ficha.palabras_clave.join(" ")}` : ""}`;
   return palabras(texto);
 }
 
@@ -350,7 +351,7 @@ for (const [regla, excepciones] of Object.entries(EXCEPCIONES_MATERIAL)) {
 }
 
 function palabrasDe(lote: Lote): string[] {
-  const texto = `${lote.titulo} ${lote.items.map((i) => i.nombre).join(" ")} ${lote.descripcion}`;
+  const texto = `${lote.titulo} ${lote.items.map((i) => nombreConMarca(i)).join(" ")} ${lote.descripcion}`;
   const med = medidas(texto);
   return [...palabras(texto), ...med, ...med];
 }

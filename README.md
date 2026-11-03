@@ -69,6 +69,11 @@ Además:
   nuevo, buen estado, con detalles, para reparar) y "detalles a tener en cuenta" según el rubro (vence pronto,
   sin probar, distintos lotes...). El descuento sugerido depende del rubro y el estado (tabla de referencia) y de
   los detalles; para usados, el tasador también busca usados en venta y lo promedia.
+- **Cómo se calcula el precio nuevo** (`src/lib/precio-consolidar.ts`, `dolar.ts`): la IA solo junta los precios que
+  encuentra (vendedor, moneda, IVA y por cuánta cantidad); el código los pasa a precio por unidad en pesos con el
+  dólar oficial del día (dolarapi.com), prioriza proveedores sobre minoristas y descarta los fuera de lugar.
+- **Marca** de cada material (opcional, dentro de `items`): en la calculadora, el formulario, la IA de fotos, el
+  detalle del lote, el buscador y la comparación de precios.
 - **Buscador con sugerencias** (`src/components/buscador.tsx`, `src/lib/sugerencias.ts`): mientras se escribe
   muestra lotes (foto, precio) y categorías. Entiende tildes, plurales, sinónimos de obra y la palabra a medio
   escribir; si nada coincide con todo, muestra lo parecido. Se maneja con el teclado.

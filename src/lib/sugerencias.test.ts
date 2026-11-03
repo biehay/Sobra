@@ -61,4 +61,9 @@ describe("sugerencias del buscador", () => {
     expect(ids("latiguillo ")).toEqual([patchcords.id]);
     expect(sugerir("fibra", lotes, ["Fibra óptica y telecomunicaciones"]).categorias).toEqual(["Fibra óptica y telecomunicaciones"]);
   });
+
+  it("encuentra por la marca", () => {
+    const conMarca = { ...lote("Bobina de fibra ADSS 24 hilos", "Fibra óptica y telecomunicaciones"), items: [{ nombre: "Cable ADSS 24 hilos", marca: "Fibrex" }] };
+    expect(sugerir("fibrex", [...lotes, conMarca], CATEGORIAS).lotes.map((l) => l.id)).toEqual([conMarca.id]);
+  });
 });
