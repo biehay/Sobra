@@ -159,7 +159,7 @@ export const FACTOR_PRECIO: Record<Condicion, number> = {
 };
 
 // Por debajo de esto, el precio de lista seguramente está mal cargado (por ejemplo "5").
-const PRECIO_LISTA_MINIMO = 1000;
+export const PRECIO_LISTA_MINIMO = 1000;
 
 export function precioSugerido(precioLista: number | null, condicion: Condicion): number | null {
   if (!precioLista || precioLista < PRECIO_LISTA_MINIMO) return null;

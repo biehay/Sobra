@@ -217,6 +217,14 @@ try {
   await anon.fill("#password", "incorrecta");
   await tras(anon, "error=", () => anon.click("button:has-text('Ingresar')"));
   esperar((await aviso(anon)).includes("incorrectos"), "login con datos incorrectos muestra error");
+  // Calculadora de la portada: sin precio no avanza; con precio lleva al registro y después al formulario con los datos.
+  await anon.goto(`${BASE}/`);
+  await anon.locator("button:has-text('Publicarlo gratis')").first().click();
+  esperar(new URL(anon.url()).pathname === "/" && (await anon.locator("#calc-error").isVisible()), "la calculadora sin precio no avanza y avisa");
+  await anon.locator("#calc-precio").first().fill("500000");
+  await anon.locator("button:has-text('Publicarlo gratis')").first().click();
+  await anon.waitForURL("**/registro?volver=**");
+  esperar(decodeURIComponent(anon.url()).includes("lista=500000&estado=nuevo"), "la calculadora pasa el precio al registro");
   paso("Visitante: portada, catálogo, páginas legales y de ayuda, botón de arrepentimiento, 404, protección de /panel y login incorrecto");
 
   // 2. Registro del vendedor con código -------------------------------------
@@ -291,7 +299,8 @@ try {
 
   // 5. Vendedor carga un lote con fotos ------------------------------------
   const fotos = await crearFotos(browser);
-  await vend.goto(`${BASE}/panel/vendedor/lotes/nuevo`);
+  await vend.goto(`${BASE}/panel/vendedor/lotes/nuevo?lista=900000&estado=sin_uso`);
+  esperar((await vend.inputValue("#precio_lista")) === "900000" && (await vend.inputValue("#condicion")) === "sin_uso" && Number(await vend.inputValue("#precio_pedido")) > 0, "el formulario llega con lo que cargó en la calculadora");
   await vend.fill("#titulo", "Porcelanato 60x60 gris, 45 m² + pegamento");
   await vend.selectOption("#categoria", "Cerámicos y porcelanatos");
   await vend.selectOption("#condicion", "nuevo");

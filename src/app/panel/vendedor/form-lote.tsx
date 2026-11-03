@@ -14,13 +14,26 @@ const MAX_FOTOS = 10;
 // Tope del archivo original; después de limpiarla la foto queda mucho más liviana.
 const MAX_BYTES = 25 * 1024 * 1024;
 
-export function FormLote({ usuarioId, lote, retiro, precioMinimo }: { usuarioId: string; lote?: Lote; retiro?: Retiro | null; precioMinimo?: number | null }) {
+// `inicial`: para un lote nuevo, lo que cargó en la calculadora de la portada.
+export function FormLote({
+  usuarioId,
+  lote,
+  retiro,
+  precioMinimo,
+  inicial,
+}: {
+  usuarioId: string;
+  lote?: Lote;
+  retiro?: Retiro | null;
+  precioMinimo?: number | null;
+  inicial?: { precioLista?: string; condicion?: Condicion };
+}) {
   const [items, setItems] = useState<Item[]>(lote?.items.length ? lote.items : [{ nombre: "", cantidad: 1, unidad: "u" }]);
   const [fotos, setFotos] = useState<string[]>(lote?.fotos ?? []);
   const [subiendo, setSubiendo] = useState(false);
   const [errorFotos, setErrorFotos] = useState("");
-  const [precioLista, setPrecioLista] = useState(lote?.precio_lista?.toString() ?? "");
-  const [condicion, setCondicion] = useState<Condicion>(lote?.condicion ?? "nuevo");
+  const [precioLista, setPrecioLista] = useState(lote?.precio_lista?.toString() ?? inicial?.precioLista ?? "");
+  const [condicion, setCondicion] = useState<Condicion>(lote?.condicion ?? inicial?.condicion ?? "nuevo");
   const [bajaActiva, setBajaActiva] = useState(lote?.baja_semanal_pct != null);
   const sugerido = precioSugerido(Number(precioLista) || null, condicion);
   const formulario = useRef<HTMLFormElement>(null);
@@ -181,7 +194,7 @@ export function FormLote({ usuarioId, lote, retiro, precioMinimo }: { usuarioId:
           </div>
           <div>
             <label htmlFor="precio_pedido" className="etiqueta">¿Cuánto querés recuperar?</label>
-            <input ref={precioPedido} id="precio_pedido" name="precio_pedido" type="number" min={1} required defaultValue={lote?.precio_pedido} className="campo" />
+            <input ref={precioPedido} id="precio_pedido" name="precio_pedido" type="number" min={1} required defaultValue={lote?.precio_pedido ?? precioSugerido(Number(inicial?.precioLista) || null, inicial?.condicion ?? "nuevo") ?? undefined} className="campo" />
           </div>
         </div>
         {sugerido && (

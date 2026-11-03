@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Aviso } from "@/components/aviso";
 import { exigirRol } from "@/lib/sesion";
 import { FormLote } from "../../form-lote";
+import { CONDICIONES, type Condicion } from "@/lib/datos";
 
 // La sugerencia de precio con IA busca en la web: puede tardar hasta un par de minutos.
 export const maxDuration = 180;
@@ -10,7 +11,10 @@ export const metadata: Metadata = { title: "Publicar lote" };
 
 export default async function NuevoLote({ searchParams }: PageProps<"/panel/vendedor/lotes/nuevo">) {
   const perfil = await exigirRol("usuario");
-  const { error } = await searchParams;
+  const { error, lista, estado } = await searchParams;
+  // Lo que cargó en la calculadora de la portada llega ya puesto.
+  const precioLista = typeof lista === "string" && /^\d{1,12}$/.test(lista) ? lista : undefined;
+  const condicion = typeof estado === "string" && estado in CONDICIONES ? (estado as Condicion) : undefined;
 
   return (
     <div className="contenedor max-w-3xl py-10">
@@ -19,7 +23,7 @@ export default async function NuevoLote({ searchParams }: PageProps<"/panel/vend
       <div className="mb-4">
         <Aviso error={error} />
       </div>
-      <FormLote usuarioId={perfil.id} />
+      <FormLote usuarioId={perfil.id} inicial={{ precioLista, condicion }} />
     </div>
   );
 }

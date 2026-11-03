@@ -131,7 +131,7 @@ export default async function Inicio() {
               })}
             </div>
           ) : (
-            <CalculadoraSobrante hrefPublicar={publicar} />
+            <CalculadoraSobrante cuenta={!perfil ? "ninguna" : perfil.rol === "admin" ? "admin" : "usuario"} />
           )}
         </div>
       </section>
@@ -273,8 +273,8 @@ export default async function Inicio() {
           </div>
           {/* Si arriba no hay productos, la calculadora ya está en la primera pantalla. */}
           {destacados.length > 0 ? (
-            <CalculadoraSobrante hrefPublicar={publicar} />
-          ) : (
+            <CalculadoraSobrante cuenta={!perfil ? "ninguna" : perfil.rol === "admin" ? "admin" : "usuario"} />
+          ) : perfil?.rol === "admin" ? null : (
             <Link href={publicar} className="btn justify-self-start px-6 py-3 text-base">Publicar mi sobrante gratis</Link>
           )}
         </div>
