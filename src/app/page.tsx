@@ -137,8 +137,8 @@ export default async function Inicio() {
       </section>
 
       {/* Para el que vende: la calculadora a la vista, justo debajo de los productos destacados
-          (si no hay lotes, ya está arriba). Las cuentas admin no publican. */}
-      {destacados.length > 0 && perfil?.rol !== "admin" && <FranjaVender cuenta={perfil ? "usuario" : "ninguna"} />}
+          (si no hay lotes, ya está arriba). */}
+      {destacados.length > 0 && <FranjaVender cuenta={!perfil ? "ninguna" : perfil.rol === "admin" ? "admin" : "usuario"} />}
 
       {/* 2. Lo que es para vos (con cuenta) o por qué crear una (sin cuenta). */}
       {perfil && perfil.rol === "usuario" ? (

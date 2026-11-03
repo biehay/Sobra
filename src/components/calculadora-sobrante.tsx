@@ -94,7 +94,8 @@ const ESTADO_CORTO: Record<Condicion, string> = { nuevo: "Nuevo", sin_uso: "Sin 
 
 // La franja de la portada, debajo de los productos destacados. En el celular
 // arranca plegada en una línea y se despliega al tocarla.
-export function FranjaVender({ cuenta }: { cuenta: Exclude<Cuenta, "admin"> }) {
+// Para la cuenta admin se ve igual (para revisar cómo queda), pero sin publicar.
+export function FranjaVender({ cuenta }: { cuenta: Cuenta }) {
   const { condicion, setCondicion, error, sugerido, publicar, propsPrecio } = useCalculadora(cuenta);
   const [abierta, setAbierta] = useState(false);
   return (
@@ -128,9 +129,13 @@ export function FranjaVender({ cuenta }: { cuenta: Exclude<Cuenta, "admin"> }) {
               <span className="block text-xs">Recuperás</span>
               <span className="block whitespace-nowrap text-lg font-extrabold leading-tight">{sugerido ? `~ ${pesos(sugerido)}` : "$ -"}</span>
             </div>
-            <button type="button" onClick={publicar} className="btn whitespace-nowrap px-5 py-3">
-              Publicarlo gratis
-            </button>
+            {cuenta === "admin" ? (
+              <span className="px-3 py-2 text-xs text-stone-500 sm:max-w-40">Las cuentas admin no publican</span>
+            ) : (
+              <button type="button" onClick={publicar} className="btn whitespace-nowrap px-5 py-3">
+                Publicarlo gratis
+              </button>
+            )}
           </div>
           {error && (
             <p id="franja-error" role="alert" className="mt-2 text-sm font-medium text-marca-oscuro">
