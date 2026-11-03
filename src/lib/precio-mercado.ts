@@ -4,7 +4,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { CONDICIONES, type Condicion, type Item } from "@/lib/datos";
 import { detallesPara, factorPrecio } from "@/lib/depreciacion";
-import { consolidarPrecios } from "@/lib/precio-consolidar";
+import { consolidarPrecios, type Coherencia, type PrecioEncontrado } from "@/lib/precio-consolidar";
 import { cantidadPrincipal } from "@/lib/precio-comparables";
 import { dolarDelDia } from "@/lib/dolar";
 
@@ -66,7 +66,7 @@ const esquemaInforme = z.object({
   notas: z.string().max(600),
 });
 
-export type InformePrecio = z.infer<typeof esquemaInforme> & { sugerido: number; descuento: number };
+export type InformePrecio = z.infer<typeof esquemaInforme> & { sugerido: number; descuento: number; coherencia?: Coherencia };
 
 // La herramienta con la que Claude entrega el resultado (strict: el formato está garantizado).
 const herramientaInforme: Anthropic.Beta.BetaTool = {
@@ -167,7 +167,28 @@ ${materiales}
 Descripción: ${lote.descripcion || "(sin descripción)"}`;
 }
 
-export async function estimarPrecioMercado(lote: LoteParaTasar): Promise<InformePrecio> {
+// Con el precio nuevo ya sabido (total), arma el informe: el descuento por rubro,
+// estado y detalles, y los usados en venta si es usado.
+function armarInforme(lote: LoteParaTasar, informe: z.infer<typeof esquemaInforme>): InformePrecio {
+  const texto = `${lote.titulo} ${lote.items.map((i) => nombreConMarca(i)).join(" ")}`;
+  const factor = factorPrecio(lote.categoria, lote.condicion, lote.detalles, texto);
+  const porTabla = informe.total_mercado_ars * factor;
+  // Si es usado y hay usados en venta parecidos, se promedian las dos cosas
+  // (los usados se toman con los detalles que marcó el vendedor).
+  const usadoValido = lote.condicion !== "nuevo" && lote.condicion !== "sin_uso" && informe.usados_mercado_ars && informe.usados_mercado_ars < informe.total_mercado_ars;
+  const ajusteDetalles = factor / factorPrecio(lote.categoria, lote.condicion, [], texto);
+  const base = usadoValido ? (porTabla + informe.usados_mercado_ars! * ajusteDetalles) / 2 : porTabla;
+  return {
+    ...informe,
+    usados_mercado_ars: usadoValido ? informe.usados_mercado_ars : null,
+    descuento: Math.round((1 - base / informe.total_mercado_ars) * 100),
+    // Redondeado a miles, para que quede prolijo.
+    sugerido: Math.max(1000, Math.round(base / 1000) * 1000),
+  };
+}
+
+// `extras`: precios que reportaron otros usuarios; se comparan junto con los que encuentre la IA.
+export async function estimarPrecioMercado(lote: LoteParaTasar, opciones: { extras?: PrecioEncontrado[] } = {}): Promise<InformePrecio> {
   const client = new Anthropic();
   const messages: Anthropic.Beta.BetaMessageParam[] = [{ role: "user", content: describirLote(lote) }];
 
@@ -207,23 +228,12 @@ export async function estimarPrecioMercado(lote: LoteParaTasar): Promise<Informe
     const crudo = esquemaInforme.parse(llamada.input);
     // Las cuentas las hace el código: precio por unidad en pesos, priorizando
     // proveedores. Si no se puede (unidades que no coinciden), queda el total de la IA.
-    const consolidado = consolidarPrecios(crudo.precios_encontrados, cantidadPrincipal(lote.titulo, lote.items), (await dolarDelDia()) ?? crudo.tipo_cambio_usd_ars);
-    const informe = consolidado ? { ...crudo, total_mercado_ars: consolidado.total } : crudo;
-    const texto = `${lote.titulo} ${lote.items.map((i) => nombreConMarca(i)).join(" ")}`;
-    const factor = factorPrecio(lote.categoria, lote.condicion, lote.detalles, texto);
-    const porTabla = informe.total_mercado_ars * factor;
-    // Si es usado y hay usados en venta parecidos, se promedian las dos cosas
-    // (los usados se toman con los detalles que marcó el vendedor).
-    const usadoValido = lote.condicion !== "nuevo" && lote.condicion !== "sin_uso" && informe.usados_mercado_ars && informe.usados_mercado_ars < informe.total_mercado_ars;
-    const ajusteDetalles = factor / factorPrecio(lote.categoria, lote.condicion, [], texto);
-    const base = usadoValido ? (porTabla + informe.usados_mercado_ars! * ajusteDetalles) / 2 : porTabla;
-    return {
-      ...informe,
-      usados_mercado_ars: usadoValido ? informe.usados_mercado_ars : null,
-      descuento: Math.round((1 - base / informe.total_mercado_ars) * 100),
-      // Redondeado a miles, para que quede prolijo.
-      sugerido: Math.max(1000, Math.round(base / 1000) * 1000),
-    };
+    const consolidado = consolidarPrecios(
+      [...crudo.precios_encontrados, ...(opciones.extras ?? [])],
+      cantidadPrincipal(lote.titulo, lote.items),
+      (await dolarDelDia()) ?? crudo.tipo_cambio_usd_ars,
+    );
+    return { ...armarInforme(lote, consolidado ? { ...crudo, total_mercado_ars: consolidado.total } : crudo), coherencia: consolidado?.coherencia ?? "solo_web" };
   }
   throw new Error("La búsqueda de precios tardó demasiado. Probá de nuevo.");
 }

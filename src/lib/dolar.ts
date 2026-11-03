@@ -8,6 +8,8 @@ const VIGENCIA = 6 * 3_600_000;
 let guardado: { valor: number; hasta: number } | null = null;
 
 export async function dolarDelDia(): Promise<number | null> {
+  // En el recorrido de pruebas (sin internet), un valor fijo. Nunca en producción.
+  if (process.env.SOBRA_IA_DE_PRUEBA === "1") return 1000;
   if (guardado && guardado.hasta > Date.now()) return guardado.valor;
   try {
     const r = await fetch(FUENTE, { signal: AbortSignal.timeout(4000), cache: "no-store" });

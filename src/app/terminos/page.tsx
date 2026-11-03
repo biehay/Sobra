@@ -87,7 +87,8 @@ export default function Terminos() {
         </li>
         <li>
           <strong>Precio sugerido con IA:</strong> es una estimación hecha con precios públicos de material nuevo y con los
-          precios de lotes parecidos publicados o vendidos en Sobrá, y puede equivocarse. Es solo una orientación: el precio lo decidís vos y lo confirmamos al revisar el lote.
+          precios de lotes parecidos publicados o vendidos en Sobrá, y con lo que reportaron pagar otros usuarios, y puede
+          equivocarse. Es solo una orientación: el precio lo decidís vos y lo confirmamos al revisar el lote.
         </li>
         <li>
           <strong>Baja automática de precio (opcional):</strong> si la activás, nos autorizás a bajar el precio de publicación

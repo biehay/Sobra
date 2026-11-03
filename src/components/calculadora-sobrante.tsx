@@ -4,7 +4,8 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { CONDICIONES, PRECIO_LISTA_MINIMO, TASA_COMISION, pesos, precioSugerido, type Condicion } from "@/lib/datos";
 import { cantidadPrincipal, combinarPrecio } from "@/lib/precio-comparables";
-import { compararEnSobra, tasarDesdePortada } from "@/app/precio-portada";
+import { compararEnSobra, reportarPrecio, tasarDesdePortada } from "@/app/precio-portada";
+import type { Coherencia } from "@/lib/precio-consolidar";
 
 // "¿Cuánto vale lo que te sobró?": una cuenta express para quien todavía no
 // publicó. Cuenta qué le sobró y en qué estado está, y le mostramos dos números:
@@ -13,7 +14,7 @@ import { compararEnSobra, tasarDesdePortada } from "@/app/precio-portada";
 // al formulario de publicación (sin cuenta, después de crearla).
 // `cuenta`: sin cuenta, con cuenta de usuario o admin (que no publica).
 type Cuenta = "ninguna" | "usuario" | "admin";
-type Resultado = { nuevo: number | null; venta: number; ajustadoASobra: boolean };
+type Resultado = { nuevo: number | null; venta: number; ajustadoASobra: boolean; deUsuarios?: number; coherencia?: Coherencia };
 
 // Unidades de la cantidad (el valor es como lo entiende el resto de la app).
 const UNIDADES: Record<string, string> = { m2: "m²", m: "metros", u: "unidades", kg: "kg", bolsas: "bolsas", cajas: "cajas", rollos: "rollos", l: "litros" };
@@ -53,9 +54,8 @@ function useCalculadora(cuenta: Cuenta, idTexto: string) {
       return;
     }
     // Lo que se busca y se compara: "4000 metros de fibra óptica ADSS 6 hilos".
-    // Con la marca se busca ese producto exacto (cambia mucho el precio).
-    const base = cant ? `${cant} ${UNIDADES[unidad]} de ${texto.trim()}` : texto.trim();
-    const consulta = marca.trim() ? `${base}, marca ${marca.trim()}` : base;
+    // Lo que se busca y se compara; la marca va aparte (busca ese producto exacto).
+    const consulta = cant ? `${cant} ${UNIDADES[unidad]} de ${texto.trim()}` : texto.trim();
     const lista = Number(precio) || null;
     if (lista !== null && lista < PRECIO_LISTA_MINIMO) {
       setError(`El precio nuevo tiene que ser de al menos ${pesos(PRECIO_LISTA_MINIMO)}.`);
@@ -72,15 +72,20 @@ function useCalculadora(cuenta: Cuenta, idTexto: string) {
       if (lista) {
         const r = combinarPrecio(precioSugerido(lista, condicion, enSobra.categoria, [], consulta), enSobra.referencia);
         if (r.sugerido) setResultado({ nuevo: lista, venta: r.sugerido, ajustadoASobra: r.motivo.includes("más baratos") });
+        // Lo que le costó queda de referencia (sin sus datos) para la próxima persona.
+        const enTexto = cantidadPrincipal(consulta);
+        if (enTexto) {
+          void reportarPrecio({ texto: texto.trim(), marca: marca.trim() || undefined, cantidad: enTexto.cantidad, unidad: enTexto.unidad, precio: lista });
+        }
         return;
       }
-      const r = await tasarDesdePortada(consulta, condicion);
+      const r = await tasarDesdePortada(consulta, condicion, marca.trim());
       if (!r.ok) {
         setPedirPrecio(true);
         setError(`${r.error}${r.detalle ? ` (${r.detalle})` : ""} Mientras tanto, poné cuánto cuesta nuevo y te hacemos la cuenta.`);
         return;
       }
-      setResultado({ nuevo: r.tasacion.mercado, venta: r.tasacion.sugerido, ajustadoASobra: r.tasacion.ajustadoASobra });
+      setResultado({ nuevo: r.tasacion.mercado, venta: r.tasacion.sugerido, ajustadoASobra: r.tasacion.ajustadoASobra, deUsuarios: r.tasacion.deUsuarios, coherencia: r.tasacion.coherencia });
     });
   }
 
@@ -177,6 +182,7 @@ function ResultadoCalc({ c, cuenta }: { c: Calc; cuenta: Cuenta }) {
         <div>
           <p className="text-sm text-stone-500">Nuevo, hoy cuesta</p>
           <p className="text-xl font-bold text-stone-500">~ {pesos(r.nuevo)}</p>
+          <OrigenPrecio r={r} />
         </div>
       )}
       <div>
@@ -204,6 +210,19 @@ function ResultadoCalc({ c, cuenta }: { c: Calc; cuenta: Cuenta }) {
       </div>
     </div>
   );
+}
+
+// De dónde salió el precio nuevo, en una línea (solo si intervinieron los usuarios).
+function OrigenPrecio({ r }: { r: Resultado }) {
+  if (!r.deUsuarios) return null;
+  const personas = r.deUsuarios === 1 ? "1 persona" : `${r.deUsuarios} personas`;
+  const texto =
+    r.coherencia === "coinciden"
+      ? `Coincide con lo que pagaron ${personas} en Sobrá`
+      : r.coherencia === "web_descartada" || r.coherencia === "solo_usuarios"
+        ? `Según lo que pagaron ${personas} en Sobrá`
+        : null;
+  return texto ? <p data-de-usuarios className="text-xs text-stone-500">{texto}</p> : null;
 }
 
 function Avisos({ c, prefijo }: { c: Calc; prefijo: string }) {

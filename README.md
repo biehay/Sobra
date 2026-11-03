@@ -72,6 +72,9 @@ Además:
 - **Cómo se calcula el precio nuevo** (`src/lib/precio-consolidar.ts`, `dolar.ts`): la IA solo junta los precios que
   encuentra (vendedor, moneda, IVA y por cuánta cantidad); el código los pasa a precio por unidad en pesos con el
   dólar oficial del día (dolarapi.com), prioriza proveedores sobre minoristas y descarta los fuera de lugar.
+- **Precios que reportan los usuarios** (`src/lib/precios-reportados.ts`, migración 20261111): cuánto les costó un
+  material (calculadora o precio de lista al publicar), guardado en dólares y sin datos de la persona. Entran en la
+  comparación junto con los precios de la web (mismo producto, unidad y marca; menos de un año; una opinión por persona).
 - **Marca** de cada material (opcional, dentro de `items`): en la calculadora, el formulario, la IA de fotos, el
   detalle del lote, el buscador y la comparación de precios.
 - **Buscador con sugerencias** (`src/components/buscador.tsx`, `src/lib/sugerencias.ts`): mientras se escribe

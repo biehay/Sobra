@@ -233,6 +233,42 @@ try {
   await anon.waitForURL("**/registro?volver=**");
   const volverCalc = decodeURIComponent(decodeURIComponent(anon.url()));
   esperar(volverCalc.includes("lista=600000") && volverCalc.includes("titulo=38+m²+de+porcelanato+60x60") && volverCalc.includes("pedido=450000"), "la calculadora pasa el material, el precio y el sugerido al registro");
+  // Lo que alguien pagó queda de referencia: dos personas distintas cuentan cuánto les costó y,
+  // para la tercera, esos precios entran en la comparación junto con los de la web.
+  for (const [ip, costo] of [["10.0.0.11", "4500000"], ["10.0.0.12", "4700000"]]) {
+    const ctx = await browser.newContext({ extraHTTPHeaders: { "x-forwarded-for": ip }, userAgent: NAVEGADOR });
+    await ctx.addCookies([{ name: "sobra_cookies", value: "ok", url: BASE }]);
+    const pg = await ctx.newPage();
+    await pg.goto(`${BASE}/`);
+    await pg.fill("#calc-texto", "bobina de fibra óptica 24 hilos");
+    await pg.fill("#calc-texto-cantidad", "4000");
+    await pg.selectOption("select[aria-label=Unidad]", "m");
+    await pg.click("button:has-text('Calcular')");
+    await pg.click("button:has-text('¿Lo compraste a otro precio?')");
+    await pg.fill("#calc-precio", costo);
+    await pg.click("button:has-text('Calcular')");
+    await pg.waitForSelector("[data-resultado]");
+    await pg.waitForTimeout(500);
+    await ctx.close();
+  }
+  const reportes = await api("/rest/v1/precios_reportados?select=quien,origen");
+  esperar(reportes.length === 2 && new Set(reportes.map((r) => r.quien)).size === 2, "los precios que pusieron quedan guardados, sin datos de las personas");
+  {
+    const ctx = await browser.newContext({ extraHTTPHeaders: { "x-forwarded-for": "10.0.0.13" }, userAgent: NAVEGADOR });
+    await ctx.addCookies([{ name: "sobra_cookies", value: "ok", url: BASE }]);
+    const pg = await ctx.newPage();
+    await pg.goto(`${BASE}/`);
+    await pg.fill("#calc-texto", "bobina fibra óptica 24 hilos");
+    await pg.fill("#calc-texto-cantidad", "4000");
+    await pg.selectOption("select[aria-label=Unidad]", "m");
+    await pg.click("button:has-text('Calcular')");
+    await pg.waitForSelector("[data-resultado]");
+    const texto = (await pg.textContent("[data-resultado]")).replace(/\s/g, " ");
+    // Web (de prueba): $ 150 el metro; las dos personas: $ 1.125 y $ 1.175, que coinciden entre
+    // ellas. La web no es coherente con eso, así que mandan ellas: $ 1.150 → $ 4.600.000.
+    esperar(texto.includes("Según lo que pagaron 2 personas") && texto.includes("$ 4.600.000"), "si la web no coincide con lo que pagaron varias personas, mandan ellas: " + texto.slice(0, 140));
+    await ctx.close();
+  }
   paso("Visitante: portada, catálogo, páginas legales y de ayuda, botón de arrepentimiento, 404, protección de /panel y login incorrecto");
 
   // 2. Registro del vendedor con código -------------------------------------

@@ -68,6 +68,11 @@ export default function Privacidad() {
         </li>
         <li><strong>El equipo de Sobrá:</strong> para revisar lotes, verificar usuarios y resolver reclamos.</li>
         <li>
+          <strong>Precios que contás:</strong> si en la calculadora ponés cuánto te costó un material, o cargás el precio de
+          lista al publicar, guardamos ese precio y el producto para compararlo con otros precios cuando alguien tase lo mismo.
+          No guardamos quién lo puso: solo un código anónimo para no contar dos veces a la misma persona.
+        </li>
+        <li>
           <strong>Proveedores que nos prestan servicios:</strong> Supabase (base de datos y archivos), Resend (envío de
           emails), Anthropic (la IA que sugiere precios, también desde la calculadora de la portada con lo que escribas ahí, arma la ficha técnica de cada lote publicado para
           recomendar complementos y, si usás “Completar con IA”, completa la publicación a partir de las fotos: recibe

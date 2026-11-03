@@ -2,6 +2,9 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
+import { guardarReporte, quienReporta } from "@/lib/precios-reportados";
+import { cantidadPrincipal } from "@/lib/precio-comparables";
 import { z } from "zod";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { mensajeParaUsuario } from "@/lib/errores";
@@ -121,6 +124,23 @@ export async function guardarLote(formData: FormData) {
   if (errorMinimo) volverCon(rutaForm, "error", errorMinimo.message);
 
   if (pasoARevision) notificar.loteEnRevision(loteId);
+  // El precio de lista que cargó el vendedor queda de referencia (sin sus datos) para
+  // tasar el mismo producto la próxima vez. Solo al enviarlo, no en borradores.
+  const principal = cantidadPrincipal(lote.titulo, lote.items);
+  if (enviar && lote.precio_lista && principal) {
+    const unico = lote.items.length === 1 ? lote.items[0] : null;
+    after(() =>
+      guardarReporte({
+        texto: unico?.nombre ?? lote.titulo,
+        marca: lote.items.find((i) => i.marca)?.marca,
+        cantidad: principal.cantidad,
+        unidad: principal.unidad,
+        precioTotalArs: lote.precio_lista!,
+        quien: quienReporta(perfil.id),
+        origen: "publicacion",
+      }),
+    );
+  }
   revalidatePath(PANEL_VENDEDOR);
   volverCon(
     PANEL_VENDEDOR,
