@@ -291,6 +291,10 @@ Cosas que quedaron a propósito sin definir y hay que completar antes de tener u
 
 ## Pendiente para próximas versiones
 
+- Vista previa al compartir un lote (foto, título, precio y descuento en WhatsApp y redes), botón
+  "Compartir por WhatsApp" y mapa del sitio para Google. Se prueba con la app publicada (no con localhost).
+- Publicar sacando fotos: la IA completa título, categoría, materiales, cantidades y precio sugerido.
+- Preguntas públicas al vendedor en cada lote (filtrando teléfonos y emails).
 - Cobro online con Mercado Pago (hoy el pago es por transferencia y lo confirma el admin).
 - Avisos por WhatsApp además del email.
 - Resumen semanal por email al vendedor con las visitas de sus lotes.
