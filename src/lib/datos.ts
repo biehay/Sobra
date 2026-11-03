@@ -11,7 +11,7 @@ export type EstadoLote =
   | "vendido"
   | "rechazado"
   | "pausado";
-export type Condicion = "nuevo" | "sin_uso" | "usado_buen_estado";
+export type Condicion = "nuevo" | "sin_uso" | "usado_como_nuevo" | "usado_buen_estado" | "usado_con_detalles" | "para_reparar";
 export type EstadoOferta = "pendiente" | "aceptada" | "rechazada" | "cancelada" | "pagada" | "completada" | "reembolsada";
 export type ModoRetiro = "retira_comprador" | "flete_sobra";
 
@@ -45,6 +45,7 @@ export type Lote = {
   precio_publicado: number | null;
   peso_kg: number | null; // lo declara el vendedor y lo confirma el admin
   baja_semanal_pct: number | null; // baja automática de precio (opcional)
+  detalles?: string[]; // "detalles a tener en cuenta" (códigos de lib/depreciacion.ts)
   ultima_baja_at: string | null;
   fotos: string[];
   estado: EstadoLote;
@@ -88,9 +89,12 @@ export const CATEGORIAS = [
 export const ZONAS = ["CABA", "GBA Norte", "GBA Oeste", "GBA Sur", "La Plata y alrededores"] as const;
 
 export const CONDICIONES: Record<Condicion, string> = {
-  nuevo: "Nuevo, en su embalaje",
-  sin_uso: "Sin uso",
+  nuevo: "Nuevo, en su embalaje cerrado",
+  sin_uso: "Sin uso, embalaje abierto",
+  usado_como_nuevo: "Usado, como nuevo",
   usado_buen_estado: "Usado en buen estado",
+  usado_con_detalles: "Usado, con detalles",
+  para_reparar: "Para reparar o repuesto",
 };
 
 export const ESTADOS_LOTE: Record<EstadoLote, string> = {
@@ -149,24 +153,8 @@ export const MODOS_RETIRO: Record<ModoRetiro, string> = {
 // Comisión de Sobrá. Debe coincidir con public.tasa_comision() en la base.
 export const TASA_COMISION = 0.12;
 
-// Precio sugerido como fracción del precio de mercado del material nuevo, según
-// su estado: 25% menos si está nuevo en su embalaje, 35% sin uso y 50% usado.
-// Se aplica al precio que estima la IA (lib/precio-mercado.ts) o, si no, al
-// precio de lista que carga el vendedor.
-export const FACTOR_PRECIO: Record<Condicion, number> = {
-  nuevo: 0.75,
-  sin_uso: 0.65,
-  usado_buen_estado: 0.5,
-};
-
-// Por debajo de esto, el precio de lista seguramente está mal cargado (por ejemplo "5").
-export const PRECIO_LISTA_MINIMO = 1000;
-
-export function precioSugerido(precioLista: number | null, condicion: Condicion): number | null {
-  if (!precioLista || precioLista < PRECIO_LISTA_MINIMO) return null;
-  // Redondeo a múltiplos de 1.000 para que el precio quede prolijo.
-  return Math.max(1000, Math.round((precioLista * FACTOR_PRECIO[condicion]) / 1000) * 1000);
-}
+// El precio sugerido según el rubro, el estado y los detalles está en lib/depreciacion.ts.
+export { PRECIO_LISTA_MINIMO, precioSugerido } from "@/lib/depreciacion";
 
 // Próxima baja automática: una semana después de publicado o de la última baja.
 export function proximaBaja(lote: Pick<Lote, "baja_semanal_pct" | "ultima_baja_at" | "publicado_at">): Date | null {

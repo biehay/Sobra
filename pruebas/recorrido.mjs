@@ -334,6 +334,8 @@ try {
   await vend.fill("#titulo", "Porcelanato 60x60 gris, 45 m² + pegamento");
   await vend.selectOption("#categoria", "Cerámicos y porcelanatos");
   await vend.selectOption("#condicion", "nuevo");
+  // Detalles del rubro: cambian según la categoría y el comprador los ve en el lote.
+  await vend.check("[data-detalles] label:has-text('Cajas de distintos lotes') input");
   await vend.fill("input[aria-label='Material']", "Porcelanato 60x60 gris");
   await vend.fill("input[aria-label='Cantidad']", "45");
   await vend.fill("input[aria-label='Unidad']", "m²");
@@ -441,6 +443,7 @@ try {
   await anon.waitForSelector("text=Qué incluye el lote");
   const loteUrl = anon.url();
   esperar((await anon.textContent("body")).includes("47% menos"), "muestra el descuento sobre el precio de lista");
+  esperar((await anon.textContent("[data-detalles-lote]")).includes("Cajas de distintos lotes"), "el comprador ve los detalles que marcó el vendedor");
   await captura(anon, "detalle-lote-visitante");
   paso("Catálogo: portada, buscador del header, categorías, ofertas, filtros y detalle con descuento");
 

@@ -98,6 +98,16 @@ const LOTES = [
   ["telecom", "Rack de pared 12U con patcheras", "Fibra óptica y telecomunicaciones", "sin_uso", [u("Rack de pared 12U", 1, "u"), u("Patchera Cat 6 24 puertos", 2, "u")], 420000, 240000, 28, 8, null, "Armado pero sin instalar."],
 ];
 
+// "Detalles a tener en cuenta" de algunos lotes (códigos de src/lib/depreciacion.ts).
+const DETALLES_EJEMPLO = {
+  "Cal hidratada x 25 bolsas": ["vence_pronto"],
+  "Cerámico 45x45 beige para piso, 30 m²": ["distinto_lote"],
+  "Hormigonera 130 litros": ["rayones"],
+  "Placas fenólicas 18 mm x 20": ["piezas_rotas"],
+  "Fusionadora de fibra óptica con cortadora": ["rayones"],
+  "ONU GPON con WiFi x 25 unidades": ["sin_probar"],
+};
+
 // ---------------------------------------------------------------------------
 // Fotos de ejemplo: una ilustración por rubro, con la leyenda "Foto de ejemplo".
 // ---------------------------------------------------------------------------
@@ -266,6 +276,7 @@ async function cargar() {
         precio_publicado: precio,
         peso_kg: kg,
         baja_semanal_pct: baja,
+        detalles: DETALLES_EJEMPLO[titulo] ?? [],
         fotos,
         estado: "publicado",
         publicado_at: new Date(ahora - dias * 86_400_000 - i * 3_600_000).toISOString(),

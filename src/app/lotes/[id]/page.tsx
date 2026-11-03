@@ -26,6 +26,7 @@ import {
 } from "@/lib/datos";
 import { BotonEnviar } from "@/components/boton-enviar";
 import { ofertar } from "./acciones";
+import { DETALLES } from "@/lib/depreciacion";
 
 export default async function DetalleLote({ params, searchParams }: PageProps<"/lotes/[id]">) {
   const { id } = await params;
@@ -39,6 +40,7 @@ export default async function DetalleLote({ params, searchParams }: PageProps<"/
   const perfil = await obtenerPerfil();
 
   const precio = lote.precio_publicado ?? lote.precio_pedido;
+  const detallesDelLote = DETALLES.filter((d) => lote.detalles?.includes(d.id));
   const off = descuento(precio, lote.precio_lista);
   const disponible = lote.estado === "publicado";
   const esMio = perfil?.id === lote.vendedor_id;
@@ -144,6 +146,16 @@ export default async function DetalleLote({ params, searchParams }: PageProps<"/
                 </dd>
               </div>
             </dl>
+            {detallesDelLote.length > 0 && (
+              <div data-detalles-lote className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                <p className="font-semibold">Para tener en cuenta</p>
+                <ul className="mt-0.5 list-disc pl-5">
+                  {detallesDelLote.map((d) => (
+                    <li key={d.id}>{d.texto}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <p className="rounded-lg bg-green-50 px-3 py-2 text-sm text-green-800">
               ✓ Lote verificado por Sobrá · Pago protegido hasta el retiro
             </p>

@@ -63,6 +63,10 @@ Además:
   nuevo (búsqueda web) por el estado, comparado con los lotes parecidos publicados y vendidos en Sobrá (precio por
   unidad, llevado al mismo estado). Si lo parecido está más barato, sugiere apenas por debajo. La calculadora de la
   portada pide qué sobró; sin precio nuevo lo busca (3 por día por persona sin cuenta, 10 con cuenta, 300 en total).
+- **Estados y detalles** (`src/lib/depreciacion.ts`, migración 20261110): 6 estados (nuevo, sin uso, usado como
+  nuevo, buen estado, con detalles, para reparar) y "detalles a tener en cuenta" según el rubro (vence pronto,
+  sin probar, distintos lotes...). El descuento sugerido depende del rubro y el estado (tabla de referencia) y de
+  los detalles; para usados, el tasador también busca usados en venta y lo promedia.
 - **Buscador con sugerencias** (`src/components/buscador.tsx`, `src/lib/sugerencias.ts`): mientras se escribe
   muestra lotes (foto, precio) y categorías. Entiende tildes, plurales, sinónimos de obra y la palabra a medio
   escribir; si nada coincide con todo, muestra lo parecido. Se maneja con el teclado.

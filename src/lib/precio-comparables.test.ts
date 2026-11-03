@@ -26,14 +26,14 @@ describe("precio con lo que hay en Sobrá", () => {
     const lotes = [
       lote("Porcelanato 60x60 gris 20 m²", 200000), // 10.000/m²
       lote("Porcelanato 60x60 beige 30 m²", 360000), // 12.000/m²
-      lote("Porcelanato 60x60 negro 10 m²", 75000, { condicion: "usado_buen_estado" }), // usado: 7.500/m² → como nuevo 11.250/m²
+      lote("Porcelanato 60x60 negro 10 m²", 75000, { condicion: "usado_buen_estado" }), // usado: 7.500/m² → como nuevo (tabla de cerámicos 0,75/0,45) 12.500/m²
       lote("Cerámico 45x45 25 m²", 100000), // no es porcelanato
       lote("Porcelanato 60x60 en cajas", 999999), // sin cantidad: no se puede comparar
     ];
     const r = buscarComparables({ texto: "38 m² de porcelanato 60x60", condicion: "nuevo" }, lotes);
     expect(r.comparables).toHaveLength(3);
-    expect(r.medianaPorUnidad).toBe(11250);
-    expect(r.estimado).toBe(427500);
+    expect(r.medianaPorUnidad).toBe(12000);
+    expect(r.estimado).toBe(456000);
     expect(r.confiable).toBe(true);
   });
 

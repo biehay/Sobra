@@ -22,6 +22,7 @@ const esquema = z.object({
   items: z
     .array(z.object({ nombre: z.string().trim().max(120), cantidad: z.number().nonnegative(), unidad: z.string().trim().max(20) }))
     .max(30),
+  detalles: z.array(z.string().regex(/^[a-z_]+$/)).max(10).default([]),
 });
 
 export type ResultadoPrecioIA = { ok: true; informe: InformeCompleto } | { ok: false; error: string };

@@ -2,10 +2,11 @@ import { describe, expect, it } from "vitest";
 import { cuitValido, descuento, formatearCuit, linkWhatsapp, normalizarTelefono, pesos, precioSugerido } from "./datos";
 
 describe("precioSugerido", () => {
-  it("aplica el factor según la condición y redondea a miles", () => {
-    expect(precioSugerido(900_000, "nuevo")).toBe(675_000);
-    expect(precioSugerido(900_000, "sin_uso")).toBe(585_000);
-    expect(precioSugerido(123_456, "usado_buen_estado")).toBe(62_000);
+  it("aplica el factor del rubro según el estado y redondea a miles", () => {
+    expect(precioSugerido(900_000, "nuevo", "Cerámicos y porcelanatos")).toBe(675_000);
+    expect(precioSugerido(900_000, "sin_uso", "Cerámicos y porcelanatos")).toBe(612_000);
+    // Sin rubro, la tabla general.
+    expect(precioSugerido(123_456, "usado_buen_estado")).toBe(49_000);
   });
 
   it("no sugiere nada sin precio de lista", () => {

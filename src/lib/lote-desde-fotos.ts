@@ -4,6 +4,7 @@ import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
 import { CATEGORIAS, CONDICIONES, type Condicion } from "@/lib/datos";
 import { unificar, type Observacion, type PropuestaLote, type Revision } from "@/lib/lote-desde-fotos-control";
+import { DETALLES } from "@/lib/depreciacion";
 
 // Publicar sacando fotos. Antes de mostrarle algo al vendedor, pasa por varias fases:
 //  1. Observación: Claude describe cada foto, transcribe las etiquetas y propone
@@ -36,7 +37,12 @@ const esquemaObservacion = z.object({
     .describe("Una entrada por foto, en orden."),
   titulo: z.string().describe("Título corto: material, medida y cantidad total. Ej.: \"Porcelanato 60x60 gris, 38 m²\"."),
   categoria,
-  condicion: condicion.describe("nuevo: embalaje cerrado; sin_uso: abierto pero sin usar; usado_buen_estado: usado."),
+  condicion: condicion.describe(
+    "nuevo: embalaje cerrado; sin_uso: embalaje abierto pero sin usar; usado_como_nuevo: usado sin marcas; usado_buen_estado: usado con desgaste normal; usado_con_detalles: con daños o marcas visibles; para_reparar: no funciona o es para repuesto.",
+  ),
+  detalles: z
+    .array(z.enum(DETALLES.map((d) => d.id) as [string, ...string[]]))
+    .describe(`Solo los que se VEN en las fotos: ${DETALLES.map((d) => `${d.id} (${d.texto})`).join("; ")}. Vacío si no se ve ninguno.`),
   condicion_evidencia: z.string().describe("Qué se ve en las fotos que indica ese estado."),
   materiales: z
     .array(
@@ -156,6 +162,7 @@ export const CONSULTAS_DE_PRUEBA: ConsultasIA = {
     categoria: "Cerámicos y porcelanatos",
     condicion: "nuevo",
     condicion_evidencia: "Cajas cerradas con el film del fabricante.",
+    detalles: ["embalaje_danado"],
     materiales: [{ nombre: "Porcelanato 60x60 gris rectificado", presentacion: "cajas", unidades_contadas: 19, contenido_por_unidad: 2, unidad: "m2", cantidad: 40, evidencia: "19 cajas en la foto 1, etiqueta 2 m²/caja", seguro: true }],
     peso_kg: 870,
     descripcion: "Cajas cerradas, sin golpes. Mismo lote de fabricación.",

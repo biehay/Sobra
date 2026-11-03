@@ -3,6 +3,7 @@
 import { useRef, useState, useTransition } from "react";
 import { crearClienteNavegador } from "@/lib/supabase/client";
 import { limpiarFoto } from "@/lib/limpiar-foto";
+import { detallesPara } from "@/lib/depreciacion";
 import { CATEGORIAS, CONDICIONES, ZONAS, pesos, precioSugerido, urlFoto, type Condicion, type Item, type Lote } from "@/lib/datos";
 import { BotonEnviar } from "@/components/boton-enviar";
 import { guardarLote } from "../acciones";
@@ -41,7 +42,8 @@ export function FormLote({
   const [precioLista, setPrecioLista] = useState(lote?.precio_lista?.toString() ?? inicial?.precioLista ?? "");
   const [condicion, setCondicion] = useState<Condicion>(lote?.condicion ?? inicial?.condicion ?? "nuevo");
   const [bajaActiva, setBajaActiva] = useState(lote?.baja_semanal_pct != null);
-  const sugerido = precioSugerido(Number(precioLista) || null, condicion);
+  // "Detalles a tener en cuenta": dependen del rubro y bajan el precio sugerido.
+  const [detalles, setDetalles] = useState<string[]>(lote?.detalles ?? []);
   const formulario = useRef<HTMLFormElement>(null);
   const precioPedido = useRef<HTMLInputElement>(null);
   // Completar con fotos: lo que propuso la IA y lo que el vendedor tiene que confirmar.
@@ -51,8 +53,12 @@ export function FormLote({
   const [analizando, analizar] = useTransition();
   const resumen = useRef<HTMLDivElement>(null);
   // Para la vista previa: una copia de los campos de texto, que se actualiza al cambiar algo.
-  const precioInicial = lote?.precio_pedido ?? inicial?.precioPedido ?? precioSugerido(Number(inicial?.precioLista) || null, inicial?.condicion ?? "nuevo") ?? undefined;
-  const [campos, setCampos] = useState<Record<string, string>>({ precio_pedido: precioInicial ? String(precioInicial) : "" });
+  const precioInicial = lote?.precio_pedido ?? inicial?.precioPedido ?? precioSugerido(Number(inicial?.precioLista) || null, inicial?.condicion ?? "nuevo", lote?.categoria) ?? undefined;
+  const [campos, setCampos] = useState<Record<string, string>>({ precio_pedido: precioInicial ? String(precioInicial) : "", categoria: lote?.categoria ?? "" });
+  const categoriaActual = campos.categoria || null;
+  const opcionesDetalle = detallesPara(categoriaActual);
+  const detallesValidos = detalles.filter((d) => opcionesDetalle.some((o) => o.id === d));
+  const sugerido = precioSugerido(Number(precioLista) || null, condicion, categoriaActual, detallesValidos);
   const leerCampos = () => {
     if (!formulario.current) return;
     const f = new FormData(formulario.current);
@@ -78,6 +84,7 @@ export function FormLote({
       (campos.namedItem("peso_kg") as HTMLInputElement).value = p.peso_kg ? String(p.peso_kg) : "";
       (campos.namedItem("descripcion") as HTMLTextAreaElement).value = p.descripcion;
       setCondicion(p.condicion);
+      setDetalles(p.detalles);
       if (p.materiales.length) setItems(p.materiales.map((m) => ({ nombre: m.nombre, cantidad: m.cantidad, unidad: m.unidad })));
       setPropuesta(p);
       setDudas(p.dudas);
@@ -103,6 +110,7 @@ export function FormLote({
       condicion,
       descripcion: String(f.get("descripcion") ?? ""),
       items: items.filter((i) => i.nombre.trim() && i.cantidad > 0),
+      detalles: detallesValidos,
     };
   }
 
@@ -179,6 +187,7 @@ export function FormLote({
       {lote && <input type="hidden" name="id" value={lote.id} />}
       <input type="hidden" name="items" value={JSON.stringify(itemsValidos)} />
       <input type="hidden" name="fotos" value={JSON.stringify(fotos)} />
+      <input type="hidden" name="detalles" value={JSON.stringify(detallesValidos)} />
 
       <section className="tarjeta space-y-4 p-6">
         <h2 className="text-lg font-bold">1. Fotos</h2>
@@ -292,6 +301,26 @@ export function FormLote({
             <Duda duda={dudaDe("condicion")} alConfirmar={() => resolver("condicion")} />
           </div>
         </div>
+
+        {opcionesDetalle.length > 0 && (
+          <fieldset data-detalles>
+            <legend className="etiqueta">Detalles a tener en cuenta (opcional)</legend>
+            <p className="mb-2 text-sm text-stone-500">Marcá lo que corresponda: el comprador lo ve en el lote y ajusta el precio sugerido.</p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {opcionesDetalle.map((d) => (
+                <label key={d.id} className="flex items-start gap-2 rounded-lg border border-stone-200 px-3 py-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={detallesValidos.includes(d.id)}
+                    onChange={(e) => setDetalles((ds) => (e.target.checked ? [...ds, d.id] : ds.filter((x) => x !== d.id)))}
+                    className="mt-0.5 size-4 accent-marca"
+                  />
+                  {d.texto}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        )}
 
         <div>
           <p className="etiqueta">Materiales incluidos</p>

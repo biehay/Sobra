@@ -14,21 +14,21 @@ export const lotesParaComparar = cache(async (): Promise<LoteComparable[]> => {
   const supabase = await crearClienteServidor();
   const { data } = await supabase
     .from("lotes")
-    .select("id, titulo, categoria, condicion, items, precio_publicado, precio_pedido, estado")
+    .select("id, titulo, categoria, condicion, items, precio_publicado, precio_pedido, estado, detalles")
     .in("estado", ["publicado", "reservado", "vendido"])
     .order("publicado_at", { ascending: false })
     .limit(1000);
   return (data ?? []) as LoteComparable[];
 });
 
-export async function referenciaEnSobra(lote: { texto: string; items?: LoteParaTasar["items"]; categoria?: string | null; condicion: LoteParaTasar["condicion"]; excluir?: string }) {
+export async function referenciaEnSobra(lote: { texto: string; items?: LoteParaTasar["items"]; categoria?: string | null; condicion: LoteParaTasar["condicion"]; detalles?: string[]; excluir?: string }) {
   return buscarComparables(lote, await lotesParaComparar());
 }
 
 export async function precioSugeridoCompleto(lote: LoteParaTasar & { excluir?: string }): Promise<InformeCompleto> {
   const [informe, referencia] = await Promise.all([
     estimarPrecioMercado(lote),
-    referenciaEnSobra({ texto: lote.titulo, items: lote.items, categoria: lote.categoria || null, condicion: lote.condicion, excluir: lote.excluir }),
+    referenciaEnSobra({ texto: lote.titulo, items: lote.items, categoria: lote.categoria || null, condicion: lote.condicion, detalles: lote.detalles, excluir: lote.excluir }),
   ]);
   const { sugerido, motivo } = combinarPrecio(informe.sugerido, referencia);
   return { ...informe, sugeridoMercado: informe.sugerido, sugerido: sugerido ?? informe.sugerido, referencia, motivo };

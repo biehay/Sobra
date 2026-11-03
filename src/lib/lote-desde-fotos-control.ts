@@ -1,5 +1,6 @@
 import type { Condicion } from "@/lib/datos";
 import { palabras } from "@/lib/recomendaciones/motor";
+import { detallesPara } from "@/lib/depreciacion";
 
 // Controles fijos (sin IA) de "Publicar con fotos" y unificación de las dos
 // revisiones. Todo lo que no cierra se convierte en una pregunta para el vendedor.
@@ -14,6 +15,7 @@ export type Observacion = {
   categoria: string;
   condicion: Condicion;
   condicion_evidencia: string;
+  detalles?: string[];
   materiales: {
     nombre: string;
     presentacion: string;
@@ -45,13 +47,21 @@ export type PropuestaLote = {
   materiales: { nombre: string; cantidad: number; unidad: string }[];
   peso_kg: number | null;
   descripcion: string;
+  detalles: string[];
   dudas: { campo: CampoDuda; pregunta: string }[];
   // Los controles que pasó, para mostrárselos al vendedor.
   verificaciones: string[];
 };
 
 const MAX_DUDAS = 3;
-const NOMBRE_ESTADO: Record<Condicion, string> = { nuevo: "nuevo, en su embalaje", sin_uso: "sin uso", usado_buen_estado: "usado" };
+const NOMBRE_ESTADO: Record<Condicion, string> = {
+  nuevo: "nuevo, en su embalaje",
+  sin_uso: "sin uso",
+  usado_como_nuevo: "usado, como nuevo",
+  usado_buen_estado: "usado en buen estado",
+  usado_con_detalles: "usado, con detalles",
+  para_reparar: "para reparar",
+};
 
 const redondear = (n: number) => Math.round(n * 100) / 100;
 const numero = (n: number) => n.toLocaleString("es-AR", { maximumFractionDigits: 2 });
@@ -194,6 +204,8 @@ export function unificar(obs: Observacion, rev: Revision | null): PropuestaLote 
     materiales: materiales.map((m) => ({ nombre: m.nombre.trim().slice(0, 120), cantidad: m.cantidad, unidad: m.unidad.slice(0, 20) })),
     peso_kg: peso,
     descripcion: obs.descripcion.trim().slice(0, 1000),
+    // Solo los detalles que corresponden al rubro.
+    detalles: (obs.detalles ?? []).filter((d) => detallesPara(obs.categoria).some((x) => x.id === d)),
     dudas: orden.filter((c) => dudas.has(c)).slice(0, MAX_DUDAS).map((campo) => ({ campo, pregunta: dudas.get(campo)! })),
     verificaciones: verificaciones.slice(0, 8),
   };

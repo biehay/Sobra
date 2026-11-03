@@ -6,7 +6,8 @@ import { z } from "zod";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { mensajeParaUsuario } from "@/lib/errores";
 import { exigirRol } from "@/lib/sesion";
-import { CATEGORIAS, ZONAS, normalizarTelefono, cuitValido, formatearCuit } from "@/lib/datos";
+import { CATEGORIAS, CONDICIONES, ZONAS, normalizarTelefono, cuitValido, formatearCuit, type Condicion } from "@/lib/datos";
+import { detallesPara } from "@/lib/depreciacion";
 import { notificar } from "@/lib/email/notificar";
 
 const PANEL_VENDEDOR = "/panel/vendedor";
@@ -35,7 +36,7 @@ const esquemaLote = z.object({
   titulo: z.string().trim().min(5, "El título debe tener al menos 5 caracteres").max(120),
   descripcion: z.string().trim().max(3000).default(""),
   categoria: z.enum(CATEGORIAS, "Elegí una categoría"),
-  condicion: z.enum(["nuevo", "sin_uso", "usado_buen_estado"], "Elegí el estado del material"),
+  condicion: z.enum(Object.keys(CONDICIONES) as [Condicion, ...Condicion[]], "Elegí el estado del material"),
   zona: z.enum(ZONAS, "Elegí la zona de retiro"),
   localidad: z.string().trim().max(80).default(""),
   precio_lista: z.preprocess(
@@ -51,6 +52,7 @@ const esquemaLote = z.object({
   precio_minimo: z.preprocess((v) => (v === "" || v == null ? null : Number(v)), z.number("Precio mínimo inválido").positive("Precio mínimo inválido").nullable()),
   items: z.preprocess(json, z.array(esquemaItem).max(100)),
   fotos: z.preprocess(json, z.array(z.string()).max(10)),
+  detalles: z.preprocess(json, z.array(z.string()).max(10)).default([]),
   direccion: z.string().trim().max(200).default(""),
   horarios: z.string().trim().max(200).default(""),
   indicaciones: z.string().trim().max(500).default(""),
@@ -66,6 +68,9 @@ export async function guardarLote(formData: FormData) {
   if (!datos.success) volverCon(rutaForm, "error", datos.error.issues[0].message);
 
   const { direccion, horarios, indicaciones, precio_minimo, ...lote } = datos.data;
+  // Solo los detalles que corresponden a la categoría elegida.
+  const validos = new Set(detallesPara(lote.categoria).map((d) => d.id));
+  lote.detalles = lote.detalles.filter((d) => validos.has(d));
   // Baja automática: van juntos o ninguno, y el mínimo tiene que ser menor al precio.
   if (lote.baja_semanal_pct == null || precio_minimo == null) {
     lote.baja_semanal_pct = null;

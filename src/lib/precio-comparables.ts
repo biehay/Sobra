@@ -1,4 +1,5 @@
-import { FACTOR_PRECIO, type Condicion, type Item } from "@/lib/datos";
+import type { Condicion, Item } from "@/lib/datos";
+import { factorPrecio } from "@/lib/depreciacion";
 import { palabras } from "@/lib/recomendaciones/motor";
 import { normalizarUnidad } from "@/lib/lote-desde-fotos-control";
 
@@ -16,6 +17,7 @@ export type LoteComparable = {
   precio_publicado: number | null;
   precio_pedido: number;
   estado: string;
+  detalles?: string[];
 };
 
 export type Comparable = { id: string; titulo: string; precio: number; porUnidad: number; vendido: boolean };
@@ -52,7 +54,7 @@ const mediana = (v: number[]) => {
 const delProducto = (texto: string) => new Set(palabras(texto).filter((p) => !/^\d/.test(p)));
 
 export function buscarComparables(
-  objetivo: { texto: string; items?: Item[]; categoria?: string | null; condicion: Condicion; excluir?: string },
+  objetivo: { texto: string; items?: Item[]; categoria?: string | null; condicion: Condicion; detalles?: string[]; excluir?: string },
   lotes: LoteComparable[],
 ): Referencia {
   const principal = cantidadPrincipal(objetivo.texto, objetivo.items);
@@ -72,8 +74,10 @@ export function buscarComparables(
     // Que sea lo mismo: la mayoría de lo que se busca tiene que estar en el lote.
     if (comunes / buscadas.size < 0.5) continue;
     const precio = Number(l.precio_publicado ?? l.precio_pedido);
-    // Llevado al mismo estado que el que se quiere tasar.
-    const porUnidad = (precio / suyo.cantidad) * (FACTOR_PRECIO[objetivo.condicion] / FACTOR_PRECIO[l.condicion]);
+    // Llevado al mismo estado (y detalles) que el que se quiere tasar, con la tabla de su rubro.
+    const porUnidad =
+      (precio / suyo.cantidad) *
+      (factorPrecio(l.categoria, objetivo.condicion, objetivo.detalles) / factorPrecio(l.categoria, l.condicion, l.detalles));
     comparables.push({ id: l.id, titulo: l.titulo, precio, porUnidad, vendido: l.estado === "vendido" });
   }
   if (!comparables.length) return vacia;

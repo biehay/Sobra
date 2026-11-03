@@ -12,7 +12,14 @@ import { compararEnSobra, tasarDesdePortada } from "@/app/precio-portada";
 // gratis" pasa todo al formulario de publicación (sin cuenta, después de crearla).
 // `cuenta`: sin cuenta, con cuenta de usuario o admin (que no publica).
 type Cuenta = "ninguna" | "usuario" | "admin";
-type Resultado = { sugerido: number; mercado: number | null; motivo: string; referencia: Referencia; fuentes: { titulo: string; url: string }[] };
+type Resultado = {
+  sugerido: number;
+  mercado: number | null;
+  motivo: string;
+  referencia: Referencia;
+  fuentes: { titulo: string; url: string }[];
+  categoria?: string | null;
+};
 
 // `idTexto`: el campo "¿Qué te sobró?", para llevar el foco ahí si falta.
 function useCalculadora(cuenta: Cuenta, idTexto: string) {
@@ -55,16 +62,16 @@ function useCalculadora(cuenta: Cuenta, idTexto: string) {
       setParcial(enSobra.referencia);
       // 2a. Si sabe cuánto cuesta nuevo: la cuenta con ese precio y lo de Sobrá.
       if (lista) {
-        const { sugerido, motivo } = combinarPrecio(precioSugerido(lista, condicion), enSobra.referencia);
-        setResultado({ sugerido: sugerido ?? 0, mercado: lista, motivo, referencia: enSobra.referencia, fuentes: [] });
+        const { sugerido, motivo } = combinarPrecio(precioSugerido(lista, condicion, enSobra.categoria), enSobra.referencia);
+        setResultado({ sugerido: sugerido ?? 0, mercado: lista, motivo, referencia: enSobra.referencia, fuentes: [], categoria: enSobra.categoria });
         return;
       }
       // 2b. Si no: el precio de mercado en la web.
       const r = await tasarDesdePortada(texto, condicion);
-      if (r.ok) setResultado({ ...r.tasacion });
+      if (r.ok) setResultado({ ...r.tasacion, categoria: enSobra.categoria });
       else if (enSobra.referencia.estimado && enSobra.referencia.comparables.length >= 2) {
         const { sugerido, motivo } = combinarPrecio(null, enSobra.referencia);
-        setResultado({ sugerido: sugerido ?? 0, mercado: null, motivo, referencia: enSobra.referencia, fuentes: [] });
+        setResultado({ sugerido: sugerido ?? 0, mercado: null, motivo, referencia: enSobra.referencia, fuentes: [], categoria: enSobra.categoria });
       } else setError(r.error);
     });
   }
@@ -114,7 +121,12 @@ function Detalle({ c, prefijo }: { c: Calc; prefijo: string }) {
       )}
       {c.resultado && (
         <>
-          {c.resultado.motivo && <p className="text-xs text-stone-600">{c.resultado.motivo}</p>}
+          {c.resultado.motivo && (
+            <p className="text-xs text-stone-600">
+              {c.resultado.categoria && <>Rubro: {c.resultado.categoria.toLowerCase()}. </>}
+              {c.resultado.motivo}
+            </p>
+          )}
           {c.resultado.fuentes.length > 0 && (
             <p className="text-xs text-stone-600">
               Precio nuevo según{" "}
@@ -201,7 +213,14 @@ export function CalculadoraSobrante({ cuenta }: { cuenta: Cuenta }) {
   );
 }
 
-const ESTADO_CORTO: Record<Condicion, string> = { nuevo: "Nuevo", sin_uso: "Sin uso", usado_buen_estado: "Usado" };
+const ESTADO_CORTO: Record<Condicion, string> = {
+  nuevo: "Nuevo",
+  sin_uso: "Sin uso",
+  usado_como_nuevo: "Usado, como nuevo",
+  usado_buen_estado: "Usado, buen estado",
+  usado_con_detalles: "Usado, con detalles",
+  para_reparar: "Para reparar",
+};
 
 // La franja de la portada, debajo de los productos destacados. En el celular
 // arranca plegada en una línea y se despliega al tocarla.
