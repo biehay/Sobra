@@ -75,11 +75,12 @@ const esquemaRevision = z.object({
   problemas: z.array(z.string()).describe("Datos de la propuesta que NO se ven en las fotos (por ejemplo una marca o medida inventada). Vacío si no hay."),
 });
 
-const INSTRUCCIONES_OBSERVAR = `Ayudás a vendedores de Sobrá, un marketplace de sobrantes de obra y otros materiales del AMBA, a publicar un lote a partir de sus fotos.
+const INSTRUCCIONES_OBSERVAR = `Ayudás a vendedores de Sobrá, un marketplace de sobrantes de obra, instalaciones y telecomunicaciones (fibra óptica, redes) del AMBA, a publicar un lote a partir de sus fotos.
 
 Trabajá con evidencia:
 - Primero describí cada foto y copiá tal cual el texto de las etiquetas que se lean.
 - Para cada material, contá las cajas, bolsas, rollos o unidades y anotá cuánto trae cada una según la etiqueta. La cantidad total tiene que salir de esa cuenta.
+- En fibra óptica y equipos, leé en la etiqueta o la bobina el tipo (monomodo/multimodo), la cantidad de hilos, los metros, el tipo de conector (SC/APC, LC/UPC) y el modelo del equipo, si se ven.
 - No inventes: si la marca o una medida no se ven, no las pongas. Si algo no se puede saber, estimalo, marcá seguro=false y bajá la confianza.
 - Escribí en castellano rioplatense, simple, como un vendedor de obra.
 

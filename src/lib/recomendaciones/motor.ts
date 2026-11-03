@@ -92,6 +92,9 @@ export const COMPLEMENTOS_CATEGORIA: Record<string, string[]> = {
   "Sanitarios y grifería": ["Plomería y gas", "Cerámicos y porcelanatos"],
   "Plomería y gas": ["Sanitarios y grifería", "Herramientas y equipos"],
   "Electricidad e iluminación": ["Aislantes y durlock", "Herramientas y equipos"],
+  // En telecomunicaciones los complementos son del mismo rubro: los resuelven las
+  // reglas por material y las fichas técnicas.
+  "Fibra óptica y telecomunicaciones": [],
   "Cemento, cal y áridos": ["Hierros y perfiles", "Cerámicos y porcelanatos", "Maderas y placas"],
   "Hierros y perfiles": ["Cemento, cal y áridos", "Herramientas y equipos"],
   "Maderas y placas": ["Pinturas e impermeabilizantes", "Herramientas y equipos"],
@@ -120,6 +123,17 @@ const COMPLEMENTOS_MATERIAL_TEXTO: Record<string, string[]> = {
   puerta: ["bisagra", "cerradura", "picaporte", "marco"],
   pintura: ["rodillo", "pincel", "enduido", "fijador"],
   membrana: ["imprimacion", "pintura"],
+  // Fibra óptica y telecomunicaciones.
+  fibra: ["conector", "pigtail", "patchcord", "splitter", "empalme", "manguito", "herraje", "preformado", "roseta"],
+  bobina: ["conector", "empalme", "herraje", "preformado"],
+  drop: ["conector", "roseta", "tensor", "herraje"],
+  onu: ["patchcord", "router", "roseta"],
+  olt: ["sfp", "patchcord", "splitter", "odf"],
+  splitter: ["conector", "caja", "nap", "patchcord"],
+  nap: ["splitter", "conector", "drop", "precinto"],
+  fusionadora: ["cortadora", "manguito", "peladora"],
+  utp: ["ficha", "jack", "patchera", "patchcord"],
+  rack: ["patchera", "patchcord", "utp", "ordenador", "bandeja", "switch"],
 };
 
 const VACIAS = new Set(
@@ -136,6 +150,7 @@ const ETAPA_DE: Record<string, number> = {
   "Aislantes y durlock": 1,
   "Plomería y gas": 2,
   "Electricidad e iluminación": 2,
+  "Fibra óptica y telecomunicaciones": 2,
   "Cerámicos y porcelanatos": 3,
   "Sanitarios y grifería": 3,
   "Pinturas e impermeabilizantes": 3,
@@ -173,6 +188,14 @@ const SINONIMOS_TEXTO: Record<string, string> = {
   portland: "cemento",
   perfileria: "perfil",
   aberturas: "abertura",
+  optico: "optica",
+  latiguillo: "patchcord",
+  jumper: "patchcord",
+  patch: "patchcord",
+  pachcord: "patchcord",
+  derivador: "splitter",
+  divisor: "splitter",
+  empalmadora: "fusionadora",
 };
 
 // Raíz simple para que singular y plural coincidan: "llaves" y "llave" quedan
@@ -314,7 +337,7 @@ function palabrasDeProducto(lote: Lote, fichas: Map<string, Ficha>): string[] {
 // Reglas escritas a mano que no aplican en otros rubros: un cable de fibra
 // óptica no lleva térmicas ni cajas de luz (eso lo resuelve su ficha técnica).
 const EXCEPCIONES_MATERIAL: Record<string, string[]> = {
-  cabl: ["fibra", "optica", "coaxil", "utp", "red", "telefonico"],
+  cabl: ["fibra", "optica", "coaxil", "utp", "red", "telefonico", "nap", "empalme", "ftth", "splitter", "drop"],
   // "Porcelanato símil cemento" describe el aspecto, no el material.
   cemento: ["simil", "porcelanato", "ceramico", "microcemento"],
 };
@@ -632,6 +655,8 @@ function puntuar(ctx: Contexto, descartarVistos: boolean) {
       // Complementos según las fichas técnicas (lo más preciso): qué pide el
       // proceso de lo que compró y si este lote lo cubre, y en qué cantidad.
       let deFicha: { c: ComplementoFicha; alcanza: number | null } | null = null;
+      // Si hay ficha, manda la ficha: es más precisa que las reglas escritas a mano.
+      let mejorFicha = 0;
       for (const c of interes.deFichas) {
         if (!cumpleComplemento(c, producto)) continue;
         let valor = c.peso / maxComplemento;
@@ -643,8 +668,9 @@ function puntuar(ctx: Contexto, descartarVistos: boolean) {
             alcanza = hay / c.necesario;
           }
         }
-        if (valor >= partes.complemento) {
-          partes.complemento = Math.min(1, valor);
+        if (valor > mejorFicha) {
+          mejorFicha = valor;
+          partes.complemento = Math.max(partes.complemento, Math.min(1, valor));
           deFicha = { c, alcanza };
           necesidad = `ficha:${c.nucleo.join(" ")}`;
         }

@@ -37,7 +37,7 @@ export default async function Constancia({ params }: PageProps<"/constancia/[cod
         <p className="mt-2 text-lg text-stone-700">
           Sobrá deja constancia de que <strong>{c.titular}</strong> realizó, durante el año <strong>{c.anio}</strong>,{" "}
           {c.operaciones} {c.operaciones === 1 ? "operación completada" : "operaciones completadas"} de compraventa de materiales
-          de construcción sobrantes a través de la plataforma, con el siguiente resultado:
+          sobrantes a través de la plataforma, con el siguiente resultado:
         </p>
 
         {/* Solo los números que corresponden: quien solo vendió no tiene material reutilizado ni CO₂. */}

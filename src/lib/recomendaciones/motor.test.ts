@@ -374,3 +374,22 @@ describe("complementos que no son", () => {
     expect(recs.map((r) => r.lote.id)).toEqual(expect.arrayContaining([pastina.id, pegamento.id]));
   });
 });
+
+describe("fibra óptica y telecomunicaciones (sin ficha técnica)", () => {
+  const FO = "Fibra óptica y telecomunicaciones";
+  it("después de comprar fibra recomienda conectores, splitters y patchcords, no cosas de obra", () => {
+    const bobina = lote({ titulo: "Bobina de fibra óptica monomodo 2 km", categoria: FO });
+    const conectores = lote({ titulo: "Conectores SC/APC x 200", categoria: FO });
+    const splitters = lote({ titulo: "Splitters PLC 1x8", categoria: FO });
+    const latiguillos = lote({ titulo: "Latiguillos SC/APC 3 m x 150", categoria: FO });
+    const pegamento = lote({ titulo: "Pegamento para porcelanato x 20 bolsas", categoria: "Cemento, cal y áridos" });
+    const recs = recomendar({ senales: [senal(bobina, "compra")], candidatos: [pegamento, conectores, splitters, latiguillos], ahora: AHORA }, 3);
+    expect(recs.map((r) => r.lote.id)).toEqual(expect.arrayContaining([conectores.id, splitters.id, latiguillos.id]));
+    expect(recs.every((r) => r.complemento?.tipo === "complemento")).toBe(true);
+  });
+
+  it("entiende los sinónimos del rubro", () => {
+    expect(palabras("Latiguillo óptico")).toEqual(palabras("patchcord optica"));
+    expect(palabras("Derivador 1x8")).toContain("splitter");
+  });
+});

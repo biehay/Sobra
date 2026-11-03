@@ -320,7 +320,7 @@ export function FormLote({
           <p className="mt-1 text-sm text-stone-500">
             Con esto calculamos cuánto material salvaste de ir a residuos (y lo ves en tu constancia de impacto). Referencias:
             porcelanato o cerámico, unos 20 kg por m²; una bolsa de cemento, 50 kg; un inodoro, unos 25 kg; una placa de durlock,
-            unos 20 kg. Lo confirmamos al revisar el lote.
+            unos 20 kg; una bobina de 2 km de fibra óptica, unos 150 kg. Lo confirmamos al revisar el lote.
           </p>
         </div>
 

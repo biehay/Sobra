@@ -56,6 +56,9 @@ Además:
   un resumen, marca en amarillo lo dudoso (máx. 3 preguntas) y una vista previa en vivo. Nada se envía solo.
   Máximo 20 análisis por usuario por día. En el recorrido se usa una respuesta fija (`SOBRA_IA_DE_PRUEBA=1`,
   nunca en producción).
+- **Fibra óptica y telecomunicaciones**: categoría propia (bobinas, drop, conectores, splitters, patchcords, NAP,
+  ONU, racks, UTP, fusionadoras). El algoritmo conoce sus complementos y sinónimos (latiguillo = patchcord), la IA
+  de fotos lee etiquetas de fibra y el tasador busca en distribuidores del rubro. Migración 20261109 (factor de CO₂).
 - **Buscador con sugerencias** (`src/components/buscador.tsx`, `src/lib/sugerencias.ts`): mientras se escribe
   muestra lotes (foto, precio) y categorías. Entiende tildes, plurales, sinónimos de obra y la palabra a medio
   escribir; si nada coincide con todo, muestra lo parecido. Se maneja con el teclado.
@@ -266,7 +269,7 @@ supabase/templates/        emails de Supabase: código de verificación y recupe
 Para probar la app con mercadería cargada:
 
 ```bash
-npm run ejemplos          # 5 vendedores, 32 lotes publicados con fotos y algo de actividad
+npm run ejemplos          # 6 vendedores, 41 lotes (obra y fibra óptica) con fotos y algo de actividad
 npm run ejemplos:borrar   # borra todo lo de ejemplo y deja la base limpia
 ```
 

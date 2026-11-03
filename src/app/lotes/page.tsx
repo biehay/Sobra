@@ -80,7 +80,7 @@ export default async function Catalogo({ searchParams }: PageProps<"/lotes">) {
         <span aria-hidden className="text-stone-500">▾</span>
       </label>
       <form className="tarjeta mt-2 hidden gap-3 p-4 peer-checked:grid sm:mt-6 sm:grid sm:grid-cols-2 lg:grid-cols-6">
-        <input name="q" defaultValue={q} placeholder="Buscar: porcelanato, caño, cemento..." className="campo lg:col-span-2" />
+        <input name="q" defaultValue={q} placeholder="Buscar: porcelanato, caño, fibra óptica..." className="campo lg:col-span-2" />
         <select name="categoria" defaultValue={categoria} className="campo" aria-label="Categoría">
           <option value="">Todas las categorías</option>
           {CATEGORIAS.map((c) => (

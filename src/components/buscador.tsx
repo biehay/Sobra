@@ -128,7 +128,7 @@ export function Buscador({ variante, id, className = "" }: { variante: "encabeza
           onChange={(e) => escribir(e.target.value)}
           onFocus={() => setAbierto(true)}
           onKeyDown={teclas}
-          placeholder={portada ? "¿Qué necesitás? Porcelanato, caños, cemento..." : "Buscar porcelanato, caños, cemento..."}
+          placeholder={portada ? "¿Qué necesitás? Porcelanato, caños, fibra óptica..." : "Buscar porcelanato, fibra óptica..."}
           className={
             portada
               ? "min-w-0 flex-1 rounded-lg px-3 text-base text-petroleo outline-none"

@@ -27,7 +27,7 @@ const COLUMNAS_PIE: [string, [string, string][]][] = [
 export const metadata: Metadata = {
   title: { default: "Sobrá · Vendé lo que te sobró", template: "%s · Sobrá" },
   description:
-    "Marketplace B2B de materiales de construcción sobrantes en el AMBA. Lotes verificados, cobro protegido y retiro coordinado.",
+    "Marketplace B2B de sobrantes de obra, instalaciones y fibra óptica en el AMBA. Lotes verificados, cobro protegido y retiro coordinado.",
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
@@ -41,7 +41,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           <div className="contenedor grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
             <div>
               <Logo className="h-8 w-auto text-white" />
-              <p className="mt-3">Marketplace de sobrantes de obra del AMBA.</p>
+              <p className="mt-3">Marketplace de sobrantes de obra y telecomunicaciones del AMBA.</p>
             </div>
             {COLUMNAS_PIE.map(([titulo, links]) => (
               <nav key={titulo} aria-label={titulo}>

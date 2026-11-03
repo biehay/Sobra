@@ -39,13 +39,14 @@ const VENDEDORES = [
   { clave: "electricista", nombre: "Diego Sosa", empresa: "Sosa Instalaciones", zona: "GBA Oeste", localidad: "Morón", telefono: "11 4000 0003" },
   { clave: "arquitecta", nombre: "Carla Benítez", empresa: "Estudio Benítez", zona: "GBA Sur", localidad: "Lomas de Zamora", telefono: "11 4000 0004" },
   { clave: "obra", nombre: "Martín Ruiz", empresa: "Ruiz & Hijos", zona: "La Plata y alrededores", localidad: "City Bell", telefono: "11 4000 0005" },
+  { clave: "telecom", nombre: "Andrea Molina", empresa: "Molina Redes y Fibra", zona: "GBA Norte", localidad: "Vicente López", telefono: "11 4000 0006" },
 ];
 // Compradores de ejemplo: solo dejan visitas y favoritos para que el algoritmo
 // tenga "quienes vieron esto también vieron" y popularidad.
-const COMPRADORES = ["Lucas", "Sofía", "Tomás", "Valentina"].map((n, i) => ({
+const COMPRADORES = ["Lucas", "Sofía", "Tomás", "Valentina", "Martina"].map((n, i) => ({
   clave: `comprador${i + 1}`,
   nombre: `${n} (comprador de ejemplo)`,
-  zona: ["CABA", "GBA Norte", "GBA Sur", "GBA Oeste"][i],
+  zona: ["CABA", "GBA Norte", "GBA Sur", "GBA Oeste", "GBA Norte"][i],
 }));
 
 // ---------------------------------------------------------------------------
@@ -83,8 +84,18 @@ const LOTES = [
   ["corralon", "Placas fenólicas 18 mm x 20", "Maderas y placas", "usado_buen_estado", [u("Fenólico 18 mm 1,22x2,44", 20, "u")], 480000, 210000, 650, 10, null, "Usadas una vez para encofrado, en buen estado."],
   ["obra", "Tirantes de pino 2x4 x 50", "Maderas y placas", "nuevo", [u("Tirante pino cepillado 2x4\" x 3,05 m", 50, "u")], 260000, 160000, 400, 4, null, "Secos, bajo techo."],
   ["electricista", "Hormigonera 130 litros", "Herramientas y equipos", "usado_buen_estado", [u("Hormigonera eléctrica 130 l", 1, "u")], 650000, 320000, 70, 8, 5, "Funciona perfecto, terminamos la obra."],
-  ["electricista", "Bobina de fibra óptica monomodo 2 km", "Otros", "nuevo", [u("Cable de fibra óptica monomodo 12 hilos", 2000, "m")], 900000, 520000, 160, 3, null, "Sobrante de un tendido de telecomunicaciones. Bobina sellada."],
-  ["electricista", "Conectores SC/APC y cajas de empalme", "Otros", "nuevo", [u("Conector SC/APC rápido", 200, "u"), u("Caja de empalme 24 fibras", 6, "u")], 260000, 150000, 12, 3, null, "Para instalaciones FTTH."],
+  ["electricista", "Bobina de fibra óptica monomodo 2 km", "Fibra óptica y telecomunicaciones", "nuevo", [u("Cable de fibra óptica monomodo 12 hilos", 2000, "m")], 900000, 520000, 160, 3, null, "Sobrante de un tendido de telecomunicaciones. Bobina sellada."],
+  ["electricista", "Conectores SC/APC y cajas de empalme", "Fibra óptica y telecomunicaciones", "nuevo", [u("Conector SC/APC rápido", 200, "u"), u("Caja de empalme 24 fibras", 6, "u")], 260000, 150000, 12, 3, null, "Para instalaciones FTTH."],
+  // Fibra óptica y telecomunicaciones.
+  ["telecom", "Cable drop FTTH x 6 bobinas de 1 km", "Fibra óptica y telecomunicaciones", "nuevo", [u("Cable drop FTTH 1 fibra con mensajero", 6000, "m")], 780000, 450000, 120, 2, null, "Bobinas cerradas, sobrante de un despliegue en Vicente López."],
+  ["telecom", "ONU GPON con WiFi x 25 unidades", "Fibra óptica y telecomunicaciones", "nuevo", [u("ONU GPON con WiFi doble banda", 25, "u")], 1250000, 690000, 15, 4, 5, "En caja, con fuente. Quedaron de un proyecto que se achicó."],
+  ["telecom", "Splitters PLC 1x8 SC/APC x 40", "Fibra óptica y telecomunicaciones", "nuevo", [u("Splitter PLC 1x8 conectorizado SC/APC", 40, "u")], 480000, 280000, 6, 6, null, "Conectorizados, en su bolsa."],
+  ["telecom", "Patchcords SC/APC monomodo 3 m x 150", "Fibra óptica y telecomunicaciones", "nuevo", [u("Patchcord SC/APC-SC/APC monomodo 3 m", 150, "u")], 300000, 165000, 8, 5, null, "Sin uso, en bolsas de 10."],
+  ["telecom", "Cajas NAP exterior 16 puertos x 12", "Fibra óptica y telecomunicaciones", "nuevo", [u("Caja NAP exterior 16 puertos", 12, "u")], 540000, 320000, 30, 9, null, "Para poste o fachada. Incluyen bandeja de empalme."],
+  ["telecom", "Fusionadora de fibra óptica con cortadora", "Fibra óptica y telecomunicaciones", "usado_buen_estado", [u("Fusionadora de fibra óptica", 1, "u"), u("Cortadora de precisión", 1, "u")], 3200000, 1650000, 8, 7, null, "Funciona perfecto, con estuche y batería. La cambiamos por un modelo nuevo."],
+  ["telecom", "Herrajes y preformados para fibra x 300", "Fibra óptica y telecomunicaciones", "nuevo", [u("Preformado para cable ADSS", 200, "u"), u("Herraje de suspensión", 100, "u")], 360000, 210000, 90, 11, null, "Sobrante de un tendido aéreo."],
+  ["electricista", "Cable UTP Cat 6 x 4 cajas de 305 m", "Fibra óptica y telecomunicaciones", "nuevo", [u("Cable UTP Cat 6 exterior", 1220, "m")], 620000, 360000, 48, 5, null, "Cajas cerradas, para redes de datos."],
+  ["telecom", "Rack de pared 12U con patcheras", "Fibra óptica y telecomunicaciones", "sin_uso", [u("Rack de pared 12U", 1, "u"), u("Patchera Cat 6 24 puertos", 2, "u")], 420000, 240000, 28, 8, null, "Armado pero sin instalar."],
 ];
 
 // ---------------------------------------------------------------------------
@@ -102,6 +113,7 @@ const COLORES = {
   Aberturas: ["#062a3a", "#bae6fd"],
   "Maderas y placas": ["#92400e", "#fcd34d"],
   "Herramientas y equipos": ["#b45309", "#fde68a"],
+  "Fibra óptica y telecomunicaciones": ["#0b3a53", "#22d3ee"],
   Otros: ["#062a3a", "#00b4d8"],
 };
 
@@ -137,6 +149,14 @@ function dibujo(categoria, oscuro, claro) {
       break;
     case "Maderas y placas":
       for (let i = 0; i < 7; i++) r.push(`<rect x="80" y="${90 + i * 75}" width="1040" height="62" rx="6" fill="${i % 2 ? claro : "#fde68a"}" opacity=".95"/>`);
+      break;
+    case "Fibra óptica y telecomunicaciones":
+      // Hilos de fibra que brillan en la punta.
+      for (let i = 0; i < 7; i++) {
+        const y = 140 + i * 70;
+        r.push(`<path d="M60 ${y} C 380 ${y - 90}, 700 ${y + 90}, 1080 ${y - 20}" fill="none" stroke="${i % 2 ? claro : "#e0f7ff"}" stroke-width="10" stroke-linecap="round"/>`);
+        r.push(`<circle cx="1080" cy="${y - 20}" r="16" fill="#fff"/><circle cx="1080" cy="${y - 20}" r="30" fill="${claro}" opacity=".35"/>`);
+      }
       break;
     default:
       for (let i = 0; i < 5; i++) r.push(`<circle cx="${250 + i * 175}" cy="340" r="${70 + (i % 2) * 30}" fill="${i % 2 ? claro : "#fff"}"/>`);
@@ -260,7 +280,7 @@ async function cargar() {
 
   // Actividad: cada comprador de ejemplo mira algunos lotes de un mismo rubro y
   // guarda uno, así funcionan "quienes vieron esto también vieron" y la popularidad.
-  const grupos = [[0, 1, 2, 3, 4], [10, 11, 12, 13], [14, 15, 16, 17, 18], [20, 21, 22, 0, 3]];
+  const grupos = [[0, 1, 2, 3, 4], [10, 11, 12, 13], [14, 15, 16, 17, 18], [20, 21, 22, 0, 3], [30, 31, 32, 34, 35]];
   const hoy = new Date().toISOString().slice(0, 10);
   const vistas = [];
   const visitas = [];

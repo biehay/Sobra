@@ -73,6 +73,7 @@ export const CATEGORIAS = [
   "Cerámicos y porcelanatos",
   "Sanitarios y grifería",
   "Electricidad e iluminación",
+  "Fibra óptica y telecomunicaciones",
   "Plomería y gas",
   "Cemento, cal y áridos",
   "Hierros y perfiles",

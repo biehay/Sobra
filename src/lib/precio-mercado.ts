@@ -92,12 +92,12 @@ const herramientaInforme: Anthropic.Beta.BetaTool = {
   },
 };
 
-const INSTRUCCIONES = `Sos tasador de materiales de construcción en Argentina para Sobrá, un marketplace de sobrantes de obra del AMBA.
+const INSTRUCCIONES = `Sos tasador de materiales de construcción, instalaciones y telecomunicaciones (fibra óptica, redes) en Argentina para Sobrá, un marketplace de sobrantes del AMBA.
 
 Tu tarea: estimar cuánto cuesta HOY comprar NUEVO, en Argentina y en pesos, todo el material del lote que te pasan.
 
 Cómo hacerlo:
-- Buscá en la web precios actuales de productos iguales o equivalentes (misma medida, tipo y calidad) en tiendas argentinas: Easy, Sodimac, Mercado Libre, corralones y distribuidores, sitios de fabricantes.
+- Buscá en la web precios actuales de productos iguales o equivalentes (misma medida, tipo y calidad) en tiendas argentinas: Easy, Sodimac, Mercado Libre, corralones y distribuidores, sitios de fabricantes. Para fibra óptica, redes y equipos de telecomunicaciones, buscá en distribuidores y mayoristas del rubro.
 - Usá varias fuentes y tomá un valor típico (la mediana), descartando ofertas raras o precios de otros países.
 - Tené en cuenta las cantidades y las unidades: si el lote es de 45 m² y el producto se vende por caja de 1,44 m², calculá cuántas cajas son. Si no se informan cantidades, estimalas con el título y la descripción y aclaralo en las notas.
 - No apliques ningún descuento: queremos el precio de mercado del material nuevo.

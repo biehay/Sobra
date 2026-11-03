@@ -18,7 +18,9 @@ const pegamento = lote("Pegamento para porcelanato x 20 bolsas", "Cemento, cal y
 const placas = lote("Placas de yeso x 40", "Aislantes y durlock", ["Placa de yeso estándar 12,5 mm"]);
 const cable = lote("Cable unipolar 2,5 mm", "Electricidad e iluminación");
 const caños = lote("Caños termofusión 20 mm", "Plomería y gas");
-const lotes = [porcelanato, pegamento, placas, cable, caños];
+const bobina = lote("Bobina de fibra óptica monomodo 2 km", "Fibra óptica y telecomunicaciones", ["Cable de fibra óptica 12 hilos"]);
+const patchcords = lote("Patchcords SC/APC 3 m x 150", "Fibra óptica y telecomunicaciones");
+const lotes = [porcelanato, pegamento, placas, cable, caños, bobina, patchcords];
 const CATEGORIAS = ["Cerámicos y porcelanatos", "Aislantes y durlock", "Plomería y gas", "Electricidad e iluminación"];
 const ids = (q: string) => sugerir(q, lotes, CATEGORIAS).lotes.map((l) => l.id);
 
@@ -50,5 +52,13 @@ describe("sugerencias del buscador", () => {
 
   it("sugiere categorías por nombre", () => {
     expect(sugerir("plom", lotes, CATEGORIAS).categorias).toEqual(["Plomería y gas"]);
+  });
+
+  it("encuentra fibra óptica con tildes, a medio escribir y por sinónimos", () => {
+    // Primero la que lo dice en el título; después la que es de la categoría.
+    expect(ids("fibr")).toEqual([bobina.id, patchcords.id]);
+    expect(ids("optico ")).toContain(bobina.id);
+    expect(ids("latiguillo ")).toEqual([patchcords.id]);
+    expect(sugerir("fibra", lotes, ["Fibra óptica y telecomunicaciones"]).categorias).toEqual(["Fibra óptica y telecomunicaciones"]);
   });
 });

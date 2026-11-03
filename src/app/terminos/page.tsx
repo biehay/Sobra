@@ -14,7 +14,7 @@ export default function Terminos() {
       <div className="rounded-xl border border-celeste/40 bg-celeste-claro p-5 text-petroleo">
         <p className="font-bold">Resumen</p>
         <ul className="mt-2">
-          <li>Sobrá conecta a quienes tienen materiales de construcción sobrantes con compradores del AMBA.</li>
+          <li>Sobrá conecta a quienes tienen sobrantes de materiales de construcción, instalaciones y telecomunicaciones con compradores del AMBA.</li>
           <li>Con una sola cuenta podés vender y comprar. Para ofertar, verificamos tu cuenta.</li>
           <li>Revisamos cada lote antes de publicarlo y te sugerimos un precio.</li>
           <li>El comprador paga a Sobrá y retenemos el dinero hasta que retira y entrega el código de retiro.</li>
@@ -25,8 +25,8 @@ export default function Terminos() {
 
       <h2>1. Qué es Sobrá</h2>
       <p>
-        Sobrá es una plataforma de tecnología que conecta a empresas y personas que tienen materiales de construcción
-        sobrantes (vendedores) con interesados en comprarlos (compradores) en el AMBA. Sobrá no compra, no vende ni
+        Sobrá es una plataforma de tecnología que conecta a empresas y personas que tienen materiales sobrantes de
+        construcción, instalaciones y telecomunicaciones (vendedores) con interesados en comprarlos (compradores) en el AMBA. Sobrá no compra, no vende ni
         almacena los materiales: verifica los lotes y a los compradores, cobra el pago y lo retiene hasta que se completa
         el retiro, y coordina la operación. La compraventa es entre el vendedor y el comprador.
       </p>

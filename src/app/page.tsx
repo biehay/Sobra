@@ -91,7 +91,7 @@ export default async function Inicio() {
             </h1>
             {/* En el celular se acorta para que los productos entren en la primera pantalla. */}
             <p className="mt-4 hidden max-w-xl text-lg text-white/80 sm:block">
-              Sobrantes nuevos y sin uso de constructoras y corralones, verificados por Sobrá. Pagás protegido: el vendedor cobra
+              Sobrantes nuevos y sin uso de constructoras, corralones e instaladores de fibra óptica, verificados por Sobrá. Pagás protegido: el vendedor cobra
               recién cuando retirás.
             </p>
             <Buscador variante="portada" id="buscar-portada" className="mt-6 hidden max-w-xl sm:block" />
@@ -222,7 +222,7 @@ export default async function Inicio() {
       {/* Lo que nos diferencia: corto y concreto, debajo de los productos. */}
       <section className="contenedor pt-14">
         <h2 className="text-2xl font-bold">Lo que no vas a encontrar en otro lado</h2>
-        <p className="mt-1 text-stone-600">Sobrá está hecho para materiales de obra, no para vender de todo.</p>
+        <p className="mt-1 text-stone-600">Sobrá está hecho para materiales de obra, instalaciones y telecomunicaciones, no para vender de todo.</p>
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {DIFERENCIALES.map(([titulo, texto, href]) => (
             <Link key={titulo} href={href} className="tarjeta p-5 transition hover:border-celeste hover:shadow-md">

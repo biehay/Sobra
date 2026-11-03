@@ -12,6 +12,7 @@ const TEMAS: { titulo: string; preguntas: [string, React.ReactNode][] }[] = [
   {
     titulo: "Vender",
     preguntas: [
+      ["¿Qué puedo vender en Sobrá?", "Sobrantes nuevos, sin uso o usados en buen estado de obra e instalaciones: cerámicos, cemento, hierros, maderas, aberturas, sanitarios, plomería, electricidad, pinturas, durlock, herramientas y equipos. También fibra óptica y telecomunicaciones: bobinas, cable drop, conectores, splitters, patchcords, cajas NAP, herrajes, ONU, racks, cable UTP y equipos como fusionadoras."],
       ["¿Cuánto cuesta publicar?", `Publicar es gratis. Solo si vendés, Sobrá cobra una comisión del ${Math.round(TASA_COMISION * 100)}% sobre el monto de la venta.`],
       ["¿Cuánto tarda en publicarse mi lote?", "Lo revisamos y te avisamos por email. Si falta algo (por ejemplo, una foto), te lo devolvemos con observaciones para que lo corrijas."],
       ["¿Puedo publicar solo con fotos?", "Sí. Subí las fotos y tocá “Completar con IA”: mira las fotos y completa título, categoría, estado, materiales, cantidades y peso. Te muestra todo lo que completó y, si algo no lo pudo ver bien, te lo marca en amarillo para que lo confirmes. Revisás, cambiás lo que quieras y decidís si lo enviás. Nada se publica solo."],

@@ -25,7 +25,7 @@ function plantilla({ titulo, parrafos, boton }: { titulo: string; parrafos: stri
 <tr><td style="padding:8px 32px 28px">
 <h1 style="margin:0 0 16px;font-size:20px;color:#062a3a">${titulo}</h1>${cuerpo}${accion}
 </td></tr></table>
-<p style="margin:16px 0 0;font-size:12px;color:#a8a29e">Sobrá · Marketplace de sobrantes de obra del AMBA</p>
+<p style="margin:16px 0 0;font-size:12px;color:#a8a29e">Sobrá · Marketplace de sobrantes de obra y telecomunicaciones del AMBA</p>
 </td></tr></table></body></html>`;
 }
 

@@ -10,6 +10,7 @@ export const FACTORES_CO2: [string, number][] = [
   ["Cerámicos y porcelanatos", 0.78],
   ["Sanitarios y grifería", 1.6],
   ["Electricidad e iluminación", 3.0],
+  ["Fibra óptica y telecomunicaciones", 3.5],
   ["Plomería y gas", 2.5],
   ["Cemento, cal y áridos", 0.5],
   ["Hierros y perfiles", 1.55],

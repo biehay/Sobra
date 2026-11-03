@@ -94,6 +94,10 @@ if (urlValida) {
           if (r.estado === 200) ok(`Migración ${archivo} aplicada`);
           else mal(`Falta la migración ${archivo}`, "Ejecutala en Supabase > SQL Editor (copiar, pegar y Run)");
         }
+        // La de fibra óptica cambia una función: se revisa que devuelva el factor nuevo.
+        const factor = await pedir(`/rest/v1/rpc/factor_co2?p_categoria=${encodeURIComponent("Fibra óptica y telecomunicaciones")}`, servicio);
+        if (factor.estado === 200 && Number(factor.cuerpo) === 3.5) ok("Migración 20261109000000_fibra_optica.sql aplicada");
+        else mal("Falta la migración 20261109000000_fibra_optica.sql", "Ejecutala en Supabase > SQL Editor (copiar, pegar y Run)");
         const rol = await pedir("/rest/v1/perfiles?select=rol&rol=eq.usuario&limit=1", servicio);
         if (rol.estado === 200) ok("Migración 20261031000000_cuenta_unica.sql aplicada");
         else mal("Falta la migración 20261031000000_cuenta_unica.sql", "Ejecutala en Supabase > SQL Editor (copiar, pegar y Run)");
