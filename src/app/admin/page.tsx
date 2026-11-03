@@ -7,7 +7,7 @@ import { EtiquetaEstado } from "@/components/etiqueta-estado";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { exigirRol } from "@/lib/sesion";
 import { CONDICIONES, linkWhatsapp, pesos, precioSugerido, urlFoto, type Lote, type Oferta, type Perfil, MOTIVOS_RECLAMO, type Reclamo } from "@/lib/datos";
-import { adjuntarComprobante, avanzarOperacion, liquidar, resolverReclamo, revisarLote, verificarUsuario } from "./acciones";
+import { adjuntarComprobante, avanzarOperacion, devolverPublicado, liquidar, resolverReclamo, revisarLote, verificarUsuario } from "./acciones";
 
 export const metadata: Metadata = { title: "Admin" };
 
@@ -39,6 +39,10 @@ export default async function Admin({ searchParams }: PageProps<"/admin">) {
   const conReclamo = new Set(reclamos.map((r) => r.oferta_id));
 
   const enRevision = lotes.filter((l) => l.estado === "en_revision");
+  // Publicados al instante (vendedores de confianza), de la última semana: para mirarlos después.
+  const automaticos = lotes.filter(
+    (l) => l.publicado_automatico && l.estado === "publicado" && l.publicado_at && Date.parse(l.publicado_at) > Date.parse(new Date().toISOString()) - 7 * 86_400_000,
+  );
   const operaciones = ofertas.filter((o) => o.estado === "aceptada" || o.estado === "pagada");
   const sinVerificar = perfiles.filter((p) => p.rol !== "admin" && !p.verificado);
   const aLiquidar = ofertas.filter((o) => o.estado === "completada" && !o.liquidada_at);
@@ -174,6 +178,34 @@ export default async function Admin({ searchParams }: PageProps<"/admin">) {
                 </div>
               );
             })}
+          </div>
+        </section>
+      )}
+
+      {automaticos.length > 0 && (
+        <section data-publicados-al-instante>
+          <h2 className="mb-1 text-xl font-bold">Publicados al instante ({automaticos.length})</h2>
+          <p className="mb-4 text-sm text-stone-600">
+            De vendedores de confianza que pasaron los controles automáticos, en la última semana. Si algo no va, devolvelo con observaciones.
+          </p>
+          <div className="space-y-3">
+            {automaticos.map((lote) => (
+              <details key={lote.id} className="tarjeta p-4">
+                <summary className="cursor-pointer">
+                  <Link href={`/lotes/${lote.id}`} className="font-semibold hover:text-marca">{lote.titulo}</Link>
+                  <span className="ml-2 text-sm text-stone-500">
+                    {lote.perfiles?.empresa ?? lote.perfiles?.nombre} · {pesos(lote.precio_publicado ?? lote.precio_pedido)}
+                  </span>
+                </summary>
+                <form action={devolverPublicado} className="mt-3 space-y-2">
+                  <input type="hidden" name="id" value={lote.id} />
+                  <textarea name="nota" required rows={2} className="campo" placeholder="Qué tiene que corregir el vendedor" />
+                  <BotonEnviar className="btn-sec" pendiente="Devolviendo..." confirmar="¿Lo sacás de la publicación y se lo devolvés al vendedor?">
+                    Devolver con observaciones
+                  </BotonEnviar>
+                </form>
+              </details>
+            ))}
           </div>
         </section>
       )}

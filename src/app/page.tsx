@@ -91,11 +91,11 @@ export default async function Inicio() {
             </h1>
             {/* En el celular se acorta para que los productos entren en la primera pantalla. */}
             <p className="mt-4 hidden max-w-xl text-lg text-white/80 sm:block">
-              Sobrantes nuevos y sin uso de constructoras, corralones e instaladores de fibra óptica, verificados por Sobrá. Pagás protegido: el vendedor cobra
+              Sobrantes nuevos y sin uso de constructoras, corralones e instaladores de fibra óptica, con vendedores verificados. Pagás protegido: el vendedor cobra
               recién cuando retirás.
             </p>
             <Buscador variante="portada" id="buscar-portada" className="mt-6 hidden max-w-xl sm:block" />
-            <p className="mt-3 text-white/80 sm:hidden">Sobrantes verificados, con pago protegido.</p>
+            <p className="mt-3 text-white/80 sm:hidden">Vendedores verificados, con pago protegido.</p>
             <div className="mt-4 hidden flex-wrap gap-2 text-sm sm:flex">
               {categorias.slice(0, 5).map((c) => (
                 <Link key={c} href={`/lotes?categoria=${encodeURIComponent(c)}`} className="rounded-full bg-white/10 px-3 py-1 text-white/90 hover:bg-white/20">

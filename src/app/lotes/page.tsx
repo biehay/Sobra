@@ -65,7 +65,7 @@ export default async function Catalogo({ searchParams }: PageProps<"/lotes">) {
   return (
     <div className="contenedor py-10">
       <h1 className="text-3xl font-bold">Lotes disponibles</h1>
-      <p className="mt-1 text-stone-600">Materiales sobrantes verificados, con retiro en el AMBA.</p>
+      <p className="mt-1 text-stone-600">Materiales sobrantes de vendedores verificados, con retiro en el AMBA.</p>
 
       {/* En el celular los filtros se pliegan en un botón para que los lotes entren en la primera pantalla. */}
       <input type="checkbox" id="ver-filtros" className="peer sr-only" />

@@ -36,6 +36,7 @@ export async function revisarLote(formData: FormData) {
         peso_kg: peso,
         precio_sugerido: sugerido > 0 ? sugerido : null,
         nota_admin: null,
+        publicado_automatico: false,
       })
       .eq("id", id);
     if (error) volver("error", error.message);
@@ -50,6 +51,24 @@ export async function revisarLote(formData: FormData) {
   const nota = String(formData.get("nota") ?? "").trim();
   if (!nota) volver("error", "Escribí qué tiene que corregir el vendedor");
   const { error } = await supabase.from("lotes").update({ estado: "rechazado", nota_admin: nota }).eq("id", id);
+  if (error) volver("error", error.message);
+  notificar.loteRevisado(id);
+  volver("ok", "Lote devuelto al vendedor con observaciones.");
+}
+
+// Un lote publicado al instante que no va: se saca de la publicación y vuelve al
+// vendedor con observaciones (como si lo hubiera devuelto en la revisión).
+export async function devolverPublicado(formData: FormData) {
+  await exigirRol("admin");
+  const id = String(formData.get("id"));
+  const nota = String(formData.get("nota") ?? "").trim();
+  if (!nota) volver("error", "Escribí qué tiene que corregir el vendedor");
+  const supabase = await crearClienteServidor();
+  const { error } = await supabase
+    .from("lotes")
+    .update({ estado: "rechazado", nota_admin: nota, publicado_automatico: false })
+    .eq("id", id)
+    .eq("estado", "publicado");
   if (error) volver("error", error.message);
   notificar.loteRevisado(id);
   volver("ok", "Lote devuelto al vendedor con observaciones.");

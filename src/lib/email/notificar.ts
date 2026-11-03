@@ -167,6 +167,19 @@ export const notificar = {
     });
   },
 
+  // Al admin: se publicó sin revisión manual (vendedor de confianza). Lo puede mirar después.
+  publicadoAutomatico(loteId: string) {
+    enSegundoPlano("publicado automático", async (admin) => {
+      const { data, error } = await admin.from("lotes").select("titulo, perfiles(nombre, empresa)").eq("id", loteId).single();
+      if (error) throw error;
+      const vendedor = data.perfiles as unknown as { nombre: string; empresa: string | null } | null;
+      await enviarEmail({
+        para: emailsAdmin(),
+        ...plantillas.adminPublicadoAutomatico(data.titulo, vendedor?.empresa || vendedor?.nombre || "Un vendedor", loteId),
+      });
+    });
+  },
+
   loteEnRevision(loteId: string) {
     enSegundoPlano("lote en revisión", async (admin) => {
       const { data, error } = await admin.from("lotes").select("titulo, perfiles(nombre, empresa)").eq("id", loteId).single();

@@ -781,6 +781,28 @@ try {
   await captura(adm, "admin-final");
   paso("Admin: al volver a ingresar se le pide el código del email; uno incorrecto se rechaza");
 
+  // Publicación automática: Marta ya vendió sin reclamos; con la cuenta verificada es de confianza
+  // y un lote que pasa los controles se publica al instante (y el admin lo ve en su panel).
+  await adm.goto(`${BASE}/admin`);
+  await tras(adm, "ok=", () => adm.locator("tr", { hasText: "Marta Gómez" }).locator("button:has-text('Verificar')").click());
+  await vend.goto(`${BASE}/panel/vendedor/lotes/nuevo`);
+  esperar(await vend.isVisible("text=Tu cuenta es de confianza"), "el formulario avisa que la cuenta publica al instante");
+  await vend.setInputFiles("input[type=file]", fotos[0]);
+  await vend.waitForSelector("img[alt='Foto 1']");
+  await vend.fill("#titulo", "Pastina gris x 10 kg");
+  await vend.selectOption("#categoria", "Cemento, cal y áridos");
+  await vend.fill("input[aria-label='Material']", "Pastina gris");
+  await vend.fill("input[aria-label='Cantidad']", "10");
+  await vend.fill("input[aria-label='Unidad']", "kg");
+  await vend.fill("#peso_kg", "10");
+  await vend.fill("#precio_pedido", "15000");
+  await vend.selectOption("#zona", "GBA Sur");
+  await vend.fill("#direccion", "Av. Siempreviva 742");
+  await tras(vend, "ok=", () => vend.click("button:has-text('Enviar a revisión')"));
+  esperar((await aviso(vend)).includes("ya está publicado"), "un vendedor de confianza publica al instante");
+  await adm.goto(`${BASE}/admin`);
+  esperar((await adm.textContent("[data-publicados-al-instante]")).includes("Pastina gris x 10 kg"), "el admin ve lo publicado al instante");
+
   // 15. Cerrar sesión ------------------------------------------------------
   // El menú del usuario (el círculo del encabezado) muestra el resumen y tiene "Salir".
   await vend.click("button[aria-label^='Mi cuenta']");

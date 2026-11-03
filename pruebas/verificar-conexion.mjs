@@ -90,6 +90,7 @@ if (urlValida) {
           ["20261108000000_fichas_tecnicas.sql", "/rest/v1/fichas_lote?select=lote_id&limit=1"],
           ["20261110000000_estados_y_detalles.sql", "/rest/v1/lotes?select=detalles&limit=1"],
           ["20261111000000_precios_reportados.sql", "/rest/v1/precios_reportados?select=id&limit=1"],
+          ["20261112000000_publicacion_automatica.sql", "/rest/v1/lotes?select=publicado_automatico&limit=1"],
         ];
         for (const [archivo, ruta] of migraciones) {
           const r = await pedir(ruta, servicio);

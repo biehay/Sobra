@@ -220,6 +220,18 @@ export const plantillas = {
     }),
   }),
 
+  adminPublicadoAutomatico: (lote: string, vendedor: string, loteId: string): Plantilla => ({
+    asunto: `[Admin] Publicado al instante: "${lote}"`,
+    html: plantilla({
+      titulo: "Se publicó un lote sin revisión manual",
+      parrafos: [
+        `<strong>${escapar(vendedor)}</strong> es vendedor de confianza y <strong>${escapar(lote)}</strong> pasó los controles automáticos, así que ya está publicado.`,
+        "Si querés, miralo: lo podés devolver con observaciones desde el panel de admin.",
+      ],
+      boton: { texto: "Ver el lote", ruta: `/lotes/${loteId}` },
+    }),
+  }),
+
   arrepentimientoRecibido: (nombre: string, codigo: string): Plantilla => ({
     asunto: `Recibimos tu pedido de arrepentimiento (${codigo})`,
     html: plantilla({

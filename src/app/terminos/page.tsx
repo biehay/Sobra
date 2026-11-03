@@ -78,7 +78,12 @@ export default function Terminos() {
         <li>Solo se pueden publicar materiales propios, nuevos, sin uso o usados en buen estado.</li>
         <li>No se aceptan escombros, residuos, materiales peligrosos ni productos de origen dudoso.</li>
         <li>Las fotos y la descripción tienen que mostrar el estado real del material.</li>
-        <li>Revisamos cada lote antes de publicarlo y podemos pedir cambios o rechazarlo.</li>
+        <li>
+          Revisamos los lotes antes de publicarlos. Los de vendedores de confianza (cuenta verificada y CUIT o ventas sin
+          reclamos) se publican al instante si pasan controles automáticos, y los podemos revisar después. En cualquier
+          caso podemos pedir cambios, pausar o rechazar una publicación. La revisión es de la publicación (fotos, texto y
+          precio): el material lo revisa el comprador al retirarlo.
+        </li>
         <li>El precio de publicación lo confirmamos con vos al revisarlo. Publicar es gratis.</li>
         <li>
           <strong>Completar con IA:</strong> si lo usás, la IA propone los datos de la publicación a partir de tus fotos

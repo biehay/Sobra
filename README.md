@@ -72,6 +72,10 @@ Además:
 - **Cómo se calcula el precio nuevo** (`src/lib/precio-consolidar.ts`, `dolar.ts`): la IA solo junta los precios que
   encuentra (vendedor, moneda, IVA y por cuánta cantidad); el código los pasa a precio por unidad en pesos con el
   dólar oficial del día (dolarapi.com), prioriza proveedores sobre minoristas y descarta los fuera de lugar.
+- **Publicación automática** (migración 20261112, `publicar_automatico()` en la base): vendedores de confianza
+  (verificados con CUIT, o con una venta sin reclamos) publican al instante si el lote pasa los controles (fotos,
+  peso, retiro, sin datos de contacto, precio ≤ precio de lista). El admin recibe un email y los ve en "Publicados al
+  instante" para devolverlos si hace falta.
 - **Precios que reportan los usuarios** (`src/lib/precios-reportados.ts`, migración 20261111): cuánto les costó un
   material (calculadora o precio de lista al publicar), guardado en dólares y sin datos de la persona. Entran en la
   comparación junto con los precios de la web (mismo producto, unidad y marca; menos de un año; una opinión por persona).

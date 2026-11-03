@@ -12,6 +12,7 @@ import { exigirRol } from "@/lib/sesion";
 import { CATEGORIAS, CONDICIONES, ZONAS, normalizarTelefono, cuitValido, formatearCuit, type Condicion } from "@/lib/datos";
 import { detallesPara } from "@/lib/depreciacion";
 import { notificar } from "@/lib/email/notificar";
+import { asegurarFichaPorId } from "@/lib/recomendaciones/fichas";
 
 const PANEL_VENDEDOR = "/panel/vendedor";
 const PANEL_COMPRADOR = "/panel/comprador";
@@ -61,6 +62,16 @@ const esquemaLote = z.object({
   horarios: z.string().trim().max(200).default(""),
   indicaciones: z.string().trim().max(500).default(""),
 });
+
+// Por qué un lote no se publicó al instante (lo que devuelve publicar_automatico).
+const MOTIVOS_REVISION: Record<string, string> = {
+  no_confiable: "",
+  sin_peso: "para publicarlo al instante, cargá el peso aproximado",
+  contacto: "tiene datos de contacto en el texto: los compartimos recién cuando el comprador paga",
+  precio: "el precio es mayor al precio de lista",
+  sin_fotos: "",
+  sin_retiro: "",
+};
 
 export async function guardarLote(formData: FormData) {
   const perfil = await exigirRol("usuario");
@@ -123,7 +134,24 @@ export async function guardarLote(formData: FormData) {
       : await supabase.from("lote_precio_minimo").delete().eq("lote_id", loteId);
   if (errorMinimo) volverCon(rutaForm, "error", errorMinimo.message);
 
-  if (pasoARevision) notificar.loteEnRevision(loteId);
+  // Vendedor de confianza y lote que pasa los controles: se publica al instante
+  // (lo decide la base). Si no, queda en revisión manual y se dice por qué.
+  let publicadoAlInstante = false;
+  let motivoRevision = "";
+  if (pasoARevision) {
+    const { data: resultado } = await supabase.rpc("publicar_automatico", { p_lote: loteId });
+    publicadoAlInstante = resultado === "publicado";
+    motivoRevision = MOTIVOS_REVISION[String(resultado)] ?? "";
+  }
+  if (publicadoAlInstante) {
+    notificar.loteRevisado(loteId);
+    notificar.publicadoAutomatico(loteId);
+    notificar.bajaDePrecio(loteId);
+    notificar.coincidencias(loteId);
+    after(() => asegurarFichaPorId(loteId, true));
+  } else if (pasoARevision) {
+    notificar.loteEnRevision(loteId);
+  }
   // El precio de lista que cargó el vendedor queda de referencia (sin sus datos) para
   // tasar el mismo producto la próxima vez. Solo al enviarlo, no en borradores.
   const principal = cantidadPrincipal(lote.titulo, lote.items);
@@ -145,7 +173,11 @@ export async function guardarLote(formData: FormData) {
   volverCon(
     PANEL_VENDEDOR,
     "ok",
-    enviar ? "Lote enviado a revisión. Te avisamos cuando esté publicado." : "Borrador guardado.",
+    publicadoAlInstante
+      ? "¡Listo! Tu lote ya está publicado."
+      : enviar
+        ? `Lote enviado a revisión${motivoRevision ? ` (${motivoRevision})` : ""}. Te avisamos cuando esté publicado.`
+        : "Borrador guardado.",
   );
 }
 

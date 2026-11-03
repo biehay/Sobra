@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Aviso } from "@/components/aviso";
 import { redirect } from "next/navigation";
 import { exigirRol, obtenerPerfil, sesionVerificada } from "@/lib/sesion";
+import { crearClienteServidor } from "@/lib/supabase/server";
 import { AvisoAdmin } from "@/components/aviso-admin";
 import { FormLote } from "../../form-lote";
 import { CONDICIONES, type Condicion } from "@/lib/datos";
@@ -23,6 +24,8 @@ export default async function NuevoLote({ searchParams }: PageProps<"/panel/vend
   if (!(await obtenerPerfil())) redirect(`/registro?volver=${encodeURIComponent(aca)}`);
   if (!(await sesionVerificada())) redirect(`/seguridad/verificar?volver=${encodeURIComponent(aca)}`);
   const perfil = await exigirRol("usuario", "admin");
+  const supabase = await crearClienteServidor();
+  const { data: deConfianza } = await supabase.rpc("vendedor_de_confianza", { p_vendedor: perfil.id });
   const { error, lista, estado, titulo, pedido, cant, unidad, marca } = parametros;
   // Lo que cargó en la calculadora de la portada llega ya puesto.
   const precioLista = typeof lista === "string" && /^\d{1,12}$/.test(lista) ? lista : undefined;
@@ -41,7 +44,11 @@ export default async function NuevoLote({ searchParams }: PageProps<"/panel/vend
   return (
     <div className="contenedor max-w-3xl py-10">
       <h1 className="text-3xl font-bold">Publicar un lote</h1>
-      <p className="mb-6 mt-1 text-stone-600">Lo revisamos antes de publicarlo, normalmente en el día.</p>
+      <p className="mb-6 mt-1 text-stone-600">
+        {deConfianza
+          ? "Tu cuenta es de confianza: si pasa los controles automáticos, se publica al instante."
+          : "Lo revisamos antes de publicarlo, normalmente en el día."}
+      </p>
       <div className="mb-4">
         <Aviso error={error} />
       </div>

@@ -12,7 +12,7 @@ const PUBLICAR = "/panel/vendedor/lotes/nuevo";
 
 const OFERTAS = [
   { texto: "Mayor descuento", detalle: "Lo más rebajado contra el precio de lista", href: "/lotes?orden=descuento" },
-  { texto: "Recién publicados", detalle: "Los últimos lotes verificados", href: "/lotes?orden=recientes" },
+  { texto: "Recién publicados", detalle: "Los últimos lotes publicados", href: "/lotes?orden=recientes" },
   { texto: "Menor precio", detalle: "Ordenados del más barato al más caro", href: "/lotes?orden=barato" },
   { texto: "Nuevos en su embalaje", detalle: "Material sin abrir", href: "/lotes?condicion=nuevo" },
 ];

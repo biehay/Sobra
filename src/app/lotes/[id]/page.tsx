@@ -160,7 +160,7 @@ export default async function DetalleLote({ params, searchParams }: PageProps<"/
               </div>
             )}
             <p className="rounded-lg bg-green-50 px-3 py-2 text-sm text-green-800">
-              ✓ Lote verificado por Sobrá · Pago protegido hasta el retiro
+              ✓ Vendedor verificado · Pago protegido: revisás el material al retirarlo
             </p>
             {disponible && proximaBaja(lote) && (
               <p className="rounded-lg bg-celeste-claro px-3 py-2 text-sm text-petroleo">
