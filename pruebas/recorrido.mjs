@@ -375,7 +375,7 @@ try {
   // Publicar con fotos: la IA completa (respuesta fija de prueba), muestra lo que completó,
   // marca lo dudoso para confirmar y la vista previa refleja los datos. No envía nada sola.
   await vend.goto(`${BASE}/panel/vendedor/lotes/nuevo`);
-  await vend.setInputFiles("input[type=file]", fotos[0]);
+  await vend.setInputFiles("input[type=file][multiple]", fotos[0]);
   await vend.click("button:has-text('Completar con IA')");
   await vend.waitForSelector("[data-resumen-ia]");
   esperar((await vend.inputValue("#titulo")) === "Porcelanato 60x60 gris, 38 m²" && (await vend.inputValue("#categoria")) === "Cerámicos y porcelanatos", "la IA completa el formulario con las fotos");
@@ -404,7 +404,7 @@ try {
   await vend.locator("input[aria-label='Cantidad']").nth(1).fill("12");
   await vend.locator("input[aria-label='Unidad']").nth(1).fill("bolsas");
   await vend.fill("#descripcion", "Sobró de una obra en Lanús. Cajas cerradas.");
-  await vend.setInputFiles("input[type=file]", fotos);
+  await vend.setInputFiles("input[type=file][multiple]", fotos);
   await vend.waitForFunction(() => document.querySelectorAll("img[alt^='Foto']").length === 2, null, { timeout: 30000 });
   await vend.fill("#precio_lista", "900000");
   await vend.fill("#precio_pedido", "500000");
@@ -645,7 +645,7 @@ try {
   await vend.selectOption("#categoria", "Sanitarios y grifería");
   await vend.fill("input[aria-label='Material']", "Inodoro largo Ferrum");
   await vend.fill("input[aria-label='Cantidad']", "4");
-  await vend.setInputFiles("input[type=file]", fotos[0]);
+  await vend.setInputFiles("input[type=file][multiple]", fotos[0]);
   await vend.waitForSelector("img[alt='Foto 1']", { timeout: 30000 });
   await vend.fill("#precio_pedido", "200000");
   await vend.fill("#peso_kg", "100");
@@ -787,7 +787,11 @@ try {
   await tras(adm, "ok=", () => adm.locator("tr", { hasText: "Marta Gómez" }).locator("button:has-text('Verificar')").click());
   await vend.goto(`${BASE}/panel/vendedor/lotes/nuevo`);
   esperar(await vend.isVisible("text=Tu cuenta es de confianza"), "el formulario avisa que la cuenta publica al instante");
-  await vend.setInputFiles("input[type=file]", fotos[0]);
+  // En el celular hay un botón para sacar la foto con la cámara (en la compu no).
+  esperar(!(await vend.isVisible("[data-sacar-foto]")), "en la compu no aparece el botón de la cámara");
+  esperar((await comp.goto(`${BASE}/panel/vendedor/lotes/nuevo`), await comp.isVisible("[data-sacar-foto]")), "en el celular aparece el botón para sacar la foto");
+  esperar((await comp.getAttribute("[data-sacar-foto] input", "capture")) === "environment", "el botón abre la cámara trasera");
+  await vend.setInputFiles("input[type=file][multiple]", fotos[0]);
   await vend.waitForSelector("img[alt='Foto 1']");
   await vend.fill("#titulo", "Pastina gris x 10 kg");
   await vend.selectOption("#categoria", "Cemento, cal y áridos");

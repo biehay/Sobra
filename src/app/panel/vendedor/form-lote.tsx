@@ -208,10 +208,42 @@ export function FormLote({
           </div>
         )}
         {fotos.length < MAX_FOTOS && (
-          <label className="btn-sec cursor-pointer">
-            {subiendo ? "Subiendo..." : "Agregar fotos"}
-            <input type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" disabled={subiendo} onChange={(e) => subirFotos(e.target.files)} />
-          </label>
+          <div className="flex flex-wrap gap-2">
+            {/* En el celular: sacar la foto con la cámara trasera, directo. */}
+            <label data-sacar-foto className="btn cursor-pointer sm:hidden">
+              {subiendo ? "Subiendo..." : "📷 Sacar foto"}
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                disabled={subiendo}
+                onChange={(e) => {
+                  subirFotos(e.target.files);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+            <label className="btn-sec cursor-pointer">
+              {subiendo ? "Subiendo..." : (
+                <>
+                  <span className="sm:hidden">Elegir fotos</span>
+                  <span className="hidden sm:inline">Agregar fotos</span>
+                </>
+              )}
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                multiple
+                className="hidden"
+                disabled={subiendo}
+                onChange={(e) => {
+                  subirFotos(e.target.files);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+          </div>
         )}
         {errorFotos && <p className="text-sm text-red-700">{errorFotos}</p>}
 
