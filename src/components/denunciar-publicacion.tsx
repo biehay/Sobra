@@ -5,7 +5,8 @@ import { denunciar } from "@/app/lotes/[id]/acciones";
 
 // "Denunciar publicación", al pie del lote. Es un desplegable con un formulario
 // común: funciona aunque la página no haya cargado su JavaScript.
-export function DenunciarPublicacion({ loteId, conCuenta, yaDenuncio }: { loteId: string; conCuenta: boolean; yaDenuncio: boolean }) {
+// `soloVista`: la cuenta admin lo ve (para saber cómo es) pero no denuncia: resuelve las denuncias.
+export function DenunciarPublicacion({ loteId, conCuenta, yaDenuncio, soloVista = false }: { loteId: string; conCuenta: boolean; yaDenuncio: boolean; soloVista?: boolean }) {
   if (yaDenuncio) {
     return (
       <p id="denunciar" className="scroll-mt-24 text-sm text-stone-500">
@@ -28,7 +29,12 @@ export function DenunciarPublicacion({ loteId, conCuenta, yaDenuncio }: { loteId
       <summary className="cursor-pointer text-stone-500 hover:text-marca">⚑ Denunciar publicación</summary>
       <form action={denunciar} className="mt-3 space-y-3 rounded-lg border border-stone-200 bg-white p-4">
         <input type="hidden" name="loteId" value={loteId} />
-        <fieldset className="space-y-1.5">
+        {soloVista && (
+          <p data-aviso-admin className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-900">
+            Las cuentas admin no denuncian: las denuncias te llegan a vos en el panel de admin. Acá ves cómo lo ven los usuarios.
+          </p>
+        )}
+        <fieldset disabled={soloVista} className="space-y-1.5">
           <legend className="mb-1 font-semibold text-petroleo">¿Qué pasa con esta publicación?</legend>
           {Object.entries(MOTIVOS_DENUNCIA).map(([valor, texto]) => (
             <label key={valor} className="flex items-center gap-2">
@@ -39,10 +45,10 @@ export function DenunciarPublicacion({ loteId, conCuenta, yaDenuncio }: { loteId
         </fieldset>
         <div>
           <label htmlFor="detalle-denuncia" className="etiqueta">Contanos más (opcional)</label>
-          <textarea id="detalle-denuncia" name="detalle" rows={2} maxLength={500} className="campo" placeholder="Qué viste, por qué te parece mal" />
+          <textarea id="detalle-denuncia" name="detalle" rows={2} maxLength={500} disabled={soloVista} className="campo" placeholder="Qué viste, por qué te parece mal" />
         </div>
         <p className="text-xs text-stone-500">Quien publicó no sabe quién lo denunció. Denunciar a propósito algo que está bien puede suspender tu cuenta.</p>
-        <BotonEnviar className="btn-sec" pendiente="Enviando...">Enviar denuncia</BotonEnviar>
+        <BotonEnviar className="btn-sec" pendiente="Enviando..." disabled={soloVista}>Enviar denuncia</BotonEnviar>
       </form>
     </details>
   );

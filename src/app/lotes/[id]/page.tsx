@@ -282,8 +282,8 @@ export default async function DetalleLote({ params, searchParams }: PageProps<"/
             <p className="mb-3 text-sm font-semibold text-stone-500">Sobre el vendedor</p>
             <TarjetaReputacion r={reputacionVendedor} como="vendedor" />
           </div>
-          {["publicado", "reservado"].includes(lote.estado) && !esMio && perfil?.rol !== "admin" && (
-            <DenunciarPublicacion loteId={lote.id} conCuenta={!!perfil} yaDenuncio={(misDenuncias ?? 0) > 0} />
+          {["publicado", "reservado"].includes(lote.estado) && !esMio && (
+            <DenunciarPublicacion loteId={lote.id} conCuenta={!!perfil} yaDenuncio={(misDenuncias ?? 0) > 0} soloVista={perfil?.rol === "admin"} />
           )}
         </aside>
       </div>
