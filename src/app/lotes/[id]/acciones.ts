@@ -7,6 +7,7 @@ import { crearClienteServidor } from "@/lib/supabase/server";
 import { mensajeParaUsuario } from "@/lib/errores";
 import { obtenerPerfil } from "@/lib/sesion";
 import { notificar } from "@/lib/email/notificar";
+import { MOTIVOS_DENUNCIA, type MotivoDenuncia } from "@/lib/denuncias";
 
 const esquemaOferta = z.object({
   loteId: z.uuid(),
@@ -42,4 +43,32 @@ export async function ofertar(formData: FormData) {
   notificar.nuevaOferta(data.id);
   revalidatePath("/panel/comprador");
   redirect(`/lotes/${loteId}?ok=${encodeURIComponent("¡Oferta enviada! Te avisamos cuando el vendedor responda.")}`);
+}
+
+const esquemaDenuncia = z.object({
+  loteId: z.uuid(),
+  motivo: z.enum(Object.keys(MOTIVOS_DENUNCIA) as [MotivoDenuncia, ...MotivoDenuncia[]], "Elegí el motivo de la denuncia"),
+  detalle: z.string().trim().max(500, "Contalo en menos de 500 caracteres").default(""),
+});
+
+// Denunciar una publicación. La base registra una denuncia por persona y lote, y
+// con varias personas lo pausa sola hasta que lo revise el admin.
+export async function denunciar(formData: FormData) {
+  const loteId = String(formData.get("loteId") ?? "");
+  const volver = (tipo: "ok" | "error", mensaje: string): never =>
+    redirect(`/lotes/${loteId}?${tipo}=${encodeURIComponent(mensaje)}${tipo === "ok" ? "#denunciar" : ""}`);
+  const datos = esquemaDenuncia.safeParse(Object.fromEntries(formData));
+  if (!datos.success) return volver("error", datos.error.issues[0].message);
+  const perfil = await obtenerPerfil();
+  if (!perfil) redirect(`/ingresar?volver=/lotes/${loteId}`);
+
+  const supabase = await crearClienteServidor();
+  const { data, error } = await supabase.rpc("denunciar_lote", { p_lote: loteId, p_motivo: datos.data.motivo, p_detalle: datos.data.detalle });
+  if (error) volver("error", mensajeParaUsuario(error.message));
+  if (data === "ya_denunciada") volver("ok", "Ya habías denunciado esta publicación. La estamos revisando.");
+  const resultado = data === "pausado" || data === "baja" ? data : "denunciada";
+  notificar.denuncia(loteId, MOTIVOS_DENUNCIA[datos.data.motivo], resultado);
+  if (resultado === "baja") notificar.loteDadoDeBaja(loteId);
+  if (resultado !== "denunciada") revalidatePath("/lotes");
+  volver("ok", "Gracias por avisarnos. Vamos a revisar la publicación; quien la publicó no sabe quién la denunció.");
 }

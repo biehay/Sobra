@@ -23,6 +23,11 @@ export default function Privacidad() {
         </li>
         <li><strong>Favoritos:</strong> los lotes que guardás, para avisarte si bajan de precio.</li>
         <li>
+          <strong>Denuncias:</strong> si denunciás una publicación, guardamos quién la denunció, el motivo y lo que
+          escribiste, para revisarla y para detectar denuncias abusivas. Solo lo ve el equipo de Sobrá: quien publicó
+          no sabe quién lo denunció. Las guardamos como antecedente aunque el lote se borre.
+        </li>
+        <li>
           <strong>Lotes que viste:</strong> si tenés cuenta, guardamos qué lotes abriste durante 180 días para recomendarte otros
           parecidos o que los complementan, y si llegaste a cada uno desde una recomendación (para saber cuáles sirven). Si no tenés cuenta, esa lista queda solo en tu navegador (no en una cookie ni en
           nuestros servidores) y la podés borrar limpiando los datos del sitio. Las recomendaciones del tipo “quienes vieron esto

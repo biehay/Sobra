@@ -73,6 +73,7 @@ const MOTIVOS_REVISION: Record<string, string> = {
   contacto: "tiene datos de contacto en el texto: los compartimos recién cuando el comprador paga",
   precio: "el precio es mayor al precio de lista",
   primera_publicacion: "es tu primera publicación: la revisamos nosotros",
+  denuncias: "tiene denuncias de usuarios: lo revisamos nosotros",
 };
 
 export async function guardarLote(formData: FormData) {

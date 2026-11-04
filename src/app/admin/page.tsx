@@ -7,7 +7,8 @@ import { EtiquetaEstado } from "@/components/etiqueta-estado";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { exigirRol } from "@/lib/sesion";
 import { CONDICIONES, linkWhatsapp, pesos, precioSugerido, urlFoto, type Lote, type Oferta, type Perfil, MOTIVOS_RECLAMO, type Reclamo } from "@/lib/datos";
-import { adjuntarComprobante, avanzarOperacion, devolverPublicado, liquidar, reabrirRechazado, resolverReclamo, revisarLote, verificarUsuario } from "./acciones";
+import { adjuntarComprobante, avanzarOperacion, devolverPublicado, liquidar, reabrirRechazado, resolverDenuncias, resolverReclamo, revisarLote, verificarUsuario } from "./acciones";
+import { DENUNCIAS_PARA_BAJA, DENUNCIAS_PARA_PAUSAR, MOTIVOS_DENUNCIA, type MotivoDenuncia } from "@/lib/denuncias";
 import { NOMBRE_MOTIVO, type Motivo } from "@/lib/moderacion-reglas";
 
 export const metadata: Metadata = { title: "Admin" };
@@ -15,6 +16,7 @@ export const metadata: Metadata = { title: "Admin" };
 type Contacto = Pick<Perfil, "nombre" | "empresa" | "telefono">;
 type LoteConVendedor = Lote & { perfiles: Contacto | null };
 type OfertaConDatos = Oferta & { lotes: { titulo: string } | null; perfiles: Contacto | null };
+type Denuncia = { id: string; lote_id: string | null; motivo: MotivoDenuncia; detalle: string; created_at: string };
 type Moderacion = { lote_id: string; resultado: string; motivos: Motivo[]; aplicado: string; created_at: string };
 
 // Qué hizo la moderación automática con el lote, para el admin.
@@ -51,7 +53,7 @@ export default async function Admin({ searchParams }: PageProps<"/admin">) {
   const supabase = await crearClienteServidor();
 
   const ahora = Date.parse(new Date().toISOString());
-  const [{ data: lotesData }, { data: ofertasData }, { data: perfilesData }, { data: reclamosData }, { data: moderacionesData }] = await Promise.all([
+  const [{ data: lotesData }, { data: ofertasData }, { data: perfilesData }, { data: reclamosData }, { data: moderacionesData }, { data: denunciasData }] = await Promise.all([
     supabase.from("lotes").select("*, perfiles(nombre, empresa, telefono)").order("created_at", { ascending: false }),
     supabase
       .from("ofertas")
@@ -65,7 +67,18 @@ export default async function Admin({ searchParams }: PageProps<"/admin">) {
       .gte("created_at", new Date(ahora - 30 * 86_400_000).toISOString())
       .order("created_at", { ascending: false })
       .limit(1000),
+    supabase.from("denuncias").select("id, lote_id, motivo, detalle, created_at, estado").in("estado", ["abierta", "desestimada"]).order("created_at"),
   ]);
+  // Cuántas denuncias de cada lote ya desestimó el admin (cuentan para la baja automática).
+  const desestimadas = new Map<string, number>();
+  for (const d of (denunciasData ?? []) as (Denuncia & { estado: string })[]) {
+    if (d.lote_id && d.estado === "desestimada") desestimadas.set(d.lote_id, (desestimadas.get(d.lote_id) ?? 0) + 1);
+  }
+  // Denuncias abiertas, agrupadas por lote.
+  const denunciasPorLote = new Map<string, Denuncia[]>();
+  for (const d of (denunciasData ?? []) as (Denuncia & { estado: string })[]) {
+    if (d.lote_id && d.estado === "abierta") denunciasPorLote.set(d.lote_id, [...(denunciasPorLote.get(d.lote_id) ?? []), d]);
+  }
   // La última decisión de la moderación automática para cada lote.
   const moderacionDe = new Map<string, Moderacion>();
   for (const m of (moderacionesData ?? []) as Moderacion[]) if (!moderacionDe.has(m.lote_id)) moderacionDe.set(m.lote_id, m);
@@ -251,6 +264,63 @@ export default async function Admin({ searchParams }: PageProps<"/admin">) {
                 </form>
               </details>
             ))}
+          </div>
+        </section>
+      )}
+
+      {denunciasPorLote.size > 0 && (
+        <section id="denuncias" data-denuncias className="scroll-mt-24">
+          <h2 className="mb-1 text-xl font-bold">Denuncias ({denunciasPorLote.size})</h2>
+          <p className="mb-4 text-sm text-stone-600">
+            Lotes denunciados por usuarios. Una denuncia sola no da de baja nada: la revisás vos. Con {DENUNCIAS_PARA_PAUSAR} personas el
+            lote se pausa hasta que lo revises, y si ya desestimaste denuncias y llega a {DENUNCIAS_PARA_BAJA} personas en total, se da de
+            baja solo. Respondé rápido: si una denuncia es cierta y no actuamos, Sobrá puede ser responsable.
+          </p>
+          <div className="space-y-3">
+            {[...denunciasPorLote].map(([loteId, denuncias]) => {
+              const lote = lotes.find((l) => l.id === loteId);
+              if (!lote) return null;
+              return (
+                <div key={loteId} className="tarjeta grid gap-4 p-4 lg:grid-cols-[2fr_1fr]">
+                  <div className="space-y-2">
+                    <p>
+                      <Link href={`/lotes/${lote.id}`} className="font-semibold hover:text-marca">{lote.titulo}</Link>
+                      <span className="ml-2 text-sm text-stone-500">{lote.perfiles?.empresa ?? lote.perfiles?.nombre}</span>
+                      {lote.pausado_por_denuncias && <span className="ml-2 rounded bg-marca-claro px-1.5 py-0.5 text-xs font-semibold text-marca-oscuro">Pausado</span>}
+                    </p>
+                    <ul className="space-y-1 text-sm">
+                      {denuncias.map((d) => (
+                        <li key={d.id}>
+                          • <strong>{MOTIVOS_DENUNCIA[d.motivo] ?? d.motivo}</strong>
+                          {d.detalle && <span className="text-stone-600">: “{d.detalle}”</span>}
+                        </li>
+                      ))}
+                    </ul>
+                    {(desestimadas.get(loteId) ?? 0) > 0 && (
+                      <p className="text-sm text-amber-800">
+                        Ya desestimaste {desestimadas.get(loteId)} {desestimadas.get(loteId) === 1 ? "denuncia" : "denuncias"} de este lote. Con{" "}
+                        {DENUNCIAS_PARA_BAJA} personas en total se da de baja solo.
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <form action={resolverDenuncias}>
+                      <input type="hidden" name="id" value={lote.id} />
+                      <BotonEnviar name="decision" value="desestimar" className="btn-sec w-full" pendiente="Guardando...">
+                        {lote.pausado_por_denuncias ? "Desestimar y volver a publicar" : "Desestimar"}
+                      </BotonEnviar>
+                    </form>
+                    <form action={resolverDenuncias} className="space-y-2">
+                      <input type="hidden" name="id" value={lote.id} />
+                      <textarea name="nota" required rows={2} className="campo" placeholder="Por qué se da de baja (se lo mandamos al vendedor)" />
+                      <BotonEnviar name="decision" value="baja" className="btn w-full" pendiente="Dando de baja..." confirmar="¿Das de baja este lote?">
+                        Dar de baja
+                      </BotonEnviar>
+                    </form>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </section>
       )}

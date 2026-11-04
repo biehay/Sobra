@@ -189,10 +189,20 @@ export default function Terminos() {
         </li>
       </ul>
 
-      <h2>11. Sanciones</h2>
+      <h2>11. Denuncias y sanciones</h2>
+      <p>
+        Cualquier usuario con cuenta puede denunciar una publicación desde el botón “Denunciar publicación” del lote
+        (por ejemplo, si cree que el material es robado, que es una estafa o que no es material de obra). Cada persona
+        puede denunciar un lote una sola vez, y quien publicó no sabe quién lo denunció. Una denuncia sola nunca da de
+        baja una publicación: la revisa una persona del equipo de Sobrá, que decide si la desestima o da de baja la
+        publicación. Si denuncian un lote 3 personas distintas, lo pausamos hasta revisarlo, y mientras tanto el vendedor
+        no lo puede reactivar ni editar. Si después de revisarlo lo dejamos publicado y lo siguen denunciando hasta
+        sumar 5 personas en total, se da de baja automáticamente; si el vendedor cree que es un error, nos puede escribir.
+      </p>
       <p>
         Si un usuario incumple la ley o estos términos, podemos advertirle, pausar o dar de baja sus publicaciones, y
-        suspender, restringir o inhabilitar su cuenta en forma temporal o definitiva.
+        suspender, restringir o inhabilitar su cuenta en forma temporal o definitiva. Denunciar a propósito
+        publicaciones que están bien (por ejemplo, para perjudicar a otro vendedor) también es un incumplimiento.
       </p>
 
       <h2>12. Responsabilidad</h2>

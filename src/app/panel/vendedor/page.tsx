@@ -196,6 +196,7 @@ export default async function PanelVendedor({ searchParams }: PageProps<"/panel/
                     Pedís {pesos(lote.precio_pedido)}
                     {lote.precio_publicado != null && ` · Publicado a ${pesos(lote.precio_publicado)}`}
                   </p>
+                  {lote.pausado_por_denuncias && lote.nota_admin && <p className="text-sm text-amber-800">{lote.nota_admin}</p>}
                   {lote.estado === "rechazado" && lote.nota_admin && (
                     <p className="text-sm text-amber-800">Observaciones: {lote.nota_admin}</p>
                   )}
@@ -216,7 +217,7 @@ export default async function PanelVendedor({ searchParams }: PageProps<"/panel/
                     <Link href={`/panel/vendedor/lotes/${lote.id}`} className="btn-sec px-3 py-1.5">Editar</Link>
                   )}
                   {lote.estado === "publicado" && <BotonEstado id={lote.id} estado="pausado" texto="Pausar" />}
-                  {lote.estado === "pausado" && <BotonEstado id={lote.id} estado="en_revision" texto="Reactivar" />}
+                  {lote.estado === "pausado" && !lote.pausado_por_denuncias && <BotonEstado id={lote.id} estado="en_revision" texto="Reactivar" />}
                   {["borrador", "rechazado"].includes(lote.estado) && (
                     <BotonEstado id={lote.id} estado="eliminar" texto="Eliminar" peligro />
                   )}

@@ -850,6 +850,31 @@ try {
   esperar(await adm.locator("section:has-text('Lotes para revisar') .tarjeta", { hasText: "Celular iPhone 13" }).count() > 0, "el admin puede corregir a la IA y pasarlo a revisión manual");
   paso("Moderación automática: rechaza lo que no es del rubro, manda lo dudoso al admin con el motivo y el admin puede corregirla");
 
+  // Denuncias: cualquiera con cuenta puede denunciar un lote (una vez); el admin las ve
+  // agrupadas y decide. La pausa automática con 3 personas está en supabase/tests/denuncias.sql.
+  const [{ id: idPastina }] = await api(`/rest/v1/lotes?select=id&titulo=eq.${encodeURIComponent("Pastina gris x 10 kg")}`);
+  await anon.goto(`${BASE}/lotes/${idPastina}`);
+  esperar(await anon.isVisible("text=Ingresá para denunciarla"), "sin cuenta, para denunciar hay que ingresar");
+  await vend.goto(`${BASE}/lotes/${idPastina}`);
+  esperar(!(await vend.isVisible("[data-denunciar]")), "el vendedor no puede denunciar su propio lote");
+  for (const [pg, motivo, detalle] of [[comp, "robado", "Tiene el logo de una empresa de servicios"], [comp2, "estafa", ""]]) {
+    await pg.goto(`${BASE}/lotes/${idPastina}`);
+    await pg.click("[data-denunciar] summary");
+    await pg.check(`[data-denunciar] input[value=${motivo}]`);
+    if (detalle) await pg.fill("#detalle-denuncia", detalle);
+    await tras(pg, "ok=", () => pg.click("button:has-text('Enviar denuncia')"));
+    esperar(await pg.isVisible("text=Denunciaste esta publicación"), "quien denuncia ve que ya la denunció");
+  }
+  await adm.goto(`${BASE}/admin`);
+  const denunciasAdmin = await adm.textContent("[data-denuncias]");
+  esperar(
+    denunciasAdmin.includes("Pastina gris x 10 kg") && denunciasAdmin.includes("Puede ser material robado") && denunciasAdmin.includes("Tiene el logo") && denunciasAdmin.includes("Parece una estafa"),
+    "el admin ve las denuncias del lote con sus motivos",
+  );
+  await tras(adm, "ok=", () => adm.locator("[data-denuncias] button:has-text('Desestimar')").first().click());
+  esperar(!(await adm.isVisible("[data-denuncias]")), "al desestimarlas, salen de la lista del admin");
+  paso("Denuncias: con cuenta se denuncia una vez por lote, el vendedor no puede denunciarse y el admin las resuelve");
+
   // 15. Cerrar sesión ------------------------------------------------------
   // El menú del usuario (el círculo del encabezado) muestra el resumen y tiene "Salir".
   await vend.click("button[aria-label^='Mi cuenta']");

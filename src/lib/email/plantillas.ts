@@ -225,10 +225,52 @@ export const plantillas = {
     html: plantilla({
       titulo: "Se publicó un lote sin revisión manual",
       parrafos: [
-        `<strong>${escapar(vendedor)}</strong> es vendedor de confianza y <strong>${escapar(lote)}</strong> pasó los controles automáticos, así que ya está publicado.`,
+        `<strong>${escapar(lote)}</strong>, de <strong>${escapar(vendedor)}</strong>, pasó la moderación automática y los controles, así que ya está publicado.`,
         "Si querés, miralo: lo podés devolver con observaciones desde el panel de admin.",
       ],
       boton: { texto: "Ver el lote", ruta: `/lotes/${loteId}` },
+    }),
+  }),
+
+  adminDenuncia: (lote: string, motivo: string, personas: number, resultado: "denunciada" | "pausado" | "baja"): Plantilla => ({
+    asunto: `[Admin] ${resultado === "baja" ? "Lote dado de baja por denuncias" : resultado === "pausado" ? "Lote pausado por denuncias" : "Denuncia"}: "${lote}"`,
+    html: plantilla({
+      titulo: resultado === "baja" ? "Se dio de baja un lote por denuncias" : resultado === "pausado" ? "Pausamos un lote por denuncias" : "Denunciaron un lote",
+      parrafos: [
+        `Denunciaron <strong>${escapar(lote)}</strong>: <em>${escapar(motivo)}</em>.`,
+        personas === 1 ? "Es la primera denuncia de este lote." : `Ya lo denunciaron ${personas} personas.`,
+        resultado === "baja"
+          ? "Ya habías desestimado denuncias de este lote y siguió juntando más, así que se dio de baja automáticamente."
+          : resultado === "pausado"
+            ? "Se pausó solo hasta que lo revises: desestimá las denuncias o dalo de baja desde el panel."
+            : "Revisalo desde el panel de admin.",
+      ],
+      boton: { texto: "Revisar", ruta: "/admin#denuncias" },
+    }),
+  }),
+
+  lotePausadoPorDenuncias: (lote: string, loteId: string): Plantilla => ({
+    asunto: `Pausamos tu lote "${lote}" para revisarlo`,
+    html: plantilla({
+      titulo: "Estamos revisando tu lote",
+      parrafos: [
+        `Varios usuarios denunciaron <strong>${escapar(lote)}</strong>, así que lo pausamos mientras lo revisamos.`,
+        "Si está todo bien, vuelve a publicarse solo y te avisamos. Si tenés algo que aclarar (por ejemplo, de dónde viene el material), respondé este email.",
+      ],
+      boton: { texto: "Ver mis lotes", ruta: `/panel/vendedor/lotes/${loteId}` },
+    }),
+  }),
+
+  loteDadoDeBaja: (lote: string, nota: string, loteId: string): Plantilla => ({
+    asunto: `Dimos de baja tu lote "${lote}"`,
+    html: plantilla({
+      titulo: "Dimos de baja tu lote",
+      parrafos: [
+        `Revisamos las denuncias sobre <strong>${escapar(lote)}</strong> y lo sacamos de la publicación:`,
+        `<em>${escapar(nota)}</em>`,
+        "Si creés que es un error, respondé este email.",
+      ],
+      boton: { texto: "Ver el lote", ruta: `/panel/vendedor/lotes/${loteId}` },
     }),
   }),
 

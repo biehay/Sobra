@@ -74,6 +74,24 @@ export async function devolverPublicado(formData: FormData) {
   volver("ok", "Lote devuelto al vendedor con observaciones.");
 }
 
+// Denuncias de un lote: el admin las desestima (si estaba pausado, vuelve a
+// publicarse) o da de baja el lote con una nota para el vendedor.
+export async function resolverDenuncias(formData: FormData) {
+  await exigirRol("admin");
+  const id = String(formData.get("id"));
+  const decision = formData.get("decision") === "baja" ? "baja" : "desestimar";
+  const nota = String(formData.get("nota") ?? "").trim();
+  if (decision === "baja" && !nota) volver("error", "Escribí por qué lo das de baja: se lo mandamos al vendedor");
+  const supabase = await crearClienteServidor();
+  const { data: antes } = await supabase.from("lotes").select("pausado_por_denuncias").eq("id", id).single();
+  const { error } = await supabase.rpc("resolver_denuncias", { p_lote: id, p_decision: decision, p_nota: nota });
+  if (error) volver("error", error.message);
+  if (decision === "baja") notificar.loteDadoDeBaja(id);
+  else if (antes?.pausado_por_denuncias) notificar.loteRevisado(id);
+  revalidatePath("/lotes");
+  volver("ok", decision === "baja" ? "Lote dado de baja; le avisamos al vendedor." : "Denuncias desestimadas.");
+}
+
 // Un lote que rechazó la moderación automática y el admin cree que está bien:
 // vuelve a la cola de revisión manual (sin pasar de nuevo por la IA).
 export async function reabrirRechazado(formData: FormData) {

@@ -266,6 +266,7 @@ psql -d sobra_test -f supabase/tests/impacto_y_reputacion.sql   # ídem
 psql -d sobra_test -f supabase/tests/busquedas_y_baja_automatica.sql   # ídem
 psql -d sobra_test -f supabase/tests/recomendaciones.sql   # ídem
 psql -d sobra_test -f supabase/tests/moderacion.sql   # ídem
+psql -d sobra_test -f supabase/tests/denuncias.sql   # ídem
 ```
 
 ## Estructura
@@ -325,7 +326,6 @@ Cosas que quedaron a propósito sin definir y hay que completar antes de tener u
 - Vista previa al compartir un lote (foto, título, precio y descuento en WhatsApp y redes), botón
   "Compartir por WhatsApp" y mapa del sitio para Google. Se prueba con la app publicada (no con localhost).
 - Preguntas públicas al vendedor en cada lote (filtrando teléfonos y emails).
-- Moderación, paso 2: botón "Denunciar publicación" en cada lote y pausa automática con varias denuncias.
 - Moderación, paso 3: reputación del vendedor y sanciones escalonadas, y muestreo de lo publicado al instante
   (revisar a mano 1 de cada 20 para medir cuánto se equivoca la IA). También detectar fotos repetidas entre vendedores.
 - Cobro online con Mercado Pago (hoy el pago es por transferencia y lo confirma el admin).

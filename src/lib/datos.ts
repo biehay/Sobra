@@ -52,7 +52,8 @@ export type Lote = {
   peso_kg: number | null; // lo declara el vendedor y lo confirma el admin
   baja_semanal_pct: number | null; // baja automática de precio (opcional)
   detalles?: string[]; // "detalles a tener en cuenta" (códigos de lib/depreciacion.ts)
-  publicado_automatico?: boolean; // se publicó sin revisión manual (vendedor de confianza)
+  publicado_automatico?: boolean; // se publicó sin revisión manual (lo aprobó la moderación automática)
+  pausado_por_denuncias?: boolean; // pausado porque lo denunciaron varias personas, hasta que lo revise el admin
   ultima_baja_at: string | null;
   fotos: string[];
   estado: EstadoLote;

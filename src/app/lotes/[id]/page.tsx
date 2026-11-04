@@ -12,6 +12,7 @@ import { RecordarVista } from "@/components/recordar-vista";
 import { reputacionDe } from "@/lib/reputacion";
 import { TarjetaReputacion } from "@/components/reputacion";
 import { Aviso } from "@/components/aviso";
+import { DenunciarPublicacion } from "@/components/denunciar-publicacion";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { obtenerPerfil, sesionVerificada } from "@/lib/sesion";
 import {
@@ -45,6 +46,10 @@ export default async function DetalleLote({ params, searchParams }: PageProps<"/
   const disponible = lote.estado === "publicado";
   const esMio = perfil?.id === lote.vendedor_id;
   const favorito = estadoFavorito(await idsFavoritos(), lote);
+  // ¿Ya lo denunció? (cada uno ve solo sus denuncias)
+  const { count: misDenuncias } = perfil
+    ? await supabase.from("denuncias").select("id", { count: "exact", head: true }).eq("lote_id", lote.id).eq("autor_id", perfil.id)
+    : { count: 0 };
 
   // Se cuenta la visita después de responder (no demora la página). No cuentan
   // las del propio vendedor ni las del admin.
@@ -277,6 +282,9 @@ export default async function DetalleLote({ params, searchParams }: PageProps<"/
             <p className="mb-3 text-sm font-semibold text-stone-500">Sobre el vendedor</p>
             <TarjetaReputacion r={reputacionVendedor} como="vendedor" />
           </div>
+          {["publicado", "reservado"].includes(lote.estado) && !esMio && perfil?.rol !== "admin" && (
+            <DenunciarPublicacion loteId={lote.id} conCuenta={!!perfil} yaDenuncio={(misDenuncias ?? 0) > 0} />
+          )}
         </aside>
       </div>
 

@@ -180,6 +180,26 @@ export const notificar = {
     });
   },
 
+  // Al admin, por cada denuncia; al vendedor, si el lote se pausó (sin decirle quién lo denunció).
+  denuncia(loteId: string, motivo: string, resultado: "denunciada" | "pausado" | "baja") {
+    enSegundoPlano("denuncia", async (admin) => {
+      const { data: lote, error } = await admin.from("lotes").select("titulo, vendedor_id").eq("id", loteId).single();
+      if (error) throw error;
+      const { count } = await admin.from("denuncias").select("id", { count: "exact", head: true }).eq("lote_id", loteId);
+      await enviarEmail({ para: emailsAdmin(), ...plantillas.adminDenuncia(lote.titulo, motivo, count ?? 1, resultado) });
+      if (resultado === "pausado") await enviarEmail({ para: await emailDe(admin, lote.vendedor_id), ...plantillas.lotePausadoPorDenuncias(lote.titulo, loteId) });
+    });
+  },
+
+  // Al vendedor, cuando el admin da de baja su lote por las denuncias.
+  loteDadoDeBaja(loteId: string) {
+    enSegundoPlano("lote dado de baja", async (admin) => {
+      const { data: lote, error } = await admin.from("lotes").select("titulo, vendedor_id, nota_admin").eq("id", loteId).single();
+      if (error) throw error;
+      await enviarEmail({ para: await emailDe(admin, lote.vendedor_id), ...plantillas.loteDadoDeBaja(lote.titulo, lote.nota_admin ?? "", loteId) });
+    });
+  },
+
   loteEnRevision(loteId: string) {
     enSegundoPlano("lote en revisión", async (admin) => {
       const { data, error } = await admin.from("lotes").select("titulo, perfiles(nombre, empresa)").eq("id", loteId).single();
