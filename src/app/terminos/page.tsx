@@ -10,7 +10,7 @@ const enlace = "font-semibold text-marca hover:underline";
 export default function Terminos() {
   const comision = `${Math.round(TASA_COMISION * 100)}%`;
   return (
-    <PaginaLegal titulo="Términos y condiciones" actualizada="3 de noviembre de 2026">
+    <PaginaLegal titulo="Términos y condiciones" actualizada="4 de noviembre de 2026">
       <div className="rounded-xl border border-celeste/40 bg-celeste-claro p-5 text-petroleo">
         <p className="font-bold">Resumen</p>
         <ul className="mt-2">
@@ -79,12 +79,25 @@ export default function Terminos() {
         <li>No se aceptan escombros, residuos, materiales peligrosos ni productos de origen dudoso.</li>
         <li>Las fotos y la descripción tienen que mostrar el estado real del material.</li>
         <li>
-          Revisamos los lotes antes de publicarlos. Los de vendedores de confianza (cuenta verificada y CUIT o ventas sin
-          reclamos) se publican al instante si pasan controles automáticos, y los podemos revisar después. En cualquier
-          caso podemos pedir cambios, pausar o rechazar una publicación. La revisión es de la publicación (fotos, texto y
-          precio): el material lo revisa el comprador al retirarlo.
+          <strong>Revisión de las publicaciones:</strong> cada lote que enviás pasa primero por una revisión automática
+          (controles fijos y una IA que mira las fotos y el texto). Según el resultado:
+          <ul>
+            <li>se publica al instante, si no encontramos nada para revisar;</li>
+            <li>
+              lo revisa una persona del equipo de Sobrá, si algo no cierra (por ejemplo, posible material robado, fotos
+              que no coinciden con el texto o datos de contacto), si es tu primera publicación o si ya publicaste 3 lotes
+              al instante en el día (salvo cuentas de confianza: verificadas y con CUIT o ventas sin reclamos);
+            </li>
+            <li>
+              o se rechaza, si claramente no se puede publicar (no es material de obra o está prohibido). Te decimos por
+              qué; si creés que es un error, escribinos y lo revisa una persona.
+            </li>
+          </ul>
+          La revisión automática puede equivocarse. Por eso revisamos una parte de lo que se publica al instante, y en
+          cualquier momento podemos pedir cambios, pausar o rechazar una publicación. La revisión es de la publicación
+          (fotos, texto y precio): el material lo revisa el comprador al retirarlo.
         </li>
-        <li>El precio de publicación lo confirmamos con vos al revisarlo. Publicar es gratis.</li>
+        <li>Si el lote se publica al instante, sale al precio que pediste; si lo revisa una persona, te confirmamos el precio de publicación. Publicar es gratis.</li>
         <li>
           <strong>Completar con IA:</strong> si lo usás, la IA propone los datos de la publicación a partir de tus fotos
           y puede equivocarse. Te mostramos todo lo que completó y nada se envía sin que lo confirmes. Sos responsable de

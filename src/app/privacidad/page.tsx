@@ -5,7 +5,7 @@ export const metadata: Metadata = { title: "Privacidad y cookies" };
 
 export default function Privacidad() {
   return (
-    <PaginaLegal titulo="Política de privacidad y cookies" actualizada="3 de noviembre de 2026">
+    <PaginaLegal titulo="Política de privacidad y cookies" actualizada="4 de noviembre de 2026">
       <p>
         En Sobrá cuidamos los datos de las personas y empresas que usan el marketplace. Esta política explica qué datos
         juntamos, para qué los usamos, quién los ve y qué derechos tenés, de acuerdo con la Ley 25.326 de Protección de
@@ -66,7 +66,11 @@ export default function Privacidad() {
           <strong>La otra parte de una operación:</strong> recién cuando el pago está confirmado, comprador y vendedor
           ven el nombre, la empresa y el WhatsApp del otro, y el comprador ve la dirección de retiro.
         </li>
-        <li><strong>El equipo de Sobrá:</strong> para revisar lotes, verificar usuarios y resolver reclamos.</li>
+        <li>
+          <strong>El equipo de Sobrá:</strong> para revisar lotes, verificar usuarios y resolver reclamos. De cada lote
+          guardamos el resultado de la revisión automática (si se aprobó, se mandó a revisión o se rechazó, y por qué):
+          lo ve solo el equipo de Sobrá, para controlar que la revisión automática funcione bien.
+        </li>
         <li>
           <strong>Precios que contás:</strong> si en la calculadora ponés cuánto te costó un material, o cargás el precio de
           lista al publicar, guardamos ese precio y el producto para compararlo con otros precios cuando alguien tase lo mismo.
@@ -74,7 +78,7 @@ export default function Privacidad() {
         </li>
         <li>
           <strong>Proveedores que nos prestan servicios:</strong> Supabase (base de datos y archivos), Resend (envío de
-          emails), Anthropic (la IA que sugiere precios, también desde la calculadora de la portada con lo que escribas ahí, arma la ficha técnica de cada lote publicado para
+          emails), Anthropic (la IA que revisa cada lote que se envía a publicar, mirando sus fotos y su texto, sugiere precios, también desde la calculadora de la portada con lo que escribas ahí, arma la ficha técnica de cada lote publicado para
           recomendar complementos y, si usás “Completar con IA”, completa la publicación a partir de las fotos: recibe
           solo los datos y las fotos del lote, sin la ubicación GPS, nunca tus datos personales) y, cuando se habilite, Mercado Pago (pagos). Solo reciben lo necesario para prestar su servicio.
         </li>

@@ -588,7 +588,7 @@ export function FormLote({
         <BotonEnviar name="intencion" value="borrador" className="btn-sec" disabled={subiendo || soloVista} pendiente="Guardando...">
           Guardar borrador
         </BotonEnviar>
-        <BotonEnviar name="intencion" value="revision" className="btn" disabled={subiendo || soloVista}>
+        <BotonEnviar name="intencion" value="revision" className="btn" disabled={subiendo || soloVista} pendiente="Revisando...">
           Enviar a revisión
         </BotonEnviar>
       </div>

@@ -7,20 +7,51 @@ import { EtiquetaEstado } from "@/components/etiqueta-estado";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { exigirRol } from "@/lib/sesion";
 import { CONDICIONES, linkWhatsapp, pesos, precioSugerido, urlFoto, type Lote, type Oferta, type Perfil, MOTIVOS_RECLAMO, type Reclamo } from "@/lib/datos";
-import { adjuntarComprobante, avanzarOperacion, devolverPublicado, liquidar, resolverReclamo, revisarLote, verificarUsuario } from "./acciones";
+import { adjuntarComprobante, avanzarOperacion, devolverPublicado, liquidar, reabrirRechazado, resolverReclamo, revisarLote, verificarUsuario } from "./acciones";
+import { NOMBRE_MOTIVO, type Motivo } from "@/lib/moderacion-reglas";
 
 export const metadata: Metadata = { title: "Admin" };
 
 type Contacto = Pick<Perfil, "nombre" | "empresa" | "telefono">;
 type LoteConVendedor = Lote & { perfiles: Contacto | null };
 type OfertaConDatos = Oferta & { lotes: { titulo: string } | null; perfiles: Contacto | null };
+type Moderacion = { lote_id: string; resultado: string; motivos: Motivo[]; aplicado: string; created_at: string };
+
+// Qué hizo la moderación automática con el lote, para el admin.
+const APLICADO: Record<string, string> = {
+  dudoso: "La IA encontró algo para que lo mires",
+  primera_publicacion: "Es la primera publicación del vendedor",
+  limite_diario: "El vendedor pasó las 3 publicaciones automáticas del día",
+  sin_fotos: "Aprobado por la IA, pero no tiene fotos",
+  sin_peso: "Aprobado por la IA, pero falta el peso",
+  sin_retiro: "Aprobado por la IA, pero falta la dirección de retiro",
+  contacto: "Aprobado por la IA, pero tiene datos de contacto",
+  precio: "Aprobado por la IA, pero pide más que el precio de lista",
+};
+
+function CajaModeracion({ m }: { m?: Moderacion }) {
+  if (!m) return null;
+  return (
+    <div data-moderacion className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
+      <p className="font-semibold">🤖 {APLICADO[m.aplicado] ?? "Moderación automática"}</p>
+      {m.motivos.length > 0 && (
+        <ul className="mt-1 space-y-0.5">
+          {m.motivos.map((x, i) => (
+            <li key={i}>• <strong>{NOMBRE_MOTIVO[x.tipo] ?? x.tipo}:</strong> {x.detalle}</li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 export default async function Admin({ searchParams }: PageProps<"/admin">) {
   await exigirRol("admin");
   const { ok, error } = await searchParams;
   const supabase = await crearClienteServidor();
 
-  const [{ data: lotesData }, { data: ofertasData }, { data: perfilesData }, { data: reclamosData }] = await Promise.all([
+  const ahora = Date.parse(new Date().toISOString());
+  const [{ data: lotesData }, { data: ofertasData }, { data: perfilesData }, { data: reclamosData }, { data: moderacionesData }] = await Promise.all([
     supabase.from("lotes").select("*, perfiles(nombre, empresa, telefono)").order("created_at", { ascending: false }),
     supabase
       .from("ofertas")
@@ -28,7 +59,16 @@ export default async function Admin({ searchParams }: PageProps<"/admin">) {
       .order("updated_at", { ascending: false }),
     supabase.from("perfiles").select("*").order("created_at", { ascending: false }),
     supabase.from("reclamos").select("*").eq("estado", "abierto").order("created_at"),
+    supabase
+      .from("moderaciones")
+      .select("lote_id, resultado, motivos, aplicado, created_at")
+      .gte("created_at", new Date(ahora - 30 * 86_400_000).toISOString())
+      .order("created_at", { ascending: false })
+      .limit(1000),
   ]);
+  // La última decisión de la moderación automática para cada lote.
+  const moderacionDe = new Map<string, Moderacion>();
+  for (const m of (moderacionesData ?? []) as Moderacion[]) if (!moderacionDe.has(m.lote_id)) moderacionDe.set(m.lote_id, m);
   const lotes = (lotesData ?? []) as LoteConVendedor[];
   const ofertas = (ofertasData ?? []) as OfertaConDatos[];
   const perfiles = (perfilesData ?? []) as Perfil[];
@@ -39,7 +79,12 @@ export default async function Admin({ searchParams }: PageProps<"/admin">) {
   const conReclamo = new Set(reclamos.map((r) => r.oferta_id));
 
   const enRevision = lotes.filter((l) => l.estado === "en_revision");
-  // Publicados al instante (vendedores de confianza), de la última semana: para mirarlos después.
+  // Rechazados por la moderación automática en la última semana: por si se equivocó.
+  const rechazadosIA = lotes.filter((l) => {
+    const m = moderacionDe.get(l.id);
+    return l.estado === "rechazado" && m?.aplicado === "rechazado" && Date.parse(m.created_at) > ahora - 7 * 86_400_000;
+  });
+  // Publicados al instante por la moderación automática, de la última semana: para mirarlos después.
   const automaticos = lotes.filter(
     (l) => l.publicado_automatico && l.estado === "publicado" && l.publicado_at && Date.parse(l.publicado_at) > Date.parse(new Date().toISOString()) - 7 * 86_400_000,
   );
@@ -186,7 +231,7 @@ export default async function Admin({ searchParams }: PageProps<"/admin">) {
         <section data-publicados-al-instante>
           <h2 className="mb-1 text-xl font-bold">Publicados al instante ({automaticos.length})</h2>
           <p className="mb-4 text-sm text-stone-600">
-            De vendedores de confianza que pasaron los controles automáticos, en la última semana. Si algo no va, devolvelo con observaciones.
+            Los aprobó la moderación automática (IA y controles fijos) en la última semana. Mirá algunos de vez en cuando para controlar que no se equivoque; si algo no va, devolvelo con observaciones.
           </p>
           <div className="space-y-3">
             {automaticos.map((lote) => (
@@ -205,6 +250,30 @@ export default async function Admin({ searchParams }: PageProps<"/admin">) {
                   </BotonEnviar>
                 </form>
               </details>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {rechazadosIA.length > 0 && (
+        <section data-rechazados-ia>
+          <h2 className="mb-1 text-xl font-bold">Rechazados por la moderación ({rechazadosIA.length})</h2>
+          <p className="mb-4 text-sm text-stone-600">
+            En la última semana. Si la IA se equivocó, pasalo a revisión manual y aprobalo vos.
+          </p>
+          <div className="space-y-3">
+            {rechazadosIA.map((lote) => (
+              <div key={lote.id} className="tarjeta space-y-2 p-4">
+                <p>
+                  <span className="font-semibold">{lote.titulo}</span>
+                  <span className="ml-2 text-sm text-stone-500">{lote.perfiles?.empresa ?? lote.perfiles?.nombre}</span>
+                </p>
+                <CajaModeracion m={moderacionDe.get(lote.id)} />
+                <form action={reabrirRechazado}>
+                  <input type="hidden" name="id" value={lote.id} />
+                  <BotonEnviar className="btn-sec" pendiente="Pasando...">Pasar a revisión manual</BotonEnviar>
+                </form>
+              </div>
             ))}
           </div>
         </section>
@@ -247,6 +316,7 @@ export default async function Admin({ searchParams }: PageProps<"/admin">) {
                       </ul>
                     )}
                     {lote.descripcion && <p className="whitespace-pre-line text-sm text-stone-600">{lote.descripcion}</p>}
+                    <CajaModeracion m={moderacionDe.get(lote.id)} />
                   </div>
                   <div className="space-y-3">
                     <dl className="grid grid-cols-2 gap-2 text-sm">

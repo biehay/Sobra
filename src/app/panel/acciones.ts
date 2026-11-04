@@ -13,6 +13,8 @@ import { CATEGORIAS, CONDICIONES, ZONAS, normalizarTelefono, cuitValido, formate
 import { detallesPara } from "@/lib/depreciacion";
 import { notificar } from "@/lib/email/notificar";
 import { asegurarFichaPorId } from "@/lib/recomendaciones/fichas";
+import { moderarLote } from "@/lib/moderacion";
+import { crearClienteAdmin } from "@/lib/supabase/admin";
 
 const PANEL_VENDEDOR = "/panel/vendedor";
 const PANEL_COMPRADOR = "/panel/comprador";
@@ -64,13 +66,13 @@ const esquemaLote = z.object({
 });
 
 // Por qué un lote no se publicó al instante (lo que devuelve publicar_automatico).
+// Por qué un lote queda en revisión manual, contado al vendedor. Lo que encontró
+// el moderador (por ejemplo, posible material robado) no se le cuenta: lo mira el admin.
 const MOTIVOS_REVISION: Record<string, string> = {
-  no_confiable: "",
   sin_peso: "para publicarlo al instante, cargá el peso aproximado",
   contacto: "tiene datos de contacto en el texto: los compartimos recién cuando el comprador paga",
   precio: "el precio es mayor al precio de lista",
-  sin_fotos: "",
-  sin_retiro: "",
+  primera_publicacion: "es tu primera publicación: la revisamos nosotros",
 };
 
 export async function guardarLote(formData: FormData) {
@@ -134,14 +136,27 @@ export async function guardarLote(formData: FormData) {
       : await supabase.from("lote_precio_minimo").delete().eq("lote_id", loteId);
   if (errorMinimo) volverCon(rutaForm, "error", errorMinimo.message);
 
-  // Vendedor de confianza y lote que pasa los controles: se publica al instante
-  // (lo decide la base). Si no, queda en revisión manual y se dice por qué.
-  let publicadoAlInstante = false;
-  let motivoRevision = "";
+  // Moderación: reglas fijas + IA revisan el lote, y la base aplica la decisión con
+  // sus propios controles (solo el servidor puede llamarla). Aprobado: se publica al
+  // instante. Dudoso: revisión manual. Rechazado: vuelve al vendedor explicando por qué.
+  let aplicado = "";
+  let motivoRechazo = "";
   if (pasoARevision) {
-    const { data: resultado } = await supabase.rpc("publicar_automatico", { p_lote: loteId });
-    publicadoAlInstante = resultado === "publicado";
-    motivoRevision = MOTIVOS_REVISION[String(resultado)] ?? "";
+    const moderacion = await moderarLote(lote, lote.fotos);
+    const admin = crearClienteAdmin();
+    const { data, error } = admin
+      ? await admin.rpc("moderar_lote", { p_lote: loteId, p_resultado: moderacion.resultado, p_motivos: moderacion.motivos, p_mensaje: moderacion.mensaje })
+      : { data: null, error: { message: "Falta SUPABASE_SERVICE_ROLE_KEY en el servidor" } };
+    if (error) console.error("[Sobrá] No se pudo aplicar la moderación; queda en revisión manual:", error.message);
+    aplicado = error ? "error" : String(data);
+    motivoRechazo = moderacion.mensaje;
+  }
+  const publicadoAlInstante = aplicado === "publicado";
+  const motivoRevision = MOTIVOS_REVISION[aplicado] ?? "";
+  if (aplicado === "rechazado") {
+    notificar.loteRevisado(loteId);
+    revalidatePath(PANEL_VENDEDOR);
+    volverCon(PANEL_VENDEDOR, "error", `No pudimos publicar tu lote: ${motivoRechazo || "no cumple las reglas de publicación"}. Si creés que es un error, escribinos.`);
   }
   if (publicadoAlInstante) {
     notificar.loteRevisado(loteId);

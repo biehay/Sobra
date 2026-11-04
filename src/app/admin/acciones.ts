@@ -74,6 +74,17 @@ export async function devolverPublicado(formData: FormData) {
   volver("ok", "Lote devuelto al vendedor con observaciones.");
 }
 
+// Un lote que rechazó la moderación automática y el admin cree que está bien:
+// vuelve a la cola de revisión manual (sin pasar de nuevo por la IA).
+export async function reabrirRechazado(formData: FormData) {
+  await exigirRol("admin");
+  const id = String(formData.get("id"));
+  const supabase = await crearClienteServidor();
+  const { error } = await supabase.from("lotes").update({ estado: "en_revision", nota_admin: null }).eq("id", id).eq("estado", "rechazado");
+  if (error) volver("error", error.message);
+  volver("ok", "El lote pasó a revisión manual.");
+}
+
 export async function verificarUsuario(formData: FormData) {
   await exigirRol("admin");
   const id = String(formData.get("id"));

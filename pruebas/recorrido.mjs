@@ -676,10 +676,10 @@ try {
   );
   esperar((await vend.textContent("[data-faltan]")).includes("dirección de retiro"), "abajo resume lo que falta completar");
   await vend.fill("#direccion", "Camino General Belgrano 1200, Lanús");
-  await tras(vend, "ok=", () => vend.click("button:has-text('Enviar a revisión')"));
+  // Marta ya publicó antes: lo que aprueba la moderación automática sale al instante.
   const marcaBusqueda = marcaLog();
-  await adm.goto(`${BASE}/admin`);
-  await tras(adm, "ok=", () => adm.click("button:has-text('Aprobar y publicar')"));
+  await tras(vend, "ok=", () => vend.click("button:has-text('Enviar a revisión')"));
+  esperar((await aviso(vend)).includes("ya está publicado"), "quien ya publicó antes publica al instante si la moderación lo aprueba");
   esperar(await enLog("Para: juan@contratista.test · Apareció lo que buscabas: Inodoros Ferrum", marcaBusqueda), "a quien lo buscaba le llega el aviso del lote nuevo");
   await comp.goto(`${BASE}/panel/busquedas`);
   esperar((await comp.textContent("main")).includes("Ya hay 1 lote que coincide"), "Lo busco muestra el lote que coincide");
@@ -690,10 +690,9 @@ try {
   await vend.goto(`${BASE}/panel/vendedor`);
   await vend.locator("div.p-4", { hasText: "Inodoros Ferrum" }).locator("a:has-text('Editar')").click();
   await vend.fill("#precio_pedido", "180000");
-  await tras(vend, "ok=", () => vend.click("button:has-text('Enviar a revisión')"));
   let marcaPrecio = marcaLog();
-  await adm.goto(`${BASE}/admin`);
-  await tras(adm, "ok=", () => adm.click("button:has-text('Aprobar y publicar')"));
+  await tras(vend, "ok=", () => vend.click("button:has-text('Enviar a revisión')"));
+  esperar((await aviso(vend)).includes("ya está publicado"), "al editarlo, vuelve a pasar por la moderación y se republica");
   esperar(await enLog("Para: lucia@arquitecta.test · Bajó de precio: Inodoros Ferrum", marcaPrecio), "a quien lo guardó le llega el aviso de baja de precio");
   await comp2.goto(`${BASE}/panel/favoritos`);
   esperar((await comp2.textContent("main")).replace(/\s/g, " ").includes("Bajó $ 20.000"), "Favoritos muestra cuánto bajó");
@@ -822,6 +821,34 @@ try {
   esperar((await aviso(vend)).includes("ya está publicado"), "un vendedor de confianza publica al instante");
   await adm.goto(`${BASE}/admin`);
   esperar((await adm.textContent("[data-publicados-al-instante]")).includes("Pastina gris x 10 kg"), "el admin ve lo publicado al instante");
+
+  // Moderación automática: lo que no es del rubro se rechaza y se explica; lo que puede
+  // ser robado va a la cola del admin con el motivo. El admin puede corregir a la IA.
+  async function publicarRapido(titulo, condicion = "nuevo") {
+    await vend.goto(`${BASE}/panel/vendedor/lotes/nuevo`);
+    await vend.setInputFiles("input[type=file][multiple]", fotos[0]);
+    await vend.waitForSelector("img[alt='Foto 1']");
+    await vend.fill("#titulo", titulo);
+    await vend.selectOption("#categoria", "Electricidad e iluminación");
+    await vend.selectOption("#condicion", condicion);
+    await vend.fill("#peso_kg", "20");
+    await vend.fill("#precio_pedido", "50000");
+    await vend.selectOption("#zona", "GBA Sur");
+    await vend.fill("#direccion", "Av. Siempreviva 742");
+  }
+  await publicarRapido("Celular iPhone 13 sin uso");
+  await tras(vend, "error=", () => vend.click("button:has-text('Enviar a revisión')"));
+  esperar((await aviso(vend)).includes("solo para material de obra"), "la moderación rechaza lo que no es del rubro y explica por qué");
+  await publicarRapido("Cable de cobre recuperado, 200 m", "usado_buen_estado");
+  await tras(vend, "ok=", () => vend.click("button:has-text('Enviar a revisión')"));
+  esperar((await aviso(vend)).includes("enviado a revisión") && !(await aviso(vend)).includes("robad"), "lo dudoso va a revisión (sin contarle al vendedor qué se sospecha)");
+  await adm.goto(`${BASE}/admin`);
+  const tarjetaCobre = adm.locator(".tarjeta", { hasText: "Cable de cobre recuperado" }).first();
+  esperar((await tarjetaCobre.locator("[data-moderacion]").textContent()).includes("Posible material robado"), "el admin ve por qué la moderación lo mandó a revisión");
+  esperar((await adm.textContent("[data-rechazados-ia]")).includes("Celular iPhone 13"), "el admin ve lo que rechazó la moderación");
+  await tras(adm, "ok=", () => adm.locator("[data-rechazados-ia] .tarjeta", { hasText: "Celular iPhone 13" }).locator("button:has-text('Pasar a revisión manual')").click());
+  esperar(await adm.locator("section:has-text('Lotes para revisar') .tarjeta", { hasText: "Celular iPhone 13" }).count() > 0, "el admin puede corregir a la IA y pasarlo a revisión manual");
+  paso("Moderación automática: rechaza lo que no es del rubro, manda lo dudoso al admin con el motivo y el admin puede corregirla");
 
   // 15. Cerrar sesión ------------------------------------------------------
   // El menú del usuario (el círculo del encabezado) muestra el resumen y tiene "Salir".

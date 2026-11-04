@@ -46,8 +46,8 @@ export default async function NuevoLote({ searchParams }: PageProps<"/panel/vend
       <h1 className="text-3xl font-bold">Publicar un lote</h1>
       <p className="mb-6 mt-1 text-stone-600">
         {deConfianza
-          ? "Tu cuenta es de confianza: si pasa los controles automáticos, se publica al instante."
-          : "Lo revisamos antes de publicarlo, normalmente en el día."}
+          ? "Tu cuenta es de confianza: si pasa la revisión automática, se publica al instante."
+          : "Lo revisamos al instante con controles automáticos. Si algo no cierra (o es tu primera publicación), lo mira una persona del equipo, normalmente en el día."}
       </p>
       <div className="mb-4">
         <Aviso error={error} />
