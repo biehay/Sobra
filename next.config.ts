@@ -20,11 +20,16 @@ const csp = [
   ...(isDev || !supabase.startsWith("https://") ? [] : ["upgrade-insecure-requests"]),
 ].join("; ");
 
+// Para probar desde el celular con `npm run dev` (entrando por la IP de la compu,
+// por ejemplo http://192.168.0.15:3000): solo en desarrollo y solo redes locales.
+const redLocal = ["192.168.*.*", "10.*.*.*", "172.*.*.*"];
+
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  ...(isDev ? { allowedDevOrigins: redLocal } : {}),
   experimental: {
     // Los comprobantes de transferencia (hasta 5 MB) se suben por una Server Action.
-    serverActions: { bodySizeLimit: "6mb" },
+    serverActions: { bodySizeLimit: "6mb", ...(isDev ? { allowedOrigins: redLocal } : {}) },
   },
   turbopack: {
     rules: {
