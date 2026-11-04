@@ -1,8 +1,10 @@
 // Redibuja la foto en un canvas antes de subirla. Así se pierden los metadatos
 // EXIF, incluidas las coordenadas GPS que guardan los celulares (que revelarían
 // la ubicación del depósito antes del pago), y de paso se achica el archivo.
-const LADO_MAXIMO = 2000;
-const CALIDAD = 0.85;
+// 1600 px alcanza y sobra para ver el material (y es lo que usa la IA para leer las
+// fotos); una foto de celular queda en unos 300-500 KB, así que sube en segundos.
+const LADO_MAXIMO = 1600;
+const CALIDAD = 0.82;
 
 export function medidasReducidas(ancho: number, alto: number, maximo = LADO_MAXIMO) {
   const escala = Math.min(1, maximo / Math.max(ancho, alto));

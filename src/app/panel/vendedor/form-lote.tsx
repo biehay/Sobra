@@ -18,6 +18,14 @@ type Retiro = { direccion: string; horarios: string; indicaciones: string };
 const MAX_FOTOS = 10;
 // Tope del archivo original; después de limpiarla la foto queda mucho más liviana.
 const MAX_BYTES = 25 * 1024 * 1024;
+const ESPERA_SUBIDA_MS = 45_000;
+
+// Nombre al azar para la foto. `crypto.randomUUID` no existe si la página no es
+// segura (por ejemplo, al probar desde el celular con la IP de la compu).
+function idAlAzar() {
+  if (typeof crypto.randomUUID === "function") return crypto.randomUUID();
+  return Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) => b.toString(16).padStart(2, "0")).join("");
+}
 
 // `inicial`: para un lote nuevo, lo que cargó en la calculadora de la portada.
 export function FormLote({
@@ -122,6 +130,9 @@ export function FormLote({
     leerCampos();
   }
 
+  // Las fotos se achican en el celular y se suben todas a la vez. Si algo falla (o la
+  // red no responde), se avisa y el botón vuelve a quedar disponible: nunca queda
+  // "Subiendo..." para siempre.
   async function subirFotos(archivos: FileList | null) {
     if (!archivos?.length) return;
     setErrorFotos("");
@@ -131,26 +142,34 @@ export function FormLote({
       return;
     }
     setSubiendo(true);
-    const supabase = crearClienteNavegador();
-    const nuevas: string[] = [];
-    for (const archivo of lista) {
-      const ruta = `${usuarioId}/${crypto.randomUUID()}.jpg`;
-      let foto: Blob;
-      try {
-        foto = await limpiarFoto(archivo);
-      } catch {
-        setErrorFotos(`No pudimos leer ${archivo.name}. Probá con una foto JPG o PNG.`);
-        break;
-      }
-      const { error } = await supabase.storage.from("lotes").upload(ruta, foto, { contentType: "image/jpeg" });
-      if (error) {
-        setErrorFotos(`No se pudo subir ${archivo.name}: ${error.message}`);
-        break;
-      }
-      nuevas.push(ruta);
+    try {
+      const supabase = crearClienteNavegador();
+      const resultados = await Promise.all(
+        lista.map(async (archivo): Promise<{ ruta: string } | { error: string }> => {
+          let foto: Blob;
+          try {
+            foto = await limpiarFoto(archivo);
+          } catch {
+            return { error: `No pudimos leer ${archivo.name}. Probá con una foto JPG o PNG.` };
+          }
+          const ruta = `${usuarioId}/${idAlAzar()}.jpg`;
+          const subida = supabase.storage.from("lotes").upload(ruta, foto, { contentType: "image/jpeg" });
+          const vencida = new Promise<"vencida">((r) => setTimeout(() => r("vencida"), ESPERA_SUBIDA_MS));
+          const r = await Promise.race([subida, vencida]);
+          if (r === "vencida") return { error: "La subida está tardando demasiado. Revisá la conexión y probá de nuevo." };
+          if (r.error) return { error: `No se pudo subir ${archivo.name}: ${r.error.message}` };
+          return { ruta };
+        }),
+      );
+      const nuevas = resultados.flatMap((r) => ("ruta" in r ? [r.ruta] : []));
+      const fallo = resultados.find((r) => "error" in r);
+      if (fallo && "error" in fallo) setErrorFotos(fallo.error);
+      setFotos((actuales) => [...actuales, ...nuevas]);
+    } catch {
+      setErrorFotos("No se pudieron subir las fotos. Probá de nuevo.");
+    } finally {
+      setSubiendo(false);
     }
-    setFotos((actuales) => [...actuales, ...nuevas]);
-    setSubiendo(false);
   }
 
   function cambiarItem(i: number, cambio: Partial<Item>) {
