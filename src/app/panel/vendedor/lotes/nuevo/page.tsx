@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AvisoFaltas } from "@/components/aviso-faltas";
 import { Aviso } from "@/components/aviso";
 import { redirect } from "next/navigation";
 import { exigirRol, obtenerPerfil, sesionVerificada } from "@/lib/sesion";
@@ -49,8 +50,9 @@ export default async function NuevoLote({ searchParams }: PageProps<"/panel/vend
           ? "Tu cuenta es de confianza: si pasa la revisión automática, se publica al instante."
           : "Lo revisamos al instante con controles automáticos. Si algo no cierra (o es tu primera publicación), lo mira una persona del equipo, normalmente en el día."}
       </p>
-      <div className="mb-4">
+      <div className="mb-4 space-y-3">
         <Aviso error={error} />
+        <AvisoFaltas usuarioId={perfil.id} />
       </div>
       {tituloInicial && precioPedido && (
         <p data-desde-calculadora className="mb-4 rounded-lg border border-celeste/50 bg-celeste-claro px-4 py-3 text-sm text-petroleo">

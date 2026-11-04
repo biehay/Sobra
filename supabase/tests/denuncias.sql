@@ -96,6 +96,7 @@ do $$ begin
   assert pg_temp.denunciar('00000000-0000-0000-0000-0000000000d6', '40000000-0000-0000-0000-000000000001') = 'baja', 'con 5 en total no se da de baja';
   assert (select estado = 'rechazado' and not pausado_por_denuncias and nota_admin like '%5 personas%' from lotes where id = '40000000-0000-0000-0000-000000000001'), 'la baja automática no quedó bien';
   assert (select count(*) = 2 from denuncias where lote_id = '40000000-0000-0000-0000-000000000001' and estado = 'baja'), 'las denuncias nuevas no quedaron resueltas';
+  assert (select count(*) = 1 from faltas where usuario_id = '00000000-0000-0000-0000-0000000000d1' and origen = 'denuncias'), 'la baja automática no suma una falta';
 end $$;
 
 -- Dar de baja pide el motivo y devuelve el lote al vendedor.

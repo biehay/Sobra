@@ -86,7 +86,13 @@ export async function resolverDenuncias(formData: FormData) {
   const { data: antes } = await supabase.from("lotes").select("pausado_por_denuncias").eq("id", id).single();
   const { error } = await supabase.rpc("resolver_denuncias", { p_lote: id, p_decision: decision, p_nota: nota });
   if (error) volver("error", error.message);
-  if (decision === "baja") notificar.loteDadoDeBaja(id);
+  if (decision === "baja") {
+    notificar.loteDadoDeBaja(id);
+    if (formData.get("falta") === "si") {
+      const { data: lote } = await supabase.from("lotes").select("vendedor_id").eq("id", id).single();
+      if (lote) await sumarFalta(lote.vendedor_id, id, "denuncias", nota);
+    }
+  }
   else if (antes?.pausado_por_denuncias) notificar.loteRevisado(id);
   revalidatePath("/lotes");
   volver("ok", decision === "baja" ? "Lote dado de baja; le avisamos al vendedor." : "Denuncias desestimadas.");
@@ -100,7 +106,58 @@ export async function reabrirRechazado(formData: FormData) {
   const supabase = await crearClienteServidor();
   const { error } = await supabase.from("lotes").update({ estado: "en_revision", nota_admin: null }).eq("id", id).eq("estado", "rechazado");
   if (error) volver("error", error.message);
+  // Para medir a la moderación: rechazó algo que estaba bien.
+  const { data: ultima } = await supabase.from("moderaciones").select("id").eq("lote_id", id).order("created_at", { ascending: false }).limit(1).maybeSingle();
+  if (ultima) await supabase.from("moderaciones").update({ auditoria: "error", auditada_at: new Date().toISOString() }).eq("id", ultima.id);
   volver("ok", "El lote pasó a revisión manual.");
+}
+
+// Suma una falta (la base calcula la sanción) y le avisa al usuario.
+async function sumarFalta(usuarioId: string, loteId: string | null, origen: "denuncias" | "reclamo" | "muestreo" | "manual", detalle: string) {
+  const supabase = await crearClienteServidor();
+  const { error } = await supabase.rpc("sumar_falta", { p_usuario: usuarioId, p_lote: loteId, p_origen: origen, p_detalle: detalle });
+  if (error) volver("error", error.message);
+  notificar.falta(usuarioId, detalle);
+}
+
+// El admin revisa un lote del muestreo (publicado al instante por la moderación):
+// si estuvo bien, cuenta como acierto; si no, sale de la publicación y vuelve al
+// vendedor (y, si corresponde, suma una falta).
+export async function auditarMuestra(formData: FormData) {
+  await exigirRol("admin");
+  const id = String(formData.get("id"));
+  const bien = formData.get("decision") === "acierto";
+  const nota = String(formData.get("nota") ?? "").trim();
+  if (!bien && !nota) volver("error", "Escribí qué estuvo mal: se lo mandamos al vendedor");
+  const supabase = await crearClienteServidor();
+  const { error } = await supabase
+    .from("moderaciones")
+    .update({ auditoria: bien ? "acierto" : "error", auditada_at: new Date().toISOString() })
+    .eq("lote_id", id)
+    .eq("muestreo", true)
+    .is("auditoria", null);
+  if (error) volver("error", error.message);
+  if (!bien) {
+    const { data: lote, error: e } = await supabase
+      .from("lotes")
+      .update({ estado: "rechazado", nota_admin: nota, publicado_automatico: false })
+      .eq("id", id)
+      .eq("estado", "publicado")
+      .select("vendedor_id")
+      .single();
+    if (e) volver("error", e.message);
+    notificar.loteRevisado(id);
+    if (formData.get("falta") === "si") await sumarFalta(lote.vendedor_id, id, "muestreo", nota);
+  }
+  volver("ok", bien ? "Anotado: la moderación acertó." : "Lote devuelto al vendedor; anotado como error de la moderación.");
+}
+
+export async function anularFalta(formData: FormData) {
+  await exigirRol("admin");
+  const supabase = await crearClienteServidor();
+  const { error } = await supabase.rpc("anular_falta", { p_falta: String(formData.get("id")) });
+  if (error) volver("error", error.message);
+  volver("ok", "Falta anulada.");
 }
 
 export async function verificarUsuario(formData: FormData) {
@@ -127,6 +184,11 @@ export async function resolverReclamo(formData: FormData) {
   });
   if (error) volver("error", error.message);
   notificar.reclamoResuelto(id);
+  if (formData.get("falta") === "si") {
+    const { data: r } = await supabase.from("reclamos").select("ofertas(lote_id, lotes(vendedor_id))").eq("id", id).single();
+    const oferta = r?.ofertas as unknown as { lote_id: string; lotes: { vendedor_id: string } | null } | null;
+    if (oferta?.lotes) await sumarFalta(oferta.lotes.vendedor_id, oferta.lote_id, "reclamo", `Reclamo resuelto a favor del comprador: ${String(formData.get("resolucion") ?? "").trim()}`);
+  }
   volver(
     "ok",
     resultado === "devolver"

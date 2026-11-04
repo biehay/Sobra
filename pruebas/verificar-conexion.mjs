@@ -93,6 +93,7 @@ if (urlValida) {
           ["20261112000000_publicacion_automatica.sql", "/rest/v1/lotes?select=publicado_automatico&limit=1"],
           ["20261113000000_moderacion.sql", "/rest/v1/moderaciones?select=id&limit=1"],
           ["20261114000000_denuncias.sql", "/rest/v1/denuncias?select=id&limit=1"],
+          ["20261115000000_sanciones_y_muestreo.sql", "/rest/v1/faltas?select=id&limit=1"],
         ];
         for (const [archivo, ruta] of migraciones) {
           const r = await pedir(ruta, servicio);

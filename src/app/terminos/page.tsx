@@ -204,6 +204,23 @@ export default function Terminos() {
         suspender, restringir o inhabilitar su cuenta en forma temporal o definitiva. Denunciar a propósito
         publicaciones que están bien (por ejemplo, para perjudicar a otro vendedor) también es un incumplimiento.
       </p>
+      <p>
+        <strong>Faltas:</strong> registramos una falta en la cuenta cuando una persona del equipo de Sobrá da de baja una
+        publicación por denuncias, resuelve un reclamo a favor del comprador por culpa del vendedor o encuentra una
+        publicación que no debió publicarse; también cuando una publicación se da de baja automáticamente por denuncias de
+        5 personas. La revisión automática con IA nunca suma faltas por sí sola. Te avisamos por email cada falta, con el
+        motivo. Cuentan las de los últimos 6 meses que no hayamos anulado:
+      </p>
+      <ul>
+        <li>1 falta: advertencia, y la cuenta deja de ser de confianza.</li>
+        <li>2 faltas: tus publicaciones las revisa una persona antes de publicarlas (ya no salen al instante).</li>
+        <li>3 faltas: no podés publicar durante 30 días desde la tercera.</li>
+        <li>4 o más: no podés publicar hasta que revisemos la cuenta.</li>
+      </ul>
+      <p>
+        Podés ver tus faltas en tu panel. Si creés que alguna es un error, escribinos: si corresponde, la anulamos. Estas
+        sanciones no impiden aplicar las demás de esta sección cuando el caso lo amerite.
+      </p>
 
       <h2>12. Responsabilidad</h2>
       <p>

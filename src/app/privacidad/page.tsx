@@ -28,6 +28,10 @@ export default function Privacidad() {
           no sabe quién lo denunció. Las guardamos como antecedente aunque el lote se borre.
         </li>
         <li>
+          <strong>Faltas:</strong> si se registra una falta en tu cuenta (ver los términos), guardamos el motivo y la fecha.
+          Las ves vos y el equipo de Sobrá; no se muestran a otros usuarios. Dejan de contar a los 6 meses.
+        </li>
+        <li>
           <strong>Lotes que viste:</strong> si tenés cuenta, guardamos qué lotes abriste durante 180 días para recomendarte otros
           parecidos o que los complementan, y si llegaste a cada uno desde una recomendación (para saber cuáles sirven). Si no tenés cuenta, esa lista queda solo en tu navegador (no en una cookie ni en
           nuestros servidores) y la podés borrar limpiando los datos del sitio. Las recomendaciones del tipo “quienes vieron esto

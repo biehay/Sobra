@@ -232,6 +232,19 @@ export const plantillas = {
     }),
   }),
 
+  faltaRegistrada: (detalle: string, faltas: number, consecuencia: string): Plantilla => ({
+    asunto: "Registramos una falta en tu cuenta de Sobrá",
+    html: plantilla({
+      titulo: "Registramos una falta en tu cuenta",
+      parrafos: [
+        `Motivo: <em>${escapar(detalle)}</em>`,
+        `Tenés ${faltas === 1 ? "1 falta" : `${faltas} faltas`} en los últimos 6 meses. ${escapar(consecuencia)}`,
+        "Las faltas vencen a los 6 meses. Si creés que es un error, respondé este email.",
+      ],
+      boton: { texto: "Ver mi cuenta", ruta: "/panel/vendedor" },
+    }),
+  }),
+
   adminDenuncia: (lote: string, motivo: string, personas: number, resultado: "denunciada" | "pausado" | "baja"): Plantilla => ({
     asunto: `[Admin] ${resultado === "baja" ? "Lote dado de baja por denuncias" : resultado === "pausado" ? "Lote pausado por denuncias" : "Denuncia"}: "${lote}"`,
     html: plantilla({

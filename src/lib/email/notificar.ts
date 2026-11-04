@@ -1,4 +1,5 @@
 import "server-only";
+import { consecuencia } from "@/lib/sanciones";
 import { after } from "next/server";
 import { crearClienteAdmin } from "@/lib/supabase/admin";
 import { enviarEmail } from "./enviar";
@@ -188,6 +189,16 @@ export const notificar = {
       const { count } = await admin.from("denuncias").select("id", { count: "exact", head: true }).eq("lote_id", loteId);
       await enviarEmail({ para: emailsAdmin(), ...plantillas.adminDenuncia(lote.titulo, motivo, count ?? 1, resultado) });
       if (resultado === "pausado") await enviarEmail({ para: await emailDe(admin, lote.vendedor_id), ...plantillas.lotePausadoPorDenuncias(lote.titulo, loteId) });
+    });
+  },
+
+  // Al usuario, cada vez que se le suma una falta: el motivo y qué sanción le corresponde.
+  falta(usuarioId: string, detalle: string) {
+    enSegundoPlano("falta", async (admin) => {
+      const { data: faltas } = await admin.rpc("faltas_activas", { p_usuario: usuarioId });
+      const { data: hasta } = await admin.rpc("suspendido_hasta", { p_usuario: usuarioId });
+      const n = Number(faltas ?? 1);
+      await enviarEmail({ para: await emailDe(admin, usuarioId), ...plantillas.faltaRegistrada(detalle, n, consecuencia(n, (hasta as string | null) ?? null)) });
     });
   },
 

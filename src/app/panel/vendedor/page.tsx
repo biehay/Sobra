@@ -7,6 +7,7 @@ import { DatosOperacion } from "@/components/datos-operacion";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { exigirRol } from "@/lib/sesion";
 import { AvisoAdmin } from "@/components/aviso-admin";
+import { AvisoFaltas } from "@/components/aviso-faltas";
 import { visitasDeMisLotes } from "@/lib/visitas";
 import { busquedasPublicas } from "@/lib/busquedas";
 import { reputacionDe } from "@/lib/reputacion";
@@ -66,8 +67,9 @@ export default async function PanelVendedor({ searchParams }: PageProps<"/panel/
         <Link href="/panel/vendedor/lotes/nuevo" className="btn">+ Publicar lote</Link>
       </div>
 
-      <div className="mt-6">
+      <div className="mt-6 space-y-3">
         <Aviso ok={ok} error={error} />
+        <AvisoFaltas usuarioId={perfil.id} />
       </div>
 
       {demanda.length > 0 && (

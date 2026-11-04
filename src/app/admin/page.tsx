@@ -7,7 +7,8 @@ import { EtiquetaEstado } from "@/components/etiqueta-estado";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { exigirRol } from "@/lib/sesion";
 import { CONDICIONES, linkWhatsapp, pesos, precioSugerido, urlFoto, type Lote, type Oferta, type Perfil, MOTIVOS_RECLAMO, type Reclamo } from "@/lib/datos";
-import { adjuntarComprobante, avanzarOperacion, devolverPublicado, liquidar, reabrirRechazado, resolverDenuncias, resolverReclamo, revisarLote, verificarUsuario } from "./acciones";
+import { adjuntarComprobante, anularFalta, auditarMuestra, avanzarOperacion, devolverPublicado, liquidar, reabrirRechazado, resolverDenuncias, resolverReclamo, revisarLote, verificarUsuario } from "./acciones";
+import { DIAS_DE_FALTA } from "@/lib/sanciones";
 import { DENUNCIAS_PARA_BAJA, DENUNCIAS_PARA_PAUSAR, MOTIVOS_DENUNCIA, type MotivoDenuncia } from "@/lib/denuncias";
 import { NOMBRE_MOTIVO, type Motivo } from "@/lib/moderacion-reglas";
 
@@ -17,7 +18,8 @@ type Contacto = Pick<Perfil, "nombre" | "empresa" | "telefono">;
 type LoteConVendedor = Lote & { perfiles: Contacto | null };
 type OfertaConDatos = Oferta & { lotes: { titulo: string } | null; perfiles: Contacto | null };
 type Denuncia = { id: string; lote_id: string | null; motivo: MotivoDenuncia; detalle: string; created_at: string };
-type Moderacion = { lote_id: string; resultado: string; motivos: Motivo[]; aplicado: string; created_at: string };
+type Moderacion = { lote_id: string; resultado: string; motivos: Motivo[]; aplicado: string; created_at: string; muestreo: boolean; auditoria: "acierto" | "error" | null };
+type Falta = { id: string; usuario_id: string; origen: string; detalle: string; created_at: string };
 
 // Qué hizo la moderación automática con el lote, para el admin.
 const APLICADO: Record<string, string> = {
@@ -53,7 +55,7 @@ export default async function Admin({ searchParams }: PageProps<"/admin">) {
   const supabase = await crearClienteServidor();
 
   const ahora = Date.parse(new Date().toISOString());
-  const [{ data: lotesData }, { data: ofertasData }, { data: perfilesData }, { data: reclamosData }, { data: moderacionesData }, { data: denunciasData }] = await Promise.all([
+  const [{ data: lotesData }, { data: ofertasData }, { data: perfilesData }, { data: reclamosData }, { data: moderacionesData }, { data: denunciasData }, { data: faltasData }] = await Promise.all([
     supabase.from("lotes").select("*, perfiles(nombre, empresa, telefono)").order("created_at", { ascending: false }),
     supabase
       .from("ofertas")
@@ -63,12 +65,25 @@ export default async function Admin({ searchParams }: PageProps<"/admin">) {
     supabase.from("reclamos").select("*").eq("estado", "abierto").order("created_at"),
     supabase
       .from("moderaciones")
-      .select("lote_id, resultado, motivos, aplicado, created_at")
-      .gte("created_at", new Date(ahora - 30 * 86_400_000).toISOString())
+      .select("lote_id, resultado, motivos, aplicado, created_at, muestreo, auditoria")
+      .gte("created_at", new Date(ahora - 90 * 86_400_000).toISOString())
       .order("created_at", { ascending: false })
       .limit(1000),
     supabase.from("denuncias").select("id, lote_id, motivo, detalle, created_at, estado").in("estado", ["abierta", "desestimada"]).order("created_at"),
+    supabase
+      .from("faltas")
+      .select("id, usuario_id, origen, detalle, created_at")
+      .eq("anulada", false)
+      .gte("created_at", new Date(ahora - DIAS_DE_FALTA * 86_400_000).toISOString())
+      .order("created_at"),
   ]);
+  const faltasDe = new Map<string, Falta[]>();
+  for (const f of (faltasData ?? []) as Falta[]) faltasDe.set(f.usuario_id, [...(faltasDe.get(f.usuario_id) ?? []), f]);
+  // Control de la moderación: lo publicado al instante que salió sorteado para revisar, y cuánto acierta.
+  const moderaciones = (moderacionesData ?? []) as Moderacion[];
+  const auditadas = moderaciones.filter((m) => m.auditoria);
+  const aciertos = auditadas.filter((m) => m.auditoria === "acierto").length;
+  const sorteados = new Set(moderaciones.filter((m) => m.muestreo && !m.auditoria).map((m) => m.lote_id));
   // Cuántas denuncias de cada lote ya desestimó el admin (cuentan para la baja automática).
   const desestimadas = new Map<string, number>();
   for (const d of (denunciasData ?? []) as (Denuncia & { estado: string })[]) {
@@ -83,6 +98,7 @@ export default async function Admin({ searchParams }: PageProps<"/admin">) {
   const moderacionDe = new Map<string, Moderacion>();
   for (const m of (moderacionesData ?? []) as Moderacion[]) if (!moderacionDe.has(m.lote_id)) moderacionDe.set(m.lote_id, m);
   const lotes = (lotesData ?? []) as LoteConVendedor[];
+  const muestrasPendientes = lotes.filter((l) => sorteados.has(l.id) && l.estado === "publicado");
   const ofertas = (ofertasData ?? []) as OfertaConDatos[];
   const perfiles = (perfilesData ?? []) as Perfil[];
   const reclamos = (reclamosData ?? []) as Reclamo[];
@@ -221,6 +237,10 @@ export default async function Admin({ searchParams }: PageProps<"/admin">) {
                     <input type="hidden" name="id" value={r.id} />
                     <label htmlFor={`resolucion-${r.id}`} className="etiqueta">Resolución (la ven las dos partes)</label>
                     <textarea id={`resolucion-${r.id}`} name="resolucion" rows={3} required className="campo" />
+                    <label className="flex items-center gap-2 text-sm">
+                      <input type="checkbox" name="falta" value="si" className="accent-marca" />
+                      Fue culpa del vendedor: sumarle una falta
+                    </label>
                     <div className="grid gap-2">
                       <BotonEnviar name="resultado" value="devolver" className="btn-peligro" pendiente="Resolviendo..." confirmar="¿Devolvés el pago al comprador? El lote queda pausado.">
                         Devolver el pago al comprador
@@ -268,6 +288,58 @@ export default async function Admin({ searchParams }: PageProps<"/admin">) {
         </section>
       )}
 
+      <section data-control-moderacion>
+        <h2 className="mb-1 text-xl font-bold">Control de la moderación</h2>
+        <p className="mb-4 text-sm text-stone-600">
+          1 de cada 20 lotes que se publican al instante sale sorteado para que lo revises. Así medimos cuánto se equivoca la IA.
+          {auditadas.length > 0 && (
+            <>
+              {" "}En los últimos 90 días acertó en <strong data-aciertos>{aciertos} de {auditadas.length}</strong> revisados
+              ({Math.round((aciertos / auditadas.length) * 100)}%), contando los rechazos que pasaste a revisión manual como errores.
+            </>
+          )}
+        </p>
+        {muestrasPendientes.length ? (
+          <div className="space-y-3">
+            {muestrasPendientes.map((lote) => (
+              <div key={lote.id} data-muestra className="tarjeta grid gap-4 p-4 lg:grid-cols-[2fr_1fr]">
+                <div className="space-y-2">
+                  <p>
+                    <Link href={`/lotes/${lote.id}`} className="font-semibold hover:text-marca">{lote.titulo}</Link>
+                    <span className="ml-2 text-sm text-stone-500">{lote.perfiles?.empresa ?? lote.perfiles?.nombre} · {pesos(lote.precio_publicado ?? lote.precio_pedido)}</span>
+                  </p>
+                  <div className="flex gap-2 overflow-x-auto">
+                    {lote.fotos.map((foto) => (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img key={foto} src={urlFoto(foto)} alt="" className="h-20 w-20 rounded-lg border border-stone-200 object-cover" />
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <form action={auditarMuestra}>
+                    <input type="hidden" name="id" value={lote.id} />
+                    <BotonEnviar name="decision" value="acierto" className="btn-sec w-full" pendiente="Guardando...">Estuvo bien publicado</BotonEnviar>
+                  </form>
+                  <form action={auditarMuestra} className="space-y-2">
+                    <input type="hidden" name="id" value={lote.id} />
+                    <textarea name="nota" required rows={2} className="campo" placeholder="Qué estuvo mal (se lo mandamos al vendedor)" />
+                    <label className="flex items-center gap-2 text-sm">
+                      <input type="checkbox" name="falta" value="si" className="accent-marca" />
+                      Sumarle una falta al vendedor
+                    </label>
+                    <BotonEnviar name="decision" value="error" className="btn w-full" pendiente="Devolviendo..." confirmar="¿Lo sacás de la publicación?">
+                      No debió publicarse
+                    </BotonEnviar>
+                  </form>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="tarjeta p-4 text-sm text-stone-500">No hay lotes sorteados para revisar.</p>
+        )}
+      </section>
+
       {denunciasPorLote.size > 0 && (
         <section id="denuncias" data-denuncias className="scroll-mt-24">
           <h2 className="mb-1 text-xl font-bold">Denuncias ({denunciasPorLote.size})</h2>
@@ -313,6 +385,10 @@ export default async function Admin({ searchParams }: PageProps<"/admin">) {
                     <form action={resolverDenuncias} className="space-y-2">
                       <input type="hidden" name="id" value={lote.id} />
                       <textarea name="nota" required rows={2} className="campo" placeholder="Por qué se da de baja (se lo mandamos al vendedor)" />
+                      <label className="flex items-center gap-2 text-sm">
+                        <input type="checkbox" name="falta" value="si" defaultChecked className="accent-marca" />
+                        Sumarle una falta al vendedor
+                      </label>
                       <BotonEnviar name="decision" value="baja" className="btn w-full" pendiente="Dando de baja..." confirmar="¿Das de baja este lote?">
                         Dar de baja
                       </BotonEnviar>
@@ -548,6 +624,7 @@ export default async function Admin({ searchParams }: PageProps<"/admin">) {
                 <th className="p-3 font-medium">Empresa / CUIT</th>
                 <th className="p-3 font-medium">Zona</th>
                 <th className="p-3 font-medium">Contacto</th>
+                <th className="p-3 font-medium">Faltas</th>
                 <th className="p-3" />
               </tr>
             </thead>
@@ -563,6 +640,24 @@ export default async function Admin({ searchParams }: PageProps<"/admin">) {
                       <a href={linkWhatsapp("Hola, te escribo de Sobrá.", p.telefono)} target="_blank" rel="noreferrer" className="text-marca hover:underline">
                         {p.telefono}
                       </a>
+                    ) : "-"}
+                  </td>
+                  <td className="p-3" data-faltas-de={p.nombre}>
+                    {(faltasDe.get(p.id) ?? []).length ? (
+                      <details>
+                        <summary className="cursor-pointer font-semibold text-marca-oscuro">{faltasDe.get(p.id)!.length}</summary>
+                        <ul className="mt-1 space-y-1">
+                          {faltasDe.get(p.id)!.map((f) => (
+                            <li key={f.id} className="text-xs">
+                              {f.detalle}
+                              <form action={anularFalta} className="inline">
+                                <input type="hidden" name="id" value={f.id} />
+                                <BotonEnviar className="ml-1 text-stone-500 underline" pendiente="...">Anular</BotonEnviar>
+                              </form>
+                            </li>
+                          ))}
+                        </ul>
+                      </details>
                     ) : "-"}
                   </td>
                   <td className="p-3 text-right">

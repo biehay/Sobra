@@ -875,6 +875,27 @@ try {
   esperar(!(await adm.isVisible("[data-denuncias]")), "al desestimarlas, salen de la lista del admin");
   paso("Denuncias: con cuenta se denuncia una vez por lote, el vendedor no puede denunciarse y el admin las resuelve");
 
+  // Control de la moderación y faltas: el lote sale sorteado (1 de cada 20; acá se fuerza),
+  // el admin decide que no debió publicarse y le suma una falta a la vendedora, que la ve
+  // en su panel. Después el admin la anula.
+  await api(`/rest/v1/moderaciones?lote_id=eq.${idPastina}`, { method: "PATCH", body: JSON.stringify({ muestreo: true }) });
+  await adm.goto(`${BASE}/admin`);
+  const muestra = adm.locator("[data-muestra]", { hasText: "Pastina gris x 10 kg" });
+  esperar(await muestra.isVisible(), "el admin ve el lote sorteado para controlar a la moderación");
+  await muestra.locator("textarea[name=nota]").fill("La foto no muestra la pastina.");
+  await muestra.locator("input[name=falta]").check();
+  await tras(adm, "ok=", () => muestra.locator("button:has-text('No debió publicarse')").click());
+  esperar(await adm.isVisible("[data-aciertos]"), "el admin ve cuánto acierta la moderación");
+  await vend.goto(`${BASE}/panel/vendedor`);
+  const avisoFaltas = await vend.textContent("[data-aviso-faltas]");
+  esperar(avisoFaltas.includes("1 falta") && avisoFaltas.includes("La foto no muestra la pastina") && avisoFaltas.includes("advertencia"), "la vendedora ve su falta, el motivo y la sanción");
+  await adm.goto(`${BASE}/admin`);
+  await adm.click("[data-faltas-de='Marta Gómez'] summary");
+  await tras(adm, "ok=", () => adm.locator("[data-faltas-de='Marta Gómez'] button:has-text('Anular')").click());
+  await vend.goto(`${BASE}/panel/vendedor`);
+  esperar(!(await vend.isVisible("[data-aviso-faltas]")), "al anular la falta, desaparece del panel de la vendedora");
+  paso("Control de la moderación: muestreo revisado por el admin, falta con su sanción y el admin puede anularla");
+
   // 15. Cerrar sesión ------------------------------------------------------
   // El menú del usuario (el círculo del encabezado) muestra el resumen y tiene "Salir".
   await vend.click("button[aria-label^='Mi cuenta']");
