@@ -860,6 +860,12 @@ try {
   for (const [pg, motivo, detalle] of [[comp, "robado", "Tiene el logo de una empresa de servicios"], [comp2, "estafa", ""]]) {
     await pg.goto(`${BASE}/lotes/${idPastina}`);
     await pg.click("[data-denunciar] summary");
+    esperar(await pg.evaluate(() => {
+      const fav = [...document.querySelectorAll("button, a")].find((e) => e.textContent.includes("favoritos"));
+      const den = document.querySelector("[data-denunciar]");
+      return !!fav && !!den && fav.getBoundingClientRect().bottom <= den.getBoundingClientRect().top && den.getBoundingClientRect().top - fav.getBoundingClientRect().bottom < 120;
+    }), "denunciar está justo debajo de Guardar en favoritos");
+    if (pg === comp2) await captura(pg, "denunciar-abierto");
     await pg.check(`[data-denunciar] input[value=${motivo}]`);
     if (detalle) await pg.fill("#detalle-denuncia", detalle);
     await tras(pg, "ok=", () => pg.click("button:has-text('Enviar denuncia')"));

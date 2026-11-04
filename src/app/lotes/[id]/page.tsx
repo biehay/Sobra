@@ -185,6 +185,10 @@ export default async function DetalleLote({ params, searchParams }: PageProps<"/
                 </Link>
               )
             )}
+            {/* Denunciar, a la vista: justo debajo de favoritos. */}
+            {["publicado", "reservado"].includes(lote.estado) && !esMio && (
+              <DenunciarPublicacion loteId={lote.id} conCuenta={!!perfil} yaDenuncio={(misDenuncias ?? 0) > 0} soloVista={perfil?.rol === "admin"} />
+            )}
             {esMio && visitas && (
               <p className="text-sm text-stone-600">
                 Tu lote tuvo <strong>{visitas.semana}</strong> {visitas.semana === 1 ? "visita" : "visitas"} en los últimos 7 días ({visitas.total} en total).
@@ -282,9 +286,6 @@ export default async function DetalleLote({ params, searchParams }: PageProps<"/
             <p className="mb-3 text-sm font-semibold text-stone-500">Sobre el vendedor</p>
             <TarjetaReputacion r={reputacionVendedor} como="vendedor" />
           </div>
-          {["publicado", "reservado"].includes(lote.estado) && !esMio && (
-            <DenunciarPublicacion loteId={lote.id} conCuenta={!!perfil} yaDenuncio={(misDenuncias ?? 0) > 0} soloVista={perfil?.rol === "admin"} />
-          )}
         </aside>
       </div>
 

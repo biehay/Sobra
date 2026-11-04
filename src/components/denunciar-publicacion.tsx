@@ -3,21 +3,21 @@ import { BotonEnviar } from "@/components/boton-enviar";
 import { MOTIVOS_DENUNCIA } from "@/lib/denuncias";
 import { denunciar } from "@/app/lotes/[id]/acciones";
 
-// "Denunciar publicación", al pie del lote. Es un desplegable con un formulario
+// "Denunciar publicación", debajo de "Guardar en favoritos". Es un desplegable con un formulario
 // común: funciona aunque la página no haya cargado su JavaScript.
 // `soloVista`: la cuenta admin lo ve (para saber cómo es) pero no denuncia: resuelve las denuncias.
 export function DenunciarPublicacion({ loteId, conCuenta, yaDenuncio, soloVista = false }: { loteId: string; conCuenta: boolean; yaDenuncio: boolean; soloVista?: boolean }) {
   if (yaDenuncio) {
     return (
-      <p id="denunciar" className="scroll-mt-24 text-sm text-stone-500">
+      <p id="denunciar" className="scroll-mt-24 text-center text-sm text-stone-500">
         ✓ Denunciaste esta publicación. La estamos revisando.
       </p>
     );
   }
   if (!conCuenta) {
     return (
-      <p id="denunciar" className="scroll-mt-24 text-sm text-stone-500">
-        ¿Algo raro en esta publicación?{" "}
+      <p id="denunciar" className="scroll-mt-24 text-center text-sm text-stone-500">
+        <span aria-hidden>⚑</span> ¿Algo raro en esta publicación?{" "}
         <Link href={`/ingresar?volver=/lotes/${loteId}`} className="underline hover:text-marca">
           Ingresá para denunciarla
         </Link>
@@ -26,7 +26,9 @@ export function DenunciarPublicacion({ loteId, conCuenta, yaDenuncio, soloVista 
   }
   return (
     <details id="denunciar" data-denunciar className="scroll-mt-24 text-sm text-stone-600">
-      <summary className="cursor-pointer text-stone-500 hover:text-marca">⚑ Denunciar publicación</summary>
+      <summary className="flex cursor-pointer list-none items-center justify-center gap-1.5 py-1 font-medium text-stone-500 hover:text-marca [&::-webkit-details-marker]:hidden">
+        <span aria-hidden className="text-base">⚑</span> Denunciar publicación
+      </summary>
       <form action={denunciar} className="mt-3 space-y-3 rounded-lg border border-stone-200 bg-white p-4">
         <input type="hidden" name="loteId" value={loteId} />
         {soloVista && (
