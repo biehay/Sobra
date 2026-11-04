@@ -75,6 +75,40 @@ export function FormLote({
     setCampos(Object.fromEntries(["titulo", "categoria", "zona", "precio_pedido"].map((c) => [c, String(f.get(c) ?? "")])));
   };
 
+  // Lo que falta completar al tocar "Enviar a revisión" (o "Guardar borrador").
+  const [faltan, setFaltan] = useState<Faltante[]>([]);
+  const falta = (campo: CampoFaltante) => faltan.find((x) => x.campo === campo);
+  const rojo = (campo: CampoFaltante) => (falta(campo) ? "border-marca ring-2 ring-marca/20" : "");
+  const completado = (campo: string) => setFaltan((f) => f.filter((x) => x.campo !== campo));
+  // Al usar el precio de la IA: se resaltan un momento los precios de arriba.
+  const [precioResaltado, setPrecioResaltado] = useState(false);
+  const [precioDeIA, setPrecioDeIA] = useState<number | null>(null);
+  const usaPrecioIA = precioDeIA !== null && campos.precio_pedido === String(precioDeIA);
+  const precios = useRef<HTMLDivElement>(null);
+
+  // Antes de mandar: si falta algo, no se envía y se lleva al vendedor hasta lo primero que falta.
+  function revisarAntesDeEnviar(e: React.FormEvent<HTMLFormElement>) {
+    const boton = (e.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
+    const enviar = boton?.value === "revision";
+    const el = formulario.current!.elements;
+    const texto = (n: string) => ((el.namedItem(n) as HTMLInputElement | null)?.value ?? "").trim();
+    const lista: Faltante[] = [];
+    if (enviar && fotos.length === 0) lista.push({ campo: "fotos", texto: "Subí al menos una foto" });
+    if (texto("titulo").length < 5) lista.push({ campo: "titulo", texto: "Poné un título (al menos 5 letras)" });
+    if (!texto("categoria")) lista.push({ campo: "categoria", texto: "Elegí la categoría" });
+    if (!(Number(texto("precio_pedido")) > 0)) lista.push({ campo: "precio_pedido", texto: "Poné cuánto querés recuperar" });
+    if (bajaActiva && !(Number(texto("precio_minimo")) > 0)) lista.push({ campo: "precio_minimo", texto: "Poné el precio mínimo" });
+    if (!texto("zona")) lista.push({ campo: "zona", texto: "Elegí la zona de retiro" });
+    if (enviar && !texto("direccion")) lista.push({ campo: "direccion", texto: "Completá la dirección de retiro" });
+    setFaltan(lista);
+    if (!lista.length) return;
+    e.preventDefault();
+    const primero = lista[0].campo;
+    const destino = primero === "fotos" ? document.getElementById("seccion-fotos") : (el.namedItem(primero) as HTMLElement | null);
+    destino?.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (primero !== "fotos") setTimeout(() => destino?.focus({ preventScroll: true }), 400);
+  }
+
   const resolver = (campo: CampoDuda) => setDudas((d) => d.filter((x) => x.campo !== campo));
   const dudaDe = (campo: CampoDuda) => dudas.find((d) => d.campo === campo);
 
@@ -106,6 +140,7 @@ export function FormLote({
   // Si el vendedor cambia un campo que estaba en duda, ya lo revisó.
   function alCambiar(e: React.FormEvent<HTMLFormElement>) {
     const nombre = (e.target as HTMLInputElement).name;
+    completado(nombre);
     const campo = ({ titulo: "titulo", categoria: "categoria", condicion: "condicion", peso_kg: "peso" } as Record<string, CampoDuda>)[nombre];
     if (campo) resolver(campo);
     leerCampos();
@@ -128,6 +163,12 @@ export function FormLote({
     setPrecioLista(String(mercado));
     if (precioPedido.current) precioPedido.current.value = String(sugeridoIA);
     leerCampos();
+    completado("precio_pedido");
+    setPrecioDeIA(sugeridoIA);
+    // Que se vea dónde quedó el precio elegido.
+    setPrecioResaltado(true);
+    setTimeout(() => setPrecioResaltado(false), 2500);
+    precios.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
   // Las fotos se achican en el celular y se suben todas a la vez. Si algo falla (o la
@@ -165,6 +206,7 @@ export function FormLote({
       const fallo = resultados.find((r) => "error" in r);
       if (fallo && "error" in fallo) setErrorFotos(fallo.error);
       setFotos((actuales) => [...actuales, ...nuevas]);
+      if (nuevas.length) completado("fotos");
     } catch {
       setErrorFotos("No se pudieron subir las fotos. Probá de nuevo.");
     } finally {
@@ -204,14 +246,15 @@ export function FormLote({
   };
 
   return (
-    <form ref={formulario} action={guardarLote} onChange={alCambiar} className="space-y-6">
+    <form ref={formulario} action={guardarLote} onChange={alCambiar} onSubmit={revisarAntesDeEnviar} noValidate className="space-y-6">
       {lote && <input type="hidden" name="id" value={lote.id} />}
       <input type="hidden" name="items" value={JSON.stringify(itemsValidos)} />
       <input type="hidden" name="fotos" value={JSON.stringify(fotos)} />
       <input type="hidden" name="detalles" value={JSON.stringify(detallesValidos)} />
 
-      <section className="tarjeta space-y-4 p-6">
+      <section id="seccion-fotos" className={`tarjeta space-y-4 p-6 ${falta("fotos") ? "ring-2 ring-marca" : ""}`}>
         <h2 className="text-lg font-bold">1. Fotos</h2>
+        <Falta f={falta("fotos")} />
         <p className="text-sm text-stone-600">Hasta {MAX_FOTOS} fotos. La primera es la portada. Mostrá el material completo y el estado.</p>
         {fotos.length > 0 && (
           <div className="grid grid-cols-3 gap-3 sm:grid-cols-5">
@@ -330,18 +373,20 @@ export function FormLote({
         <h2 className="text-lg font-bold">2. Qué vendés</h2>
         <div>
           <label htmlFor="titulo" className="etiqueta">Título del lote</label>
-          <input id="titulo" name="titulo" required minLength={5} maxLength={120} defaultValue={lote?.titulo ?? inicial?.titulo} className={`campo ${dudaDe("titulo") ? "border-amber-400 ring-2 ring-amber-200" : ""}`} placeholder="Ej.: Porcelanato 60x60 gris, 45 m² + pegamento" />
+          <input id="titulo" name="titulo" required minLength={5} maxLength={120} defaultValue={lote?.titulo ?? inicial?.titulo} className={`campo ${dudaDe("titulo") ? "border-amber-400 ring-2 ring-amber-200" : ""} ${rojo("titulo")}`} placeholder="Ej.: Porcelanato 60x60 gris, 45 m² + pegamento" />
+          <Falta f={falta("titulo")} />
           <Duda duda={dudaDe("titulo")} alConfirmar={() => resolver("titulo")} />
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label htmlFor="categoria" className="etiqueta">Categoría</label>
-            <select id="categoria" name="categoria" required defaultValue={lote?.categoria ?? ""} className={`campo ${dudaDe("categoria") ? "border-amber-400 ring-2 ring-amber-200" : ""}`}>
+            <select id="categoria" name="categoria" required defaultValue={lote?.categoria ?? ""} className={`campo ${dudaDe("categoria") ? "border-amber-400 ring-2 ring-amber-200" : ""} ${rojo("categoria")}`}>
               <option value="" disabled>Elegí una categoría</option>
               {CATEGORIAS.map((c) => (
                 <option key={c}>{c}</option>
               ))}
             </select>
+            <Falta f={falta("categoria")} />
             <Duda duda={dudaDe("categoria")} alConfirmar={() => resolver("categoria")} />
           </div>
           <div>
@@ -424,22 +469,25 @@ export function FormLote({
 
       <section className="tarjeta space-y-4 p-6">
         <h2 className="text-lg font-bold">3. Precio</h2>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div ref={precios} data-precios className={`grid gap-4 rounded-lg transition sm:grid-cols-2 ${precioResaltado ? "bg-celeste-claro ring-4 ring-celeste-claro" : ""}`}>
           <div>
             <label htmlFor="precio_lista" className="etiqueta">Precio de lista hoy (opcional)</label>
             <input id="precio_lista" name="precio_lista" type="number" min={1} value={precioLista} onChange={(e) => setPrecioLista(e.target.value)} className="campo" placeholder="Lo que cuesta nuevo" />
           </div>
           <div>
             <label htmlFor="precio_pedido" className="etiqueta">¿Cuánto querés recuperar?</label>
-            <input ref={precioPedido} id="precio_pedido" name="precio_pedido" type="number" min={1} required defaultValue={precioInicial} className="campo" />
+            <input ref={precioPedido} id="precio_pedido" name="precio_pedido" type="number" min={1} required defaultValue={precioInicial} className={`campo ${rojo("precio_pedido")}`} />
+            <Falta f={falta("precio_pedido")} />
+            {usaPrecioIA && <p data-precio-ia className="mt-1 text-sm font-medium text-green-700">✓ Precio sugerido por la IA</p>}
           </div>
         </div>
-        {sugerido && (
+        {sugerido && !usaPrecioIA && (
           <p className="rounded-lg bg-stone-50 px-4 py-3 text-sm text-stone-700">
             Según el precio de lista que cargaste, sugerimos alrededor de <strong>{pesos(sugerido)}</strong>. Al revisarlo te confirmamos el precio de publicación.
           </p>
         )}
-        <PrecioConIA datosDelLote={datosDelLote} alUsar={usarPrecioIA} />
+        {/* Una vez que usó el precio de la IA, el cuadro se cierra (vuelve si cambia el precio a mano). */}
+        {!usaPrecioIA && <PrecioConIA datosDelLote={datosDelLote} alUsar={usarPrecioIA} />}
         <p className="text-sm text-stone-500">Sobrá cobra 12% de comisión solo si se vende.</p>
 
         <div className="rounded-lg border border-stone-200 p-4">
@@ -465,7 +513,8 @@ export function FormLote({
               </div>
               <div>
                 <label htmlFor="precio_minimo" className="etiqueta">Precio mínimo</label>
-                <input id="precio_minimo" name="precio_minimo" type="number" min={1} required defaultValue={precioMinimo ?? ""} className="campo" placeholder="No baja de este precio" />
+                <input id="precio_minimo" name="precio_minimo" type="number" min={1} required defaultValue={precioMinimo ?? ""} className={`campo ${rojo("precio_minimo")}`} placeholder="No baja de este precio" />
+                <Falta f={falta("precio_minimo")} />
               </div>
             </div>
           )}
@@ -477,12 +526,13 @@ export function FormLote({
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label htmlFor="zona" className="etiqueta">Zona</label>
-            <select id="zona" name="zona" required defaultValue={lote?.zona ?? ""} className="campo">
+            <select id="zona" name="zona" required defaultValue={lote?.zona ?? ""} className={`campo ${rojo("zona")}`}>
               <option value="" disabled>Elegí una zona</option>
               {ZONAS.map((z) => (
                 <option key={z}>{z}</option>
               ))}
             </select>
+            <Falta f={falta("zona")} />
           </div>
           <div>
             <label htmlFor="localidad" className="etiqueta">Localidad o barrio</label>
@@ -493,7 +543,8 @@ export function FormLote({
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label htmlFor="direccion" className="etiqueta">Dirección de retiro (obligatoria para publicar)</label>
-            <input id="direccion" name="direccion" defaultValue={retiro?.direccion} className="campo" />
+            <input id="direccion" name="direccion" defaultValue={retiro?.direccion} className={`campo ${rojo("direccion")}`} />
+            <Falta f={falta("direccion")} />
           </div>
           <div>
             <label htmlFor="horarios" className="etiqueta">Horarios</label>
@@ -522,6 +573,17 @@ export function FormLote({
         </p>
       )}
 
+      {faltan.length > 0 && (
+        <div data-faltan role="alert" className="rounded-lg border border-marca/30 bg-marca-claro px-4 py-3 text-sm text-marca-oscuro">
+          <p className="font-semibold">Te falta completar:</p>
+          <ul className="mt-1 list-inside list-disc">
+            {faltan.map((x) => (
+              <li key={x.campo}>{x.texto}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
         <BotonEnviar name="intencion" value="borrador" className="btn-sec" disabled={subiendo || soloVista} pendiente="Guardando...">
           Guardar borrador
@@ -532,6 +594,15 @@ export function FormLote({
       </div>
     </form>
   );
+}
+
+type CampoFaltante = "fotos" | "titulo" | "categoria" | "precio_pedido" | "precio_minimo" | "zona" | "direccion";
+type Faltante = { campo: CampoFaltante; texto: string };
+
+// Aviso en rojo debajo de un campo que falta completar.
+function Falta({ f }: { f?: Faltante }) {
+  if (!f) return null;
+  return <p data-falta className="mt-1 text-sm font-medium text-marca-oscuro">{f.texto}</p>;
 }
 
 // Lo que la IA no pudo ver bien: una pregunta corta y un botón para confirmarlo.

@@ -391,6 +391,13 @@ try {
   esperar(new URL(vend.url()).pathname === "/panel/vendedor/lotes/nuevo", "no se envía nada sin que el vendedor lo decida");
   await vend.goto(`${BASE}/panel/vendedor/lotes/nuevo?lista=900000&estado=sin_uso`);
   esperar((await vend.inputValue("#precio_lista")) === "900000" && (await vend.inputValue("#condicion")) === "sin_uso" && Number(await vend.inputValue("#precio_pedido")) > 0, "el formulario llega con lo que cargó en la calculadora");
+  // Enviar con todo vacío: no se manda, lo lleva a las fotos (lo primero que falta) y lista lo demás.
+  await vend.click("button:has-text('Enviar a revisión')");
+  await vend.waitForSelector("#seccion-fotos [data-falta]");
+  await vend.waitForFunction(() => { const r = document.getElementById("seccion-fotos").getBoundingClientRect(); return r.top < innerHeight && r.bottom > 0; });
+  const faltan = await vend.textContent("[data-faltan]");
+  esperar(["foto", "título", "categoría", "zona", "dirección"].every((x) => faltan.includes(x)), "con el formulario vacío, lo lleva a las fotos y le dice todo lo que falta: " + faltan);
+  esperar(new URL(vend.url()).pathname === "/panel/vendedor/lotes/nuevo", "con datos faltantes no se envía");
   await vend.fill("#titulo", "Porcelanato 60x60 gris, 45 m² + pegamento");
   await vend.selectOption("#categoria", "Cerámicos y porcelanatos");
   await vend.selectOption("#condicion", "nuevo");
@@ -657,8 +664,17 @@ try {
   await tras(vend, "ok=", () => vend.click("button:has-text('Guardar borrador')"));
   await vend.locator("div.p-4", { hasText: "Inodoros Ferrum" }).locator("a:has-text('Editar')").click();
   await vend.waitForSelector("#titulo");
-  await tras(vend, "error=", () => vend.click("button:has-text('Enviar a revisión')"));
-  esperar((await aviso(vend)).includes("dirección de retiro"), "no deja enviar a revisión sin dirección de retiro");
+  // Sin dirección no se envía: lo lleva hasta el campo que falta y lo marca.
+  const urlAntes = vend.url();
+  await vend.click("button:has-text('Enviar a revisión')");
+  await vend.waitForSelector("[data-falta]:has-text('dirección de retiro')");
+  esperar(vend.url() === urlAntes, "no deja enviar a revisión sin dirección de retiro (y no recarga la página)");
+  await vend.waitForFunction(() => document.activeElement?.id === "direccion");
+  esperar(
+    await vend.evaluate(() => { const r = document.getElementById("direccion").getBoundingClientRect(); return r.top > 0 && r.bottom < innerHeight; }),
+    "lleva al vendedor hasta la dirección que falta",
+  );
+  esperar((await vend.textContent("[data-faltan]")).includes("dirección de retiro"), "abajo resume lo que falta completar");
   await vend.fill("#direccion", "Camino General Belgrano 1200, Lanús");
   await tras(vend, "ok=", () => vend.click("button:has-text('Enviar a revisión')"));
   const marcaBusqueda = marcaLog();
