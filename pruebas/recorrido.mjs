@@ -470,11 +470,11 @@ try {
   await anon.click("[data-franja-vender] button:has-text('Publicarlo gratis')");
   await anon.waitForURL("**/registro?volver=**");
   esperar(decodeURIComponent(decodeURIComponent(anon.url())).includes("lista=600000"), "la franja pasa el precio de mercado al registro");
-  // En el celular arranca plegada en una línea y se despliega al tocarla.
+  // En el celular está entera a la vista (sin desplegar nada) y entra en el ancho de la pantalla.
   await comp.goto(`${BASE}/`);
-  esperar(!(await comp.isVisible("#franja-texto")), "en el celular la franja arranca plegada");
-  await comp.click("[data-franja-vender] button[aria-controls]");
-  esperar(await comp.isVisible("#franja-texto"), "en el celular la franja se despliega al tocarla");
+  esperar(await comp.isVisible("#franja-texto") && await comp.isVisible("#franja-texto-cantidad"), "en el celular la franja está entera a la vista");
+  const sobra = await comp.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  esperar(sobra <= 0, "en el celular la franja no se sale de la pantalla");
   // Mientras escribe, el buscador sugiere lotes (con la palabra a medio escribir).
   await anon.locator("#buscar-escritorio").pressSequentially("porc", { delay: 60 });
   await anon.waitForSelector("[role=option]:has-text('Porcelanato 60x60')", { timeout: 5000 });

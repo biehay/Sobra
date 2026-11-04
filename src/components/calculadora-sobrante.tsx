@@ -145,9 +145,10 @@ function CampoMarca({ c, id, clase }: { c: Calc; id: string; clase: string }) {
   );
 }
 
+// `clase` reemplaza el armado de la fila (por defecto, cantidad y unidad una al lado de la otra).
 function CampoCantidad({ c, id, clase }: { c: Calc; id: string; clase: string }) {
   return (
-    <div className={`flex gap-1 ${clase}`}>
+    <div className={clase.startsWith("contents") ? clase : `flex gap-1 ${clase}`}>
       <input
         id={`${id}-cantidad`}
         type="number"
@@ -159,9 +160,9 @@ function CampoCantidad({ c, id, clase }: { c: Calc; id: string; clase: string })
         onKeyDown={(e) => e.key === "Enter" && c.calcular()}
         aria-label="Cantidad"
         placeholder="Cantidad"
-        className={`w-24 min-w-0 flex-1 rounded-lg border border-stone-200 px-3 py-2.5 text-sm ${sinFlechas}`}
+        className={`w-24 min-w-0 flex-1 rounded-lg border border-stone-200 bg-white px-3 py-2.5 text-base sm:text-sm ${sinFlechas}`}
       />
-      <select value={c.unidad} onChange={(e) => c.setUnidad(e.target.value)} aria-label="Unidad" className="rounded-lg border border-stone-200 px-2 py-2.5 text-sm">
+      <select value={c.unidad} onChange={(e) => c.setUnidad(e.target.value)} aria-label="Unidad" className="rounded-lg border border-stone-200 bg-white px-2 py-2.5 text-base sm:text-sm">
         {Object.entries(UNIDADES).map(([valor, texto]) => (
           <option key={valor} value={valor}>{texto}</option>
         ))}
@@ -215,12 +216,12 @@ function ResultadoCalc({ c, cuenta }: { c: Calc; cuenta: Cuenta }) {
 // De dónde salió el precio nuevo, en una línea (solo si intervinieron los usuarios).
 function OrigenPrecio({ r }: { r: Resultado }) {
   if (!r.deUsuarios) return null;
-  const personas = r.deUsuarios === 1 ? "1 persona" : `${r.deUsuarios} personas`;
+  const personas = r.deUsuarios === 1 ? "pagó 1 persona" : `pagaron ${r.deUsuarios} personas`;
   const texto =
     r.coherencia === "coinciden"
-      ? `Coincide con lo que pagaron ${personas} en Sobrá`
+      ? `Coincide con lo que ${personas} en Sobrá`
       : r.coherencia === "web_descartada" || r.coherencia === "solo_usuarios"
-        ? `Según lo que pagaron ${personas} en Sobrá`
+        ? `Según lo que ${personas} en Sobrá`
         : null;
   return texto ? <p data-de-usuarios className="text-xs text-stone-500">{texto}</p> : null;
 }
@@ -312,25 +313,26 @@ export function CalculadoraSobrante({ cuenta }: { cuenta: Cuenta }) {
 // Para la cuenta admin se ve igual (para revisar cómo queda), pero sin publicar.
 export function FranjaVender({ cuenta }: { cuenta: Cuenta }) {
   const c = useCalculadora(cuenta, "franja-texto");
-  const [abierta, setAbierta] = useState(false);
+  // En el celular va siempre abierta y apilada (texto; cantidad, unidad y estado en una
+  // fila; marca; botón). En compu, todo en una sola fila al lado del título.
+  const campo = "min-w-0 rounded-lg border border-stone-200 bg-white px-3 py-2.5 text-base lg:text-sm";
   return (
     <section data-franja-vender className="border-b border-celeste/30 bg-celeste-claro text-petroleo">
-      <div className="contenedor py-3 lg:flex lg:items-start lg:gap-6 lg:py-4">
-        <button
-          type="button"
-          onClick={() => setAbierta((a) => !a)}
-          aria-expanded={abierta}
-          aria-controls="franja-calculadora"
-          className="flex w-full items-center justify-between gap-3 text-left lg:pointer-events-none lg:w-56 lg:shrink-0 lg:pt-2"
-        >
-          <span>
-            <span className="block font-bold">💸 ¿Te sobró material?</span>
-            <span className="block text-sm text-petroleo/80">Fijate a cuánto lo podés vender.</span>
-          </span>
-          <span aria-hidden className={`text-lg transition lg:hidden ${abierta ? "rotate-180" : ""}`}>▾</span>
-        </button>
-        <div id="franja-calculadora" className={`${abierta ? "mt-3 block" : "hidden"} flex-1 space-y-2 lg:mt-0 lg:block`}>
-          <div className="flex flex-col gap-2 rounded-xl bg-white p-1.5 ring-1 ring-stone-200 lg:flex-row lg:items-center">
+      <div className="contenedor py-5 lg:flex lg:items-start lg:gap-6 lg:py-4">
+        <div className="mb-3 flex items-start gap-3 lg:mb-0 lg:w-56 lg:shrink-0 lg:pt-2">
+          <span aria-hidden className="text-3xl leading-none lg:hidden">💸</span>
+          <div>
+            <h2 className="text-lg font-extrabold leading-tight lg:text-base lg:font-bold">
+              <span aria-hidden className="hidden lg:inline">💸 </span>¿Te sobró material?
+            </h2>
+            <p className="text-sm text-petroleo/80">
+              <span className="lg:hidden">Escribí qué es y te decimos a cuánto venderlo.</span>
+              <span className="hidden lg:inline">Fijate a cuánto lo podés vender.</span>
+            </p>
+          </div>
+        </div>
+        <div className="flex-1 space-y-3 lg:space-y-2">
+          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.6fr)] gap-2 lg:flex lg:items-center lg:rounded-xl lg:bg-white lg:p-1.5 lg:ring-1 lg:ring-stone-200">
             <input
               id="franja-texto"
               value={c.texto}
@@ -340,15 +342,15 @@ export function FranjaVender({ cuenta }: { cuenta: Cuenta }) {
               aria-label="¿Qué te sobró?"
               placeholder="¿Qué te sobró? Ej.: porcelanato 60x60 gris"
               aria-describedby={c.error ? "franja-error" : undefined}
-              className="min-w-0 flex-[2] px-3 py-2.5 text-base outline-none"
+              className={`${campo} col-span-3 shadow-sm outline-none lg:flex-[2] lg:border-0 lg:text-base lg:shadow-none`}
             />
-            <CampoCantidad c={c} id="franja-texto" clase="lg:w-56" />
-            <CampoMarca c={c} id="franja-texto" clase="lg:w-36" />
-            <select value={c.condicion} onChange={(e) => c.setCondicion(e.target.value as Condicion)} aria-label="Estado" className="rounded-lg border border-stone-200 px-3 py-2.5 text-sm">
+            <CampoCantidad c={c} id="franja-texto" clase="contents lg:flex lg:w-56 lg:gap-1 max-lg:[&>*]:w-full" />
+            <select value={c.condicion} onChange={(e) => c.setCondicion(e.target.value as Condicion)} aria-label="Estado" className={`${campo} max-lg:w-full`}>
               {Object.entries(ESTADO_CORTO).map(([valor, texto]) => (
                 <option key={valor} value={valor}>{texto}</option>
               ))}
             </select>
+            <CampoMarca c={c} id="franja-texto" clase="col-span-3 bg-white text-base lg:w-36 lg:text-sm" />
             {c.pedirPrecio && (
               <input
                 id="franja-precio"
@@ -359,11 +361,11 @@ export function FranjaVender({ cuenta }: { cuenta: Cuenta }) {
                 onChange={(e) => c.setPrecio(e.target.value)}
                 aria-label="Cuánto te costó nuevo"
                 placeholder="¿Cuánto te costó nuevo?"
-                className={`min-w-0 rounded-lg border border-stone-200 px-3 py-2.5 text-sm lg:w-48 ${sinFlechas}`}
+                className={`${campo} col-span-3 lg:w-48 ${sinFlechas}`}
               />
             )}
-            <button type="button" onClick={c.calcular} disabled={c.buscando} className="btn whitespace-nowrap px-6 py-3">
-              {c.buscando ? "Calculando..." : "Calcular"}
+            <button type="button" onClick={c.calcular} disabled={c.buscando} className="btn col-span-3 whitespace-nowrap px-6 py-3 text-base">
+              {c.buscando ? "Calculando..." : <><span className="lg:hidden">Calcular precio</span><span className="hidden lg:inline">Calcular</span></>}
             </button>
           </div>
           <Avisos c={c} prefijo="franja" />

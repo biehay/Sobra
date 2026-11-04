@@ -50,8 +50,8 @@ export function PrecioConIA({ datosDelLote, alUsar }: { datosDelLote: () => unkn
               <p className="text-xs text-stone-500">{informe.motivo}</p>
               {informe.deUsuarios > 0 && informe.coherencia !== "usuarios_descartados" && (
                 <p className="text-xs text-stone-500">
-                  {informe.coherencia === "coinciden" ? "Coincide con" : "Según"} lo que pagaron{" "}
-                  {informe.deUsuarios === 1 ? "1 persona" : `${informe.deUsuarios} personas`} en Sobrá por el mismo producto.
+                  {informe.coherencia === "coinciden" ? "Coincide con" : "Según"} lo que{" "}
+                  {informe.deUsuarios === 1 ? "pagó 1 persona" : `pagaron ${informe.deUsuarios} personas`} en Sobrá por el mismo producto.
                 </p>
               )}
             </div>
