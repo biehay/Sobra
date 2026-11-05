@@ -28,6 +28,8 @@ const redLocal = ["192.168.*.*", "10.*.*.*", "172.*.*.*"];
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Sin el circulito "N" de Next en desarrollo (los errores se siguen mostrando).
+  devIndicators: false,
   // Las imágenes para compartir (opengraph-image) leen la letra y los colores de estos archivos.
   outputFileTracingIncludes: {
     "/opengraph-image*": ["./assets/fuentes/**/*", "./src/app/globals.css"],
