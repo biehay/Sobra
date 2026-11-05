@@ -4,11 +4,10 @@ import { redirect } from "next/navigation";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { enviarCodigoAcceso } from "@/lib/codigo-acceso";
 import { mensajeParaUsuario } from "@/lib/errores";
+import { rutaInterna } from "@/lib/rutas";
 
-function rutaSegura(valor: FormDataEntryValue | null) {
-  const ruta = typeof valor === "string" ? valor : "";
-  return ruta.startsWith("/") && !ruta.startsWith("//") ? ruta : "/panel";
-}
+// Solo direcciones internas (ver lib/rutas.ts).
+const rutaSegura = (valor: FormDataEntryValue | null) => rutaInterna(valor, "/panel");
 
 function pantalla(volver: string, tipo: "ok" | "error", mensaje: string): never {
   redirect(`/seguridad/verificar?volver=${encodeURIComponent(volver)}&${tipo}=${encodeURIComponent(mensaje)}`);

@@ -1,12 +1,12 @@
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 import { crearClienteServidor } from "@/lib/supabase/server";
+import { rutaInterna } from "@/lib/rutas";
 
 // Destino del link del email de confirmación de Supabase.
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
-  const volver = searchParams.get("volver") ?? "/panel";
-  const destino = volver.startsWith("/") && !volver.startsWith("//") ? volver : "/panel";
+  const destino = rutaInterna(searchParams.get("volver"), "/panel");
   const supabase = await crearClienteServidor();
 
   const code = searchParams.get("code");

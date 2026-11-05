@@ -4,13 +4,14 @@ import { Aviso } from "@/components/aviso";
 import { BotonEnviar } from "@/components/boton-enviar";
 import { CodigoSeisDigitos } from "@/components/codigo-seis-digitos";
 import { reenviarCodigo, verificarCodigo } from "../acciones";
+import { rutaInterna } from "@/lib/rutas";
 
 export const metadata: Metadata = { title: "Confirmá tu email" };
 
 export default async function Verificar({ searchParams }: PageProps<"/verificar">) {
   const { email, volver, ok, error } = await searchParams;
   if (typeof email !== "string" || !email) redirect("/registro");
-  const destino = typeof volver === "string" ? volver : "/panel";
+  const destino = rutaInterna(volver, "/panel");
 
   return (
     <div className="contenedor max-w-md py-16">

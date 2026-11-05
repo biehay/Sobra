@@ -144,7 +144,7 @@ export async function guardarLote(formData: FormData) {
   let aplicado = "";
   let motivoRechazo = "";
   if (pasoARevision) {
-    const moderacion = await moderarLote(lote, lote.fotos);
+    const moderacion = await moderarLote(lote, lote.fotos, perfil.id);
     const admin = crearClienteAdmin();
     const { data, error } = admin
       ? await admin.rpc("moderar_lote", { p_lote: loteId, p_resultado: moderacion.resultado, p_motivos: moderacion.motivos, p_mensaje: moderacion.mensaje })

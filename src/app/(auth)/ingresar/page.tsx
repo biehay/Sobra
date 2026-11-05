@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Aviso } from "@/components/aviso";
 import { BotonEnviar } from "@/components/boton-enviar";
 import { ingresar } from "../acciones";
+import { rutaInterna } from "@/lib/rutas";
 
 export const metadata: Metadata = { title: "Ingresar" };
 
@@ -17,7 +18,7 @@ export default async function Ingresar({ searchParams }: PageProps<"/ingresar">)
         <Aviso ok={ok} error={error} />
       </div>
       <form action={ingresar} className="tarjeta mt-4 space-y-4 p-6">
-        <input type="hidden" name="volver" value={typeof volver === "string" ? volver : "/panel"} />
+        <input type="hidden" name="volver" value={rutaInterna(volver, "/panel")} />
         <div>
           <label htmlFor="email" className="etiqueta">Email</label>
           <input id="email" name="email" type="email" autoComplete="email" required className="campo" />

@@ -9,12 +9,12 @@ import { enviarCodigoAcceso, marcarSesionVerificada } from "@/lib/codigo-acceso"
 import { problemaClave } from "@/lib/clave";
 import { normalizarTelefono, cuitValido, formatearCuit } from "@/lib/datos";
 import { notificar } from "@/lib/email/notificar";
+import { rutaInterna } from "@/lib/rutas";
+import { obtenerPerfil, sesionVerificada } from "@/lib/sesion";
 
 // Solo rutas internas, para no redirigir a sitios externos.
-function rutaSegura(valor: FormDataEntryValue | null, porDefecto = "/panel") {
-  const ruta = typeof valor === "string" ? valor : "";
-  return ruta.startsWith("/") && !ruta.startsWith("//") ? ruta : porDefecto;
-}
+// Solo direcciones internas (ver lib/rutas.ts).
+const rutaSegura = (valor: FormDataEntryValue | null, porDefecto = "/panel") => rutaInterna(valor, porDefecto);
 
 function rutaVerificar(email: string, volver: string, aviso?: string) {
   const params = new URLSearchParams({ email, volver });
@@ -152,6 +152,10 @@ export async function recuperarClave(formData: FormData) {
 }
 
 export async function cambiarClave(formData: FormData) {
+  // Cambiar la contraseña exige el código del email (segundo paso), igual que la
+  // página: si no, con una contraseña robada se podría cambiar y quedarse con la cuenta.
+  if (!(await obtenerPerfil())) redirect("/ingresar?volver=/nueva-clave");
+  if (!(await sesionVerificada())) redirect("/seguridad/verificar?volver=/nueva-clave");
   const password = String(formData.get("password") ?? "");
   const problema = problemaClave(password);
   if (problema) conError("/nueva-clave", problema);

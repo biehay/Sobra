@@ -6,12 +6,13 @@ import { z } from "zod";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { mensajeParaUsuario } from "@/lib/errores";
 import { obtenerPerfil, sesionVerificada } from "@/lib/sesion";
+import { rutaInterna } from "@/lib/rutas";
 
 const esquema = z.object({
   loteId: z.uuid(),
   guardar: z.enum(["si", "no"]),
-  // Solo rutas internas, para no redirigir a otro sitio.
-  volver: z.string().regex(/^\/(?!\/)/).catch("/lotes"),
+  // Solo rutas internas, para no redirigir a otro sitio (ver lib/rutas.ts).
+  volver: z.unknown().transform((v) => rutaInterna(v, "/lotes")),
 });
 
 function conAviso(ruta: string, tipo: "ok" | "error", mensaje: string) {

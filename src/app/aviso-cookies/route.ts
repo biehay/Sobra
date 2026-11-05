@@ -5,7 +5,13 @@ import { COOKIE_AVISO } from "@/lib/cookies";
 // JavaScript: guarda la cookie y vuelve a la página donde estaba.
 export function POST(request: NextRequest) {
   const anterior = request.headers.get("referer");
-  const destino = anterior && new URL(anterior).origin === request.nextUrl.origin ? anterior : "/";
+  // Vuelve a la página donde estaba, solo si es de Sobrá (un encabezado raro no la rompe).
+  let destino = "/";
+  try {
+    if (anterior && new URL(anterior).origin === request.nextUrl.origin) destino = anterior;
+  } catch {
+    destino = "/";
+  }
   const respuesta = NextResponse.redirect(new URL(destino, request.url), { status: 303 });
   respuesta.cookies.set(COOKIE_AVISO, "ok", {
     maxAge: 60 * 60 * 24 * 365,

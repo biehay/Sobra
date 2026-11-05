@@ -96,10 +96,29 @@ function consultaDePrueba(lote: LoteAModerar): Moderacion {
   return { resultado: "aprobado", motivos: [], mensaje: "" };
 }
 
-export async function moderarLote(lote: LoteAModerar, rutasFotos: string[]): Promise<Moderacion> {
+// Tope de revisiones con IA por vendedor y por día: si alguien edita y reenvía sin
+// parar, no gasta saldo sin límite (pasado el tope, sus lotes los mira una persona).
+// Se cuenta en la base, así vale aunque la app corra en varios servidores.
+export const MODERACIONES_IA_POR_DIA = 30;
+
+async function superoElTope(vendedorId: string) {
+  const admin = crearClienteAdmin();
+  if (!admin) return false;
+  const { count } = await admin
+    .from("moderaciones")
+    .select("id, lotes!inner(vendedor_id)", { count: "exact", head: true })
+    .eq("lotes.vendedor_id", vendedorId)
+    .gte("created_at", new Date(Date.now() - 86_400_000).toISOString());
+  return (count ?? 0) >= MODERACIONES_IA_POR_DIA;
+}
+
+export async function moderarLote(lote: LoteAModerar, rutasFotos: string[], vendedorId?: string): Promise<Moderacion> {
   const reglas = revisarReglas(lote);
   // Si las reglas ya lo rechazan, no hace falta gastar la IA.
   if (reglas.resultado === "rechazado") return reglas;
+  if (vendedorId && (await superoElTope(vendedorId))) {
+    return combinar(reglas, { resultado: "dudoso", motivos: [{ tipo: "sin_revision_ia", detalle: `El vendedor pasó las ${MODERACIONES_IA_POR_DIA} revisiones automáticas del día.` }], mensaje: "" });
+  }
   if (process.env.SOBRA_IA_DE_PRUEBA === "1") return combinar(reglas, consultaDePrueba(lote));
   if (!process.env.ANTHROPIC_API_KEY) {
     return combinar(reglas, { resultado: "dudoso", motivos: [{ tipo: "sin_revision_ia", detalle: "Falta ANTHROPIC_API_KEY en el servidor." }], mensaje: "" });

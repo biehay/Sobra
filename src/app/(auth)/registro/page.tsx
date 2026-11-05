@@ -6,12 +6,13 @@ import { CampoCuit } from "@/components/campo-cuit";
 import { ZONAS } from "@/lib/datos";
 import { BotonEnviar } from "@/components/boton-enviar";
 import { registrarse } from "../acciones";
+import { rutaInterna } from "@/lib/rutas";
 
 export const metadata: Metadata = { title: "Crear cuenta" };
 
 export default async function Registro({ searchParams }: PageProps<"/registro">) {
   const { volver, error, motivo } = await searchParams;
-  const destino = typeof volver === "string" && volver.startsWith("/") && !volver.startsWith("//") ? volver : "/panel";
+  const destino = rutaInterna(volver, "/panel");
   // Si llegó desde algo que quiso hacer, le decimos para qué es la cuenta.
   const porQue: Record<string, string> = {
     favorito: "Creá tu cuenta para guardar este lote: te avisamos si baja de precio.",

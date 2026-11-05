@@ -271,6 +271,18 @@ psql -d sobra_test -f supabase/tests/sanciones_y_muestreo.sql   # ídem
 psql -d sobra_test -f supabase/tests/ofertar_sin_verificacion.sql   # ídem
 ```
 
+**Pruebas de seguridad** (`pruebas/seguridad.mjs`): 46 intentos de ataque contra la base, como los haría
+cualquiera con la clave pública o con una cuenta propia (leer datos ajenos, hacerse admin, publicarse sin
+moderación, marcarse pagos, subir archivos a carpetas ajenas, ofertar sin el código del email, etc.). Todos
+tienen que quedar BLOQUEADOS. Se corren contra el Supabase local con datos de ejemplo:
+
+```bash
+npm run ejemplos
+ANON=$(npx supabase status -o env | grep ^ANON_KEY | cut -d'"' -f2) \
+SR=$(npx supabase status -o env | grep ^SERVICE_ROLE_KEY | cut -d'"' -f2) \
+node pruebas/seguridad.mjs
+```
+
 ## Estructura
 
 ```
@@ -335,6 +347,11 @@ Cosas que quedaron a propósito sin definir y hay que completar antes de tener u
         Norte, ¿tenés?").
   - [ ] Llevar la constancia de material recuperado como argumento de venta a constructoras grandes (informes
         ambientales y licitaciones).
+- [ ] **Seguridad fuera del código** (no se puede configurar desde acá):
+  - [ ] **Límite de gasto mensual** en la consola de Anthropic (y alertas), por si alguien abusa de la IA.
+  - [ ] **Supabase de producción**: confirmación de email activada, "Secure password change" activado,
+        contraseñas mínimas de 8 caracteres y los límites de envío de emails por hora.
+  - [ ] **Resend**: alertas de rebotes y quejas de spam.
 - [ ] **Publicar la app** (Vercel) con las variables de entorno de producción, incluida `CRON_SECRET` para la
       baja automática de precios y `NEXT_PUBLIC_SITE_URL` con la dirección real del sitio (sin ella, la vista
       previa al compartir por WhatsApp y el mapa del sitio apuntan a localhost).
@@ -342,6 +359,9 @@ Cosas que quedaron a propósito sin definir y hay que completar antes de tener u
 ## Pendiente para próximas versiones
 
 - Preguntas públicas al vendedor en cada lote (filtrando teléfonos y emails).
+- Seguridad: pasar a la base los límites de uso que hoy viven en la memoria del servidor (calculadora,
+  "Completar con IA", precio sugerido y botón de arrepentimiento). En Vercel cada servidor tiene su propia
+  memoria, así que esos topes valen por servidor y no en total. (El tope de la moderación ya está en la base.)
 - Moderación: detectar fotos repetidas entre vendedores (la misma foto en lotes de distintas cuentas) y
   marcar denuncias abusivas (quien denuncia a propósito cosas que están bien).
 - Cobro online con Mercado Pago (hoy el pago es por transferencia y lo confirma el admin).

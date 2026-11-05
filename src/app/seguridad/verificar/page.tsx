@@ -6,13 +6,14 @@ import { CodigoSeisDigitos } from "@/components/codigo-seis-digitos";
 import { estadoCodigoAcceso } from "@/lib/codigo-acceso";
 import { obtenerPerfil, sesionVerificada } from "@/lib/sesion";
 import { confirmarCodigo, pedirCodigo } from "../acciones";
+import { rutaInterna } from "@/lib/rutas";
 
 export const metadata: Metadata = { title: "Confirmá que sos vos" };
 
 // Segundo paso del ingreso: el código de 6 dígitos que mandamos al email.
 export default async function VerificarIngreso({ searchParams }: PageProps<"/seguridad/verificar">) {
   const { volver: volverParam, ok, error, envio } = await searchParams;
-  const volver = typeof volverParam === "string" && volverParam.startsWith("/") && !volverParam.startsWith("//") ? volverParam : "/panel";
+  const volver = rutaInterna(volverParam, "/panel");
   if (!(await obtenerPerfil())) redirect(`/ingresar?volver=${encodeURIComponent(volver)}`);
   if (await sesionVerificada()) redirect(volver);
   const { email, hayCodigo, enTerminal } = await estadoCodigoAcceso();
