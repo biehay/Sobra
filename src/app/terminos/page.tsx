@@ -117,7 +117,10 @@ export default function Terminos() {
 
       <h2>6. Ofertas y compra</h2>
       <ul>
-        <li>Para ofertar, Sobrá tiene que haber verificado tu cuenta.</li>
+        <li>
+          Para ofertar necesitás una cuenta con el email confirmado. Mientras Sobrá no verifique tu cuenta, podés tener
+          hasta 3 ofertas abiertas a la vez (pendientes o aceptadas sin pagar).
+        </li>
         <li>Las ofertas son por el lote completo. Cuando el vendedor acepta una, el lote queda reservado.</li>
         <li>El comprador paga antes del retiro. Sobrá retiene el pago hasta que se completa el retiro.</li>
         <li>Los datos de contacto y la dirección de retiro se comparten recién cuando el pago está confirmado.</li>
@@ -177,7 +180,8 @@ export default function Terminos() {
           comprar. Se muestra a otros usuarios en tus lotes y tus ofertas, sin tu nombre ni tus datos de contacto.
         </li>
         <li>
-          <strong>Peso de los lotes:</strong> el vendedor declara el peso aproximado y Sobrá lo revisa antes de publicar. Declarar
+          <strong>Peso de los lotes:</strong> el vendedor declara el peso aproximado y Sobrá lo controla con las fotos y las cantidades, pero
+          no lo pesa. Declarar
           un peso falso a propósito es un incumplimiento de estos términos.
         </li>
         <li>

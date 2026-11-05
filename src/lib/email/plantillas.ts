@@ -47,7 +47,7 @@ export const plantillas = {
     html: plantilla({
       titulo: "Recibiste una oferta",
       parrafos: [
-        `Un comprador verificado ofreció <strong>${pesos(monto)}</strong> por tu lote <strong>${escapar(lote)}</strong>.`,
+        `Un comprador ofreció <strong>${pesos(monto)}</strong> por tu lote <strong>${escapar(lote)}</strong>.`,
         "Entrá a tu panel para aceptarla o rechazarla. Mientras más rápido respondas, más chances de cerrar la venta.",
       ],
       boton: { texto: "Ver la oferta", ruta: "/panel/vendedor" },

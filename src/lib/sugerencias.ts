@@ -72,3 +72,37 @@ export function sugerir(consulta: string, lotes: LoteBuscable[], categorias: rea
   const deLotes = [...new Set(todos.map((p) => p.lote.categoria))];
   return { lotes: elegidos, categorias: [...new Set([...porNombre, ...deLotes])].slice(0, 3) };
 }
+
+// Palabras que no ayudan a buscar ("porcelanato DE 60x60", "cemento X 40 bolsas").
+const VACIAS_DE_SENTIDO = new Set(["de", "del", "la", "el", "los", "las", "para", "con", "y", "x", "en", "por", "un", "una", "sin", "a"]);
+
+// Búsqueda del catálogo: cada palabra tiene que aparecer en el título, los
+// materiales, la marca, la categoría o la descripción (con tildes, plurales y
+// sinónimos de obra, igual que las sugerencias). Devuelve los lotes ordenados por
+// qué tan bien coinciden: primero los que lo tienen en el título.
+export function buscarLotes<T extends { titulo: string; categoria: string; descripcion?: string; items: { nombre: string; marca?: string }[] }>(
+  consulta: string,
+  lotes: T[],
+): T[] {
+  const terminos = crudas(consulta).filter((t) => !VACIAS_DE_SENTIDO.has(t));
+  if (!terminos.length) return lotes;
+  const puntuados = lotes.map((lote) => {
+    const textoResto = `${lote.items.map((i) => nombreConMarca(i)).join(" ")} ${lote.categoria} ${lote.descripcion ?? ""}`;
+    const titulo = crudas(lote.titulo);
+    const resto = crudas(textoResto);
+    const enterasTitulo = new Set(palabras(lote.titulo));
+    const enterasResto = new Set(palabras(textoResto));
+    let puntaje = 0;
+    for (const t of terminos) {
+      const enTitulo = coincide(t, true, enterasTitulo, titulo);
+      const enResto = enTitulo ? 0 : coincide(t, true, enterasResto, resto);
+      if (!enTitulo && !enResto) return { lote, puntaje: -1 };
+      puntaje += enTitulo * 3 + enResto;
+    }
+    return { lote, puntaje };
+  });
+  return puntuados
+    .filter((p) => p.puntaje >= 0)
+    .sort((a, b) => b.puntaje - a.puntaje)
+    .map((p) => p.lote);
+}

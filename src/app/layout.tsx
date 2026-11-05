@@ -27,7 +27,7 @@ const COLUMNAS_PIE: [string, [string, string][]][] = [
 export const metadata: Metadata = {
   title: { default: "Sobrá · Vendé lo que te sobró", template: "%s · Sobrá" },
   description:
-    "Marketplace B2B de sobrantes de obra, instalaciones y fibra óptica en el AMBA. Vendedores verificados, cobro protegido y retiro coordinado.",
+    "Marketplace B2B de sobrantes de obra, instalaciones y fibra óptica en el AMBA. Publicaciones controladas, pago protegido y retiro coordinado.",
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {

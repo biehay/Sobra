@@ -53,8 +53,8 @@ export function TarjetaLote({
             <span className="hidden sm:inline"> · {CONDICIONES[lote.condicion]}</span>
           </p>
           <p className="pt-0.5 text-base font-bold leading-tight sm:pt-1 sm:text-lg">
-            {pesos(precio)}
-            {lote.precio_lista && off ? (
+            {precio ? pesos(precio) : <span className="text-sm font-medium text-stone-400">Precio a definir</span>}
+            {precio && lote.precio_lista && off ? (
               <span className="block text-xs font-normal text-stone-400 line-through sm:ml-2 sm:inline sm:text-sm">{pesos(lote.precio_lista)}</span>
             ) : null}
           </p>

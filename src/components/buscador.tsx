@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useId, useRef, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useId, useRef, useState } from "react";
 import { pesos, urlFoto } from "@/lib/datos";
 import type { Sugerencias } from "@/lib/sugerencias";
 
@@ -25,10 +25,29 @@ function Resaltado({ texto, consulta }: { texto: string; consulta: string }) {
   );
 }
 
-export function Buscador({ variante, id, className = "" }: { variante: "encabezado" | "portada"; id: string; className?: string }) {
+type PropsBuscador = { variante: "encabezado" | "portada"; id: string; className?: string };
+
+// El del encabezado muestra lo que se buscó (al estar en /lotes?q=...).
+export function BuscadorDelEncabezado(props: PropsBuscador) {
+  return (
+    <Suspense fallback={<Buscador {...props} />}>
+      <BuscadorConConsulta {...props} />
+    </Suspense>
+  );
+}
+
+function BuscadorConConsulta(props: PropsBuscador) {
+  const ruta = usePathname();
+  const q = useSearchParams().get("q") ?? "";
+  const inicial = ruta === "/lotes" ? q : "";
+  // La key lo reinicia cuando cambia la búsqueda (por ejemplo, al buscar otra cosa).
+  return <Buscador key={inicial} {...props} inicial={inicial} />;
+}
+
+export function Buscador({ variante, id, className = "", inicial = "" }: PropsBuscador & { inicial?: string }) {
   const router = useRouter();
   const lista = useId();
-  const [texto, setTexto] = useState("");
+  const [texto, setTexto] = useState(inicial);
   const [sugerencias, setSugerencias] = useState<Sugerencias>(VACIAS);
   const [abierto, setAbierto] = useState(false);
   const [activa, setActiva] = useState(-1);

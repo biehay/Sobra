@@ -383,6 +383,10 @@ try {
   const resumenIA = await vend.textContent("[data-resumen-ia]");
   esperar(resumenIA.includes("Corregimos una cuenta: 19 cajas × 2 m² = 38 m²") && resumenIA.includes("Peso coherente"), "los controles corrigen la cuenta de la IA y se los muestra al vendedor");
   esperar((await vend.locator("[data-duda]").count()) === 1 && (await vend.textContent("[data-duda]")).includes("contamos 36 m²"), "si la segunda revisión no coincide, se lo pregunta al vendedor");
+  // El precio se calcula solo después de completar con fotos y queda puesto.
+  await vend.waitForSelector("[data-precio-auto]:has-text('ya lo pusimos abajo')", { timeout: 30000 });
+  esperar(Number(await vend.inputValue("#precio_pedido")) > 0 && (await vend.inputValue("#precio_lista")) === "900000", "al completar con fotos, el precio sugerido se calcula y se carga solo");
+  esperar(await vend.isVisible("[data-precio-ia]"), "queda marcado que el precio lo sugirió la IA");
   await vend.click("[data-duda] button:has-text('Sí, es correcto')");
   esperar((await vend.locator("[data-duda]").count()) === 0 && (await vend.isVisible("text=Todo revisado")), "el vendedor confirma la duda");
   await vend.fill("#titulo", "Porcelanato gris de prueba");
@@ -416,9 +420,16 @@ try {
   await vend.fill("#precio_lista", "900000");
   await vend.fill("#precio_pedido", "500000");
   await vend.fill("#peso_kg", "900");
-  // Sugerencia con IA: sin ANTHROPIC_API_KEY (la prueba no la usa, cuesta plata) avisa qué falta.
+  // Sugerencia con IA (en la prueba, sin gastar la API): al usarla, el cuadro se cierra y
+  // el precio queda arriba marcado. Si el vendedor lo cambia a mano, el cuadro vuelve.
   await vend.click("button:has-text('Sugerir precio con IA')");
-  await vend.waitForSelector("text=ANTHROPIC_API_KEY");
+  await vend.click("button:has-text('Usar $')");
+  esperar(
+    !(await vend.isVisible("text=¿No sabés a cuánto publicarlo?")) && (await vend.isVisible("[data-precio-ia]")) && Number(await vend.inputValue("#precio_pedido")) > 0,
+    "al usar el precio de la IA, el cuadro se cierra y el precio queda cargado",
+  );
+  await vend.fill("#precio_pedido", "500000");
+  esperar(await vend.isVisible("text=¿No sabés a cuánto publicarlo?"), "si cambia el precio a mano, vuelve el cuadro de la IA");
   await vend.waitForSelector("text=sugerimos alrededor de");
   await vend.selectOption("#zona", "GBA Sur");
   await vend.fill("#localidad", "Lanús");
@@ -489,6 +500,7 @@ try {
   await anon.fill("#buscar-escritorio", "porcelanato");
   await anon.press("#buscar-escritorio", "Enter");
   await anon.waitForURL("**/lotes?q=porcelanato");
+  esperar((await anon.inputValue("#buscar-escritorio")) === "porcelanato", "el buscador muestra lo que se buscó");
   esperar((await anon.locator("a[href^='/lotes/']").count()) === 1, "el buscador del header encuentra el lote");
   await anon.click("button[aria-label='Categorías']");
   await captura(anon, "header-categorias");
@@ -506,8 +518,12 @@ try {
   esperar((await anon.getAttribute("a:has-text('Ingresá')", "href")).includes("volver="), "Ingresá conserva la página de vuelta");
   await anon.goto(`${BASE}/lotes?q=inexistente`);
   esperar(await anon.locator("text=No encontramos lotes").isVisible(), "filtro sin resultados");
-  // Búsqueda sin resultados exactos: el algoritmo ofrece lo más parecido (entiende plurales y sinónimos).
+  // El buscador entiende plurales y no exige el orden: "porcelanatos grises" lo encuentra directo.
   await anon.goto(`${BASE}/lotes?q=${encodeURIComponent("porcelanatos grises")}`);
+  const conPlural = (await anon.textContent("main")).replace(/\s/g, " ");
+  esperar(conPlural.includes("Porcelanato 60x60 gris") && !conPlural.includes("Lo más parecido a lo que buscaste"), "el buscador entiende plurales");
+  // Sin resultados exactos, el algoritmo ofrece lo más parecido.
+  await anon.goto(`${BASE}/lotes?q=${encodeURIComponent("porcelanato blanco")}`);
   const sinExactos = (await anon.textContent("main")).replace(/\s/g, " ");
   esperar(sinExactos.includes("Lo más parecido a lo que buscaste") && sinExactos.includes("Porcelanato 60x60 gris"), "si no hay resultados exactos, muestra lo más parecido");
   await anon.goto(`${BASE}/lotes`);
@@ -521,8 +537,15 @@ try {
 
   // 8. Ofertas -----------------------------------------------------------
   await comp.goto(loteUrl);
-  await comp.waitForSelector("text=Tu cuenta está en verificación");
-  await captura(comp, "detalle-comprador-sin-verificar-celular");
+  // En el celular, el título y el precio se ven en la primera pantalla (las fotos van en carrusel).
+  esperar(
+    await comp.evaluate(() => { const h = document.querySelector("h1").getBoundingClientRect(); return h.bottom < innerHeight; }),
+    "en el celular el título y el precio se ven sin bajar",
+  );
+  // Sin verificación del admin ya puede ofertar (con tope de 3 ofertas abiertas).
+  await comp.waitForSelector("text=Como cuenta nueva, podés tener hasta 3 ofertas abiertas");
+  esperar(await comp.isVisible("button:has-text('Enviar oferta')"), "un comprador nuevo puede ofertar sin esperar la verificación");
+  await captura(comp, "detalle-comprador-nuevo-celular");
   await adm.goto(`${BASE}/admin`);
   for (const email of ["juan@contratista.test", "lucia@arquitecta.test"]) {
     await adm.goto(`${BASE}/admin`);

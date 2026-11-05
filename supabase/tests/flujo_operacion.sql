@@ -154,10 +154,12 @@ exception when raise_exception then
   if sqlerrm like 'NO FALLÓ%' or sqlerrm not like '%propio lote%' then raise; end if;
 end $$;
 
--- Comprador sin verificar no puede ofertar.
+-- Un comprador sin verificar también puede ofertar (con tope de ofertas abiertas:
+-- ver ofertar_sin_verificacion.sql). Se borra para seguir con el flujo.
 select pg_temp.como('00000000-0000-0000-0000-00000000000d');
-select pg_temp.debe_fallar($$insert into ofertas (lote_id, comprador_id, monto)
-  values ('10000000-0000-0000-0000-000000000001', auth.uid(), 400000)$$, 'comprador sin verificar oferta');
+insert into ofertas (lote_id, comprador_id, monto) values ('10000000-0000-0000-0000-000000000001', auth.uid(), 400000);
+reset role;
+delete from ofertas where comprador_id = '00000000-0000-0000-0000-00000000000d';
 
 -- Comprador verificado pero sin el segundo paso: no puede ofertar.
 select pg_temp.como('00000000-0000-0000-0000-00000000000c', false);

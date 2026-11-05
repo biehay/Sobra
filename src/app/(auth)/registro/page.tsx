@@ -28,8 +28,8 @@ export default async function Registro({ searchParams }: PageProps<"/registro">)
       </p>
       <ul className="mt-4 grid gap-2 text-sm text-stone-600 sm:grid-cols-2">
         <li className="tarjeta p-3">
-          <strong className="text-stone-900">Para vender:</strong> publicás gratis y el pago está protegido. Cada lote lo
-          revisamos antes de publicarlo.
+          <strong className="text-stone-900">Para vender:</strong> publicás gratis y el pago está protegido. Cada lote pasa
+          por una revisión antes de publicarse.
         </li>
         <li className="tarjeta p-3">
           <strong className="text-stone-900">Para comprar:</strong> verificamos tu cuenta antes de tu primera oferta, para

@@ -58,8 +58,8 @@ export default async function ComoCalculamos({ searchParams }: PageProps<"/impac
             retiro.
           </li>
           <li>
-            <strong>Kilos</strong>: el vendedor declara el peso aproximado del lote y Sobrá lo revisa con las fotos y las cantidades
-            antes de publicarlo. Si el vendedor lo cambia después, el lote vuelve a revisión.
+            <strong>Kilos</strong>: el vendedor declara el peso aproximado del lote y lo controlamos con las fotos y las cantidades
+            (si no coincide con lo esperable para ese material, se lo marcamos). Si el vendedor lo cambia después, el lote vuelve a revisión.
           </li>
           <li>
             <strong>CO₂ evitado</strong>: kilos reutilizados × un factor de emisiones de fabricación según el tipo de material. Es

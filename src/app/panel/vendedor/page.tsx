@@ -46,7 +46,7 @@ export default async function PanelVendedor({ searchParams }: PageProps<"/panel/
     ? await supabase.from("reclamos").select("*").in("oferta_id", ofertas.map((o) => o.id)).order("created_at", { ascending: false })
     : { data: [] };
   const [visitas, demanda] = await Promise.all([visitasDeMisLotes(lotes.map((l) => l.id)), busquedasPublicas()]);
-  const compradores = [...new Set(ofertas.filter((o) => o.estado === "pendiente").map((o) => o.comprador_id))];
+  const compradores = [...new Set(ofertas.map((o) => o.comprador_id))];
   const reputaciones = new Map(await Promise.all(compradores.map(async (id) => [id, await reputacionDe(id)] as const)));
   const lotesConOfertas = new Set(ofertas.map((o) => o.lote_id));
   const reclamos = new Map<string, Reclamo>();
@@ -101,11 +101,11 @@ export default async function PanelVendedor({ searchParams }: PageProps<"/panel/
                     <p className="font-semibold">{titulos.get(oferta.lote_id)}</p>
                     <p className="text-2xl font-bold">{pesos(oferta.monto)}</p>
                     <p className="text-sm text-stone-500">
-                      Recibida el {new Date(oferta.created_at).toLocaleDateString("es-AR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })} · Comprador verificado · {MODOS_RETIRO[oferta.retiro]}
+                      Recibida el {new Date(oferta.created_at).toLocaleDateString("es-AR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })} · {(() => { const r = reputaciones.get(oferta.comprador_id); return r && r.compras > 0 ? `Comprador con ${r.compras} ${r.compras === 1 ? "compra" : "compras"}` : "Comprador nuevo"; })()} · {MODOS_RETIRO[oferta.retiro]}
                       {oferta.comision != null && ` · Recibís ${pesos(oferta.monto - oferta.comision)} (comisión ${pesos(oferta.comision)})`}
                     </p>
                     {oferta.mensaje && <p className="mt-2 text-sm italic text-stone-600">“{oferta.mensaje}”</p>}
-                    {reputaciones.get(oferta.comprador_id) && (
+                    {oferta.estado === "pendiente" && reputaciones.get(oferta.comprador_id) && (
                       <div className="mt-2">
                         <TarjetaReputacion r={reputaciones.get(oferta.comprador_id)!} como="comprador" compacta />
                       </div>

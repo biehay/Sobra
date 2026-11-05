@@ -15,16 +15,7 @@ import { Aviso } from "@/components/aviso";
 import { DenunciarPublicacion } from "@/components/denunciar-publicacion";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { obtenerPerfil, sesionVerificada } from "@/lib/sesion";
-import {
-  CONDICIONES,
-  MODOS_RETIRO,
-  descuento,
-  linkWhatsapp,
-  proximaBaja,
-  pesos,
-  urlFoto,
-  type Lote,
-} from "@/lib/datos";
+import { CONDICIONES, MODOS_RETIRO, descuento, proximaBaja, pesos, urlFoto, type Lote,  } from "@/lib/datos";
 import { BotonEnviar } from "@/components/boton-enviar";
 import { ofertar } from "./acciones";
 import { DETALLES } from "@/lib/depreciacion";
@@ -46,6 +37,7 @@ export default async function DetalleLote({ params, searchParams }: PageProps<"/
   const disponible = lote.estado === "publicado";
   const esMio = perfil?.id === lote.vendedor_id;
   const favorito = estadoFavorito(await idsFavoritos(), lote);
+  const { data: vendedorVerificado } = await supabase.rpc("vendedor_verificado", { p_usuario: lote.vendedor_id });
   // ¿Ya lo denunció? (cada uno ve solo sus denuncias)
   const { count: misDenuncias } = perfil
     ? await supabase.from("denuncias").select("id", { count: "exact", head: true }).eq("lote_id", lote.id).eq("autor_id", perfil.id)
@@ -77,9 +69,11 @@ export default async function DetalleLote({ params, searchParams }: PageProps<"/
         ← Volver a los lotes
       </Link>
 
-      <div className="mt-4 grid gap-8 lg:grid-cols-[3fr_2fr]">
-        <div className="space-y-6">
-          <div className="grid gap-3 sm:grid-cols-2">
+      {/* En el celular el orden es: fotos (carrusel), precio y oferta, qué incluye.
+          En la compu: fotos y qué incluye a la izquierda, precio y oferta a la derecha. */}
+      <div className="mt-4 grid gap-6 lg:grid-cols-[3fr_2fr] lg:gap-8">
+        <div className="contents lg:block lg:space-y-6">
+          <div data-galeria className="order-1 -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0">
             {lote.fotos.length ? (
               lote.fotos.map((foto, i) => (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -87,17 +81,20 @@ export default async function DetalleLote({ params, searchParams }: PageProps<"/
                   key={foto}
                   src={urlFoto(foto)}
                   alt={`${lote.titulo}, foto ${i + 1}`}
-                  className={`w-full rounded-xl border border-stone-200 object-cover ${i === 0 ? "aspect-[4/3] sm:col-span-2" : "aspect-square"}`}
+                  className={`aspect-[4/3] shrink-0 snap-center rounded-xl border border-stone-200 object-cover sm:w-full ${lote.fotos.length === 1 ? "w-full" : "w-[88%]"} ${i === 0 ? "sm:col-span-2" : "sm:aspect-square"}`}
                 />
               ))
             ) : (
-              <div className="flex aspect-[4/3] items-center justify-center rounded-xl bg-stone-100 text-stone-400 sm:col-span-2">
+              <div className="flex aspect-[4/3] w-full items-center justify-center rounded-xl bg-stone-100 text-stone-400 sm:col-span-2">
                 Sin fotos
               </div>
             )}
           </div>
+          {lote.fotos.length > 1 && (
+            <p className="order-1 -mt-3 text-center text-xs text-stone-500 sm:hidden">← Deslizá para ver las {lote.fotos.length} fotos →</p>
+          )}
 
-          <section className="tarjeta p-6">
+          <section className="tarjeta order-3 p-6">
             <h2 className="mb-3 text-lg font-bold">Qué incluye el lote</h2>
             {lote.items.length ? (
               <table className="w-full text-sm">
@@ -128,8 +125,8 @@ export default async function DetalleLote({ params, searchParams }: PageProps<"/
           </section>
         </div>
 
-        <aside className="space-y-4">
-          <div className="tarjeta space-y-4 p-6">
+        <aside className="contents lg:block lg:space-y-4">
+          <div className="tarjeta order-2 space-y-4 p-6">
             <p className="text-xs font-medium uppercase tracking-wide text-stone-500">{lote.categoria}</p>
             <h1 className="text-2xl font-bold leading-snug">{lote.titulo}</h1>
             <div>
@@ -165,7 +162,7 @@ export default async function DetalleLote({ params, searchParams }: PageProps<"/
               </div>
             )}
             <p className="rounded-lg bg-green-50 px-3 py-2 text-sm text-green-800">
-              ✓ Vendedor verificado · Pago protegido: revisás el material al retirarlo
+              {vendedorVerificado ? "✓ Vendedor verificado · " : "✓ "}Pago protegido: revisás el material al retirarlo y el vendedor cobra recién ahí
             </p>
             {disponible && proximaBaja(lote) && (
               <p className="rounded-lg bg-celeste-claro px-3 py-2 text-sm text-petroleo">
@@ -196,8 +193,11 @@ export default async function DetalleLote({ params, searchParams }: PageProps<"/
             )}
           </div>
 
-          <Aviso ok={ok} error={error} />
+          <div className="order-4 empty:hidden">
+            <Aviso ok={ok} error={error} />
+          </div>
 
+          <div className="order-4">
           {!disponible ? (
             <div className="tarjeta p-6 text-center">
               <p className="font-semibold text-stone-600">Este lote está {lote.estado === "vendido" ? "vendido" : "reservado"}.</p>
@@ -231,21 +231,6 @@ export default async function DetalleLote({ params, searchParams }: PageProps<"/
               <p className="text-sm text-stone-600">Para ofertar, ingresá el código que te mandamos por email.</p>
               <Link href={`/seguridad/verificar?volver=/lotes/${lote.id}`} className="btn w-full">Ingresar el código</Link>
             </div>
-          ) : !perfil.verificado ? (
-            <div className="tarjeta space-y-3 p-6">
-              <p className="font-semibold">Tu cuenta está en verificación</p>
-              <p className="text-sm text-stone-600">
-                Antes de tu primera compra verificamos tu cuenta, para que los vendedores operen tranquilos. Si querés acelerar, escribinos.
-              </p>
-              <a
-                href={linkWhatsapp(`Hola, soy ${perfil.nombre} y quiero verificar mi cuenta de Sobrá para comprar.`)}
-                target="_blank"
-                rel="noreferrer"
-                className="btn-sec w-full"
-              >
-                Escribir por WhatsApp
-              </a>
-            </div>
           ) : (
             <form action={ofertar} className="tarjeta space-y-4 p-6">
               <input type="hidden" name="loteId" value={lote.id} />
@@ -277,12 +262,15 @@ export default async function DetalleLote({ params, searchParams }: PageProps<"/
               <BotonEnviar className="btn w-full">Enviar oferta</BotonEnviar>
               <p className="text-xs text-stone-500">
                 Si el vendedor acepta, te pasamos los datos de pago. Retenemos tu dinero hasta que retirás el material.
+                {!perfil.verificado && " Como cuenta nueva, podés tener hasta 3 ofertas abiertas a la vez."}
               </p>
             </form>
           )}
 
+          </div>
+
           {/* El vendedor va después de la compra: lo primero que se ve es cómo ofertar. */}
-          <div className="tarjeta p-6">
+          <div className="tarjeta order-5 p-6">
             <p className="mb-3 text-sm font-semibold text-stone-500">Sobre el vendedor</p>
             <TarjetaReputacion r={reputacionVendedor} como="vendedor" />
           </div>

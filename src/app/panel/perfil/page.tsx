@@ -31,7 +31,7 @@ export default async function Perfil({ searchParams }: PageProps<"/panel/perfil"
         ) : perfil.verificado ? (
           <span className="font-semibold text-green-700">Cuenta verificada: podés comprar y vender</span>
         ) : (
-          <span className="font-semibold text-amber-700">En verificación: ya podés vender; para comprar te tenemos que verificar</span>
+          <span className="text-stone-600">Cuenta nueva: ya podés comprar y vender. Al verificarla te sacamos el límite de 3 ofertas abiertas y suma confianza.</span>
         )}
       </p>
       <div className="mt-6">

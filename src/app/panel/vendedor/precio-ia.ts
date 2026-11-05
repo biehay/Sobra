@@ -31,11 +31,13 @@ export async function sugerirPrecioConIA(datos: unknown): Promise<ResultadoPreci
   const perfil = await obtenerPerfil();
   if (!perfil) return { ok: false, error: "Tu sesión venció. Volvé a ingresar." };
   if (!(await sesionVerificada())) return { ok: false, error: "Ingresá el código que te mandamos por email para usar esto." };
-  if (!process.env.ANTHROPIC_API_KEY) return { ok: false, error: "Falta configurar ANTHROPIC_API_KEY en el servidor." };
+  const dePrueba = process.env.SOBRA_IA_DE_PRUEBA === "1";
+  if (!dePrueba && !process.env.ANTHROPIC_API_KEY) return { ok: false, error: "Falta configurar ANTHROPIC_API_KEY en el servidor." };
 
   const lote = esquema.safeParse(datos);
   if (!lote.success) return { ok: false, error: lote.error.issues[0].message };
   lote.data.items = lote.data.items.filter((i) => i.nombre && i.cantidad > 0);
+  if (dePrueba) return { ok: true, informe: await informeDePrueba(lote.data) };
 
   const clave = JSON.stringify(lote.data);
   const guardado = memoria.get(clave);
@@ -59,4 +61,35 @@ export async function sugerirPrecioConIA(datos: unknown): Promise<ResultadoPreci
     const { mensaje, detalle } = explicarErrorIA(error);
     return { ok: false, error: detalle ? `${mensaje} (${detalle})` : mensaje };
   }
+}
+
+// Para el recorrido de pruebas (SOBRA_IA_DE_PRUEBA=1, nunca en producción): sin
+// gastar la API. "La web" dice $ 900.000 nuevo; el resto es el cálculo real
+// (descuento por rubro y estado, y comparación con lo publicado en Sobrá).
+async function informeDePrueba(lote: z.infer<typeof esquema>): Promise<InformeCompleto> {
+  const { referenciaEnSobra } = await import("@/lib/precio-sugerido");
+  const { combinarPrecio } = await import("@/lib/precio-comparables");
+  const { factorPrecio } = await import("@/lib/depreciacion");
+  const mercado = 900_000;
+  const factor = factorPrecio(lote.categoria, lote.condicion, lote.detalles, lote.titulo);
+  const sugeridoMercado = Math.round((mercado * factor) / 1000) * 1000;
+  const referencia = await referenciaEnSobra({ texto: lote.titulo, items: lote.items, categoria: lote.categoria, condicion: lote.condicion, detalles: lote.detalles });
+  const { sugerido, motivo } = combinarPrecio(sugeridoMercado, referencia);
+  return {
+    total_mercado_ars: mercado,
+    precios_encontrados: [],
+    tipo_cambio_usd_ars: 1000,
+    usados_mercado_ars: null,
+    detalle: [],
+    fuentes: [],
+    confianza: "media",
+    notas: "",
+    sugerido: sugerido ?? sugeridoMercado,
+    descuento: Math.round((1 - factor) * 100),
+    coherencia: "solo_web",
+    sugeridoMercado,
+    referencia,
+    motivo,
+    deUsuarios: 0,
+  } as unknown as InformeCompleto;
 }

@@ -5,7 +5,7 @@ import { crearClienteServidor } from "@/lib/supabase/server";
 import { CATEGORIAS, pesos, type Perfil } from "@/lib/datos";
 import { Desplegable } from "@/components/desplegable";
 import { Logo } from "@/components/logo";
-import { Buscador } from "@/components/buscador";
+import { BuscadorDelEncabezado } from "@/components/buscador";
 import { BotonPublicarFlotante } from "@/components/boton-publicar-flotante";
 
 const PUBLICAR = "/panel/vendedor/lotes/nuevo";
@@ -68,7 +68,7 @@ export async function Encabezado() {
             )}
           </nav>
 
-            <Buscador variante="encabezado" id="buscar-escritorio" className="mx-2 hidden max-w-md flex-1 md:block" />
+            <BuscadorDelEncabezado variante="encabezado" id="buscar-escritorio" className="mx-2 hidden max-w-md flex-1 md:block" />
 
           <div className="ml-auto flex items-center gap-2 sm:gap-3">
             <Link href={publicar} className="btn hidden sm:inline-flex">
@@ -92,7 +92,7 @@ export async function Encabezado() {
         </div>
         {/* En el celular el buscador va en una segunda fila, a todo el ancho. */}
         <div className="contenedor pb-3 md:hidden">
-          <Buscador variante="encabezado" id="buscar-celular" className="block" />
+          <BuscadorDelEncabezado variante="encabezado" id="buscar-celular" className="block" />
         </div>
       </header>
       {/* Afuera del header: su desenfoque de fondo haría que "fixed" se ubique dentro de él. */}
@@ -144,7 +144,7 @@ async function MenuUsuario({ perfil }: { perfil: Perfil }) {
           ) : perfil.verificado ? (
             <p className="mt-1 text-xs font-semibold text-green-700">✓ Cuenta verificada</p>
           ) : (
-            <p className="mt-1 text-xs font-semibold text-amber-700">En verificación: todavía no podés ofertar</p>
+            <p className="mt-1 text-xs text-stone-500">Cuenta nueva</p>
           )}
         </div>
       </div>

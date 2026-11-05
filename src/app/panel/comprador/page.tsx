@@ -78,19 +78,10 @@ export default async function PanelComprador({ searchParams }: PageProps<"/panel
 
       <div className="mt-6 space-y-3">
         <Aviso ok={ok} error={error} />
-        {!perfil.verificado && (
-          <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            <strong>Tu cuenta está en verificación.</strong> Ya podés publicar tus sobrantes; para ofertar te tenemos que verificar.{" "}
-            <a
-              href={linkWhatsapp(`Hola, soy ${perfil.nombre} y quiero verificar mi cuenta de Sobrá para comprar.`)}
-              target="_blank"
-              rel="noreferrer"
-              className="font-semibold underline"
-            >
-              Escribinos para acelerarlo
-            </a>
-            .
-          </div>
+        {!perfil.verificado && perfil.rol !== "admin" && (
+          <p className="rounded-lg border border-celeste/40 bg-celeste-claro px-4 py-3 text-sm text-petroleo">
+            Ya podés ofertar. Como cuenta nueva, podés tener hasta 3 ofertas abiertas a la vez; cuando verifiquemos tu cuenta, sin límite.
+          </p>
         )}
       </div>
 

@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { buscarLotes } from "@/lib/sugerencias";
 import type { Metadata } from "next";
 import { TarjetaLote } from "@/components/tarjeta-lote";
 import { crearClienteServidor } from "@/lib/supabase/server";
@@ -36,13 +38,9 @@ export default async function Catalogo({ searchParams }: PageProps<"/lotes">) {
     .select("*")
     .in("estado", ["publicado", "reservado"])
     .order(orden.columna, { ascending: orden.ascendente })
-    .limit(claveOrden === "descuento" || claveOrden === "paravos" ? 300 : 60);
+    // Con búsqueda, se traen más y se filtran acá (entiende tildes, plurales, sinónimos y categorías).
+    .limit(q ? 1000 : claveOrden === "descuento" || claveOrden === "paravos" ? 300 : 60);
   if (claveOrden === "descuento") consulta = consulta.not("precio_lista", "is", null);
-  if (q) {
-    // Saca los caracteres que tienen significado en el filtro de PostgREST.
-    const termino = q.replace(/[%,()*]/g, " ");
-    consulta = consulta.or(`titulo.ilike.%${termino}%,descripcion.ilike.%${termino}%`);
-  }
   if (categoria) consulta = consulta.eq("categoria", categoria);
   if (zona) consulta = consulta.eq("zona", zona);
   if (condicion) consulta = consulta.eq("condicion", condicion);
@@ -54,18 +52,26 @@ export default async function Catalogo({ searchParams }: PageProps<"/lotes">) {
   const volver = `/lotes?${new URLSearchParams(Object.entries({ q, categoria, zona, condicion, orden: claveOrden }).filter(([, v]) => v))}`;
   const filtrosActivos = [q, categoria, zona, condicion].filter(Boolean).length;
   let lotes = (data ?? []) as Lote[];
+  // Búsqueda: si no eligió un orden, primero lo que mejor coincide; si eligió uno, se respeta.
+  const porRelevancia = !!q && !pedido;
+  if (q) {
+    const encontrados = buscarLotes(q, lotes);
+    const ids = new Set(encontrados.map((l) => l.id));
+    lotes = porRelevancia ? encontrados : lotes.filter((l) => ids.has(l.id));
+  }
   if (claveOrden === "descuento") {
     const rebaja = (l: Lote) => descuento(l.precio_publicado ?? l.precio_pedido, l.precio_lista) ?? 0;
     lotes = lotes.filter((l) => rebaja(l) > 0).sort((a, b) => rebaja(b) - rebaja(a)).slice(0, 60);
   }
-  if (claveOrden === "paravos" && perfil) lotes = (await ordenarParaUsuario(lotes, perfil.id, perfil.zona)).slice(0, 60);
+  if (claveOrden === "paravos" && perfil && !porRelevancia) lotes = (await ordenarParaUsuario(lotes, perfil.id, perfil.zona)).slice(0, 60);
+  lotes = lotes.slice(0, 60);
   // Si no hay nada así, lo más parecido (entiende sinónimos y medidas) en vez de una página vacía.
   const parecidos = !lotes.length && (q || categoria) ? await parecidosABusqueda(q, categoria || null, zona || null, perfil?.id ?? null) : [];
 
   return (
     <div className="contenedor py-10">
       <h1 className="text-3xl font-bold">Lotes disponibles</h1>
-      <p className="mt-1 text-stone-600">Materiales sobrantes de vendedores verificados, con retiro en el AMBA.</p>
+      <p className="mt-1 text-stone-600">Materiales sobrantes con retiro en el AMBA y pago protegido.</p>
 
       {/* En el celular los filtros se pliegan en un botón para que los lotes entren en la primera pantalla. */}
       <input type="checkbox" id="ver-filtros" className="peer sr-only" />
@@ -134,7 +140,13 @@ export default async function Catalogo({ searchParams }: PageProps<"/lotes">) {
           ))}
         </div>
       ) : (
-        <p className="tarjeta mt-8 p-10 text-center text-stone-500">No encontramos lotes con esos filtros.</p>
+        <div className="tarjeta mt-8 space-y-2 p-10 text-center text-stone-500">
+          <p>{q ? <>No encontramos lotes para <strong className="text-petroleo">“{q}”</strong>{filtrosActivos > 1 && " con esos filtros"}.</> : "No encontramos lotes con esos filtros."}</p>
+          <p className="text-sm">
+            Probá con menos palabras o{" "}
+            <Link href="/lotes" className="font-semibold text-marca hover:underline">mirá todos los lotes</Link>.
+          </p>
+        </div>
       )}
 
       {parecidos.length > 0 && (

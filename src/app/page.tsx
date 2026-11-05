@@ -14,8 +14,8 @@ import { CATEGORIAS, descuento, pesos, urlFoto, type Lote } from "@/lib/datos";
 
 const PASOS_VENDEDOR = [
   ["Cargás el lote", "Fotos, lista de materiales y cuánto querés recuperar. Te ayudamos con el precio."],
-  ["Lo verificamos", "Revisamos el estado antes de publicarlo."],
-  ["Recibís ofertas", "Solo de compradores verificados. Vos elegís cuál aceptar."],
+  ["Lo revisamos", "Una revisión automática controla fotos y texto; si está todo bien, se publica al instante."],
+  ["Recibís ofertas", "Por el lote completo, con la reputación de cada comprador. Vos elegís cuál aceptar."],
   ["Cobrás seguro", "El comprador paga antes del retiro y te transferimos al completarse."],
 ];
 
@@ -29,7 +29,7 @@ const PASOS_COMPRADOR = [
 // Lo que diferencia a Sobrá de un marketplace general.
 const DIFERENCIALES: [string, string, string][] = [
   ["Cobrás seguro, sin esperar", "El comprador paga antes de retirar y el vendedor cobra apenas se confirma el retiro con un código.", "/#como-funciona"],
-  ["Lotes revisados uno por uno", "Antes de publicar miramos fotos, cantidades y estado. Lo que ves es lo que retirás.", "/#como-funciona"],
+  ["Publicaciones controladas", "Cada lote pasa por una revisión automática de fotos y texto; si algo no cierra, lo mira una persona. Y cualquiera puede denunciar.", "/#como-funciona"],
   ["Te avisamos cuando aparece", "Guardá lo que necesitás y te llega un email apenas alguien lo publica. Sin entrar todos los días.", "/panel/busquedas"],
   ["Reputación con hechos", "Nada de estrellas por enojo: se ve qué porcentaje de ventas salió sin reclamos y quién retira a tiempo.", "/ayuda"],
   ["Constancia de material recuperado", "Cada venta suma kilos que no fueron a residuos. La constancia se verifica con un código, para informes y licitaciones.", "/impacto"],
@@ -91,11 +91,11 @@ export default async function Inicio() {
             </h1>
             {/* En el celular se acorta para que los productos entren en la primera pantalla. */}
             <p className="mt-4 hidden max-w-xl text-lg text-white/80 sm:block">
-              Sobrantes nuevos y sin uso de constructoras, corralones e instaladores de fibra óptica, con vendedores verificados. Pagás protegido: el vendedor cobra
+              Sobrantes nuevos y sin uso de constructoras, corralones e instaladores de fibra óptica, con publicaciones controladas. Pagás protegido: el vendedor cobra
               recién cuando retirás.
             </p>
             <Buscador variante="portada" id="buscar-portada" className="mt-6 hidden max-w-xl sm:block" />
-            <p className="mt-3 text-white/80 sm:hidden">Vendedores verificados, con pago protegido.</p>
+            <p className="mt-3 text-white/80 sm:hidden">Pago protegido: el vendedor cobra cuando retirás.</p>
             <div className="mt-4 hidden flex-wrap gap-2 text-sm sm:flex">
               {categorias.slice(0, 5).map((c) => (
                 <Link key={c} href={`/lotes?categoria=${encodeURIComponent(c)}`} className="rounded-full bg-white/10 px-3 py-1 text-white/90 hover:bg-white/20">

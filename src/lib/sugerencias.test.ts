@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { sugerir, type LoteBuscable } from "./sugerencias";
+import { buscarLotes, sugerir, type LoteBuscable } from "./sugerencias";
 
 let n = 0;
 const lote = (titulo: string, categoria: string, materiales: string[] = []): LoteBuscable => ({
@@ -65,5 +65,39 @@ describe("sugerencias del buscador", () => {
   it("encuentra por la marca", () => {
     const conMarca = { ...lote("Bobina de fibra ADSS 24 hilos", "Fibra óptica y telecomunicaciones"), items: [{ nombre: "Cable ADSS 24 hilos", marca: "Fibrex" }] };
     expect(sugerir("fibrex", [...lotes, conMarca], CATEGORIAS).lotes.map((l) => l.id)).toEqual([conMarca.id]);
+  });
+});
+
+describe("búsqueda del catálogo", () => {
+  const lote = (titulo: string, categoria: string, items: string[] = [], descripcion = "") => ({ titulo, categoria, descripcion, items: items.map((nombre) => ({ nombre })) });
+  const lotes = [
+    lote("Patchcords SC/APC monomodo 3 m x 150", "Fibra óptica y telecomunicaciones"),
+    lote("ONU GPON con WiFi x 25 unidades", "Fibra óptica y telecomunicaciones"),
+    lote("Bobina de fibra óptica monomodo 2 km", "Fibra óptica y telecomunicaciones"),
+    lote("Porcelanato 60x60 gris símil cemento, 38 m²", "Cerámicos y porcelanatos", ["Porcelanato 60x60 gris rectificado"]),
+    lote("Cerámico 45x45 beige para piso, 30 m²", "Cerámicos y porcelanatos"),
+    lote("Cemento portland x 40 bolsas", "Cemento, cal y áridos", [], "Bolsas cerradas, sin humedad"),
+  ];
+  const titulos = (q: string) => buscarLotes(q, lotes).map((l) => l.titulo);
+
+  it("encuentra por categoría: 'fibra' trae todo el rubro, primero lo que lo dice en el título", () => {
+    const r = titulos("fibra");
+    expect(r).toHaveLength(3);
+    expect(r[0]).toBe("Bobina de fibra óptica monomodo 2 km");
+  });
+
+  it("no exige que las palabras estén juntas ni en orden", () => {
+    expect(titulos("porcelanato gris")).toEqual(["Porcelanato 60x60 gris símil cemento, 38 m²"]);
+    expect(titulos("gris porcelanato")).toEqual(["Porcelanato 60x60 gris símil cemento, 38 m²"]);
+  });
+
+  it("entiende tildes, plurales y palabras de relleno", () => {
+    expect(titulos("ceramico")).toContain("Cerámico 45x45 beige para piso, 30 m²");
+    expect(titulos("bolsa de cemento")).toContain("Cemento portland x 40 bolsas");
+  });
+
+  it("busca también en la descripción, y si una palabra no está en ningún lado no lo trae", () => {
+    expect(titulos("humedad")).toEqual(["Cemento portland x 40 bolsas"]);
+    expect(titulos("porcelanato azul")).toEqual([]);
   });
 });

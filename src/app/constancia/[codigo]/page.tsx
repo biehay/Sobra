@@ -50,7 +50,7 @@ export default async function Constancia({ params }: PageProps<"/constancia/[cod
         <h2 className="mt-10 font-bold text-petroleo">Cómo se calculó</h2>
         <ul className="mt-2 space-y-1 text-sm text-stone-700 [&_li]:ml-5 [&_li]:list-disc">
           <li>Solo cuentan operaciones completadas: el comprador retiró el material y lo aceptó con el código de retiro.</li>
-          <li>El peso de cada lote lo declara el vendedor y lo revisa Sobrá antes de publicarlo.</li>
+          <li>El peso de cada lote lo declara el vendedor; Sobrá lo controla con las fotos y las cantidades.</li>
           <li>
             El CO₂ evitado es una <strong>estimación</strong>: el peso reutilizado por un factor de emisiones de fabricación según el
             tipo de material, tomado de bases públicas de carbono incorporado (como ICE, de la Universidad de Bath).

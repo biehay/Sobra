@@ -268,6 +268,7 @@ psql -d sobra_test -f supabase/tests/recomendaciones.sql   # ídem
 psql -d sobra_test -f supabase/tests/moderacion.sql   # ídem
 psql -d sobra_test -f supabase/tests/denuncias.sql   # ídem
 psql -d sobra_test -f supabase/tests/sanciones_y_muestreo.sql   # ídem
+psql -d sobra_test -f supabase/tests/ofertar_sin_verificacion.sql   # ídem
 ```
 
 ## Estructura

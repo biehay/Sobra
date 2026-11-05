@@ -9,6 +9,7 @@ import { CATEGORIAS, CONDICIONES, ZONAS, pesos, precioSugerido, urlFoto, type Co
 import { BotonEnviar } from "@/components/boton-enviar";
 import { guardarLote } from "../acciones";
 import { PrecioConIA } from "./precio-con-ia";
+import { sugerirPrecioConIA } from "./precio-ia";
 import { completarConFotos } from "./fotos-ia";
 import { TarjetaLote } from "@/components/tarjeta-lote";
 import type { CampoDuda, PropuestaLote } from "@/lib/lote-desde-fotos";
@@ -60,6 +61,9 @@ export function FormLote({
   const [dudas, setDudas] = useState<{ campo: CampoDuda; pregunta: string }[]>([]);
   const [errorIA, setErrorIA] = useState("");
   const [analizando, analizar] = useTransition();
+  // Después de completar con fotos, el precio se calcula solo (sin frenar el resumen).
+  const [precioAuto, setPrecioAuto] = useState<{ estado: "calculando" | "listo" | "error"; valor?: number; error?: string } | null>(null);
+  const [, calcularPrecio] = useTransition();
   const resumen = useRef<HTMLDivElement>(null);
   // Para la vista previa: una copia de los campos de texto, que se actualiza al cambiar algo.
   const precioInicial = lote?.precio_pedido ?? inicial?.precioPedido ?? precioSugerido(Number(inicial?.precioLista) || null, inicial?.condicion ?? "nuevo", lote?.categoria) ?? undefined;
@@ -133,6 +137,24 @@ export function FormLote({
       setPropuesta(p);
       setDudas(p.dudas);
       leerCampos();
+      // Si todavía no puso un precio, se lo calculamos con los datos que salieron de las fotos.
+      if (!precioPedido.current?.value) {
+        setPrecioAuto({ estado: "calculando" });
+        calcularPrecio(async () => {
+          const r = await sugerirPrecioConIA({
+            titulo: p.titulo,
+            categoria: p.categoria,
+            condicion: p.condicion,
+            descripcion: p.descripcion,
+            items: p.materiales.map((m) => ({ nombre: m.nombre, cantidad: m.cantidad, unidad: m.unidad, ...(m.marca ? { marca: m.marca } : {}) })),
+            detalles: p.detalles,
+          });
+          if (r.ok) {
+            usarPrecioIA(r.informe.total_mercado_ars, r.informe.sugerido, false);
+            setPrecioAuto({ estado: "listo", valor: r.informe.sugerido });
+          } else setPrecioAuto({ estado: "error", error: r.error });
+        });
+      }
       setTimeout(() => resumen.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
     });
   }
@@ -159,7 +181,7 @@ export function FormLote({
     };
   }
 
-  function usarPrecioIA(mercado: number, sugeridoIA: number) {
+  function usarPrecioIA(mercado: number, sugeridoIA: number, desplazar = true) {
     setPrecioLista(String(mercado));
     if (precioPedido.current) precioPedido.current.value = String(sugeridoIA);
     leerCampos();
@@ -168,7 +190,7 @@ export function FormLote({
     // Que se vea dónde quedó el precio elegido.
     setPrecioResaltado(true);
     setTimeout(() => setPrecioResaltado(false), 2500);
-    precios.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (desplazar) precios.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
   // Las fotos se achican en el celular y se suben todas a la vez. Si algo falla (o la
@@ -347,6 +369,20 @@ export function FormLote({
             <dd>{propuesta.materiales.map((m) => `${m.nombre}: ${m.cantidad.toLocaleString("es-AR")} ${m.unidad === "m2" ? "m²" : m.unidad}`).join(" · ") || "—"}</dd>
             <dt className="text-stone-500">Peso</dt>
             <dd>{propuesta.peso_kg ? `${propuesta.peso_kg} kg aprox.` : "Sin estimar"}</dd>
+            {precioAuto && (
+              <>
+                <dt className="text-stone-500">Precio sugerido</dt>
+                <dd data-precio-auto>
+                  {precioAuto.estado === "calculando" ? (
+                    <span className="text-stone-500">Calculando con precios del mercado… puede tardar hasta un minuto.</span>
+                  ) : precioAuto.estado === "listo" ? (
+                    <><strong>{pesos(precioAuto.valor!)}</strong> <span className="text-stone-500">(ya lo pusimos abajo; lo podés cambiar)</span></>
+                  ) : (
+                    <span className="text-amber-800">No pudimos calcularlo ({precioAuto.error}). Probá con “Sugerir precio con IA” abajo.</span>
+                  )}
+                </dd>
+              </>
+            )}
           </dl>
           {propuesta.verificaciones.length > 0 && (
             <div className="mt-3 text-sm">
@@ -360,10 +396,10 @@ export function FormLote({
           )}
           {dudas.length > 0 ? (
             <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
-              {dudas.length === 1 ? "Hay 1 dato" : `Hay ${dudas.length} datos`} que no pudimos ver bien: están marcados en amarillo abajo.
+              {dudas.length === 1 ? "Hay 1 dato que no pudimos ver bien: está marcado" : `Hay ${dudas.length} datos que no pudimos ver bien: están marcados`} en amarillo abajo.
             </p>
           ) : (
-            <p className="mt-3 text-sm text-green-800">✓ Todo revisado. Falta el precio y el retiro.</p>
+            <p className="mt-3 text-sm text-green-800">✓ Todo revisado. {precioAuto?.estado === "listo" ? "Solo falta el retiro." : "Falta el precio y el retiro."}</p>
           )}
         </div>
       )}
@@ -560,7 +596,7 @@ export function FormLote({
       {fotos.length > 0 && (
         <section className="tarjeta space-y-3 p-6">
           <h2 className="text-lg font-bold">Así se va a ver</h2>
-          <p className="text-sm text-stone-600">Se actualiza mientras editás. Antes de publicarlo lo revisa Sobrá.</p>
+          <p className="text-sm text-stone-600">Se actualiza mientras editás. Así lo van a ver los compradores.</p>
           <div inert className="pointer-events-none max-w-xs">
             <TarjetaLote lote={vistaPrevia} />
           </div>
