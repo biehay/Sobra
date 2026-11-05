@@ -222,7 +222,7 @@ export default async function DetalleLote({ params, searchParams }: PageProps<"/
             )}
           </div>
 
-          <div className="order-4 empty:hidden">
+          <div id="aviso" className="order-4 scroll-mt-32 empty:hidden">
             <Aviso ok={ok} error={error} />
           </div>
 

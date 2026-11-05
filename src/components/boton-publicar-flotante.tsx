@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -11,8 +11,16 @@ import { usePathname } from "next/navigation";
 const OCULTAR_EN = ["/panel/vendedor/lotes", "/ingresar", "/registro", "/verificar", "/seguridad", "/recuperar", "/nueva-clave", "/admin", "/constancia"];
 const DETALLE_DE_LOTE = /^\/lotes\/[0-9a-f-]{36}$/;
 
+// ¿Está el aviso de cookies abajo? Mientras esté, el botón va por encima de él.
+const hayAvisoCookies = () => !!document.querySelector('[aria-label="Aviso de cookies"]');
+function alCambiarAviso(avisar: () => void) {
+  window.addEventListener("aviso-cookies-cerrado", avisar);
+  return () => window.removeEventListener("aviso-cookies-cerrado", avisar);
+}
+
 export function BotonPublicarFlotante({ href }: { href: string }) {
   const ruta = usePathname();
+  const conAviso = useSyncExternalStore(alCambiarAviso, hayAvisoCookies, () => false);
   const [visible, setVisible] = useState(true);
   const anterior = useRef(0);
 
@@ -35,7 +43,7 @@ export function BotonPublicarFlotante({ href }: { href: string }) {
       data-publicar-flotante
       aria-hidden={!visible}
       tabIndex={visible ? undefined : -1}
-      className={`btn print:hidden fixed bottom-4 right-4 z-20 rounded-full px-5 py-3 text-base shadow-lg transition-transform duration-200 sm:hidden ${
+      className={`btn print:hidden fixed ${conAviso ? "bottom-24" : "bottom-4"} right-4 z-20 rounded-full px-5 py-3 text-base shadow-lg transition-transform duration-200 sm:hidden ${
         visible ? "translate-y-0" : "pointer-events-none translate-y-24"
       }`}
     >

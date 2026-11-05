@@ -10,6 +10,8 @@ export function MenuCompartir({ ruta, texto, variante }: { ruta: string; texto: 
   const menu = useRef<HTMLDetailsElement>(null);
   const [copiado, setCopiado] = useState(false);
   const [puedeCompartir, setPuedeCompartir] = useState(false);
+  // Si el navegador bloqueó la pestaña de WhatsApp, se ofrece un link para tocar.
+  const [bloqueado, setBloqueado] = useState<string | null>(null);
   const sitio = (process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/$/, "");
   const linkCon = (base: string) => `${base}${ruta}`;
   const whatsappCon = (base: string) => `https://wa.me/?text=${encodeURIComponent(`${texto} ${linkCon(base)}`)}`;
@@ -56,32 +58,47 @@ export function MenuCompartir({ ruta, texto, variante }: { ruta: string; texto: 
     }, 1500);
   }
 
-  // Directo a WhatsApp, sin pedir ningún dato y sin páginas intermedias:
-  // - Celular: abre la app (si no la tiene, WhatsApp le ofrece instalarla).
-  // - Compu: intenta abrir la app de escritorio; si en un momento no se abrió
-  //   (la página sigue al frente), abre WhatsApp Web con el mensaje listo.
+  // Directo a WhatsApp, sin pedir ningún dato y sin que Sobrá se vaya de su pestaña:
+  // - Celular: abre la app de WhatsApp (whatsapp://). Si el teléfono no la tiene,
+  //   abre la página de WhatsApp en otra pestaña.
+  // - Compu: abre la app de escritorio si está instalada; si no, WhatsApp Web en
+  //   otra pestaña.
+  // Si la app se abrió, la página pierde el foco (o se oculta): ahí no se abre nada más.
   function whatsapp(e: React.MouseEvent) {
     e.preventDefault();
     cerrar();
     const mensaje = encodeURIComponent(`${texto} ${linkCon(base())}`);
     const celular = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    if (celular) {
-      window.location.href = `https://wa.me/?text=${mensaje}`;
-      return;
-    }
     let seAbrioLaApp = false;
     const alSalir = () => (seAbrioLaApp = true);
     window.addEventListener("blur", alSalir, { once: true });
-    // Desde un marco invisible: si no tiene la app, falla en silencio (sin página de error).
-    const marco = document.createElement("iframe");
-    marco.style.display = "none";
-    marco.src = `whatsapp://send?text=${mensaje}`;
-    document.body.appendChild(marco);
+    document.addEventListener("visibilitychange", alSalir, { once: true });
+    let marco: HTMLIFrameElement | null = null;
+    if (celular) {
+      // En el celular la app solo se abre desde la página (no desde un marco); si la app
+      // está, Sobrá queda donde estaba.
+      window.location.href = `whatsapp://send?text=${mensaje}`;
+    } else {
+      // En la compu, desde un marco invisible: si no tiene la app, falla en silencio.
+      marco = document.createElement("iframe");
+      marco.style.display = "none";
+      marco.src = `whatsapp://send?text=${mensaje}`;
+      document.body.appendChild(marco);
+    }
     setTimeout(() => {
-      marco.remove();
+      marco?.remove();
       window.removeEventListener("blur", alSalir);
-      if (!seAbrioLaApp && document.hasFocus()) window.open(`https://web.whatsapp.com/send?text=${mensaje}`, "_blank", "noopener");
-    }, 1200);
+      document.removeEventListener("visibilitychange", alSalir);
+      if (seAbrioLaApp || !document.hasFocus()) return;
+      // No tiene la app: WhatsApp en otra pestaña (Sobrá sigue en esta).
+      const destino = celular ? `https://wa.me/?text=${mensaje}` : `https://web.whatsapp.com/send?text=${mensaje}`;
+      const pestana = window.open(destino, "_blank");
+      if (pestana) pestana.opener = null;
+      else {
+        setBloqueado(destino);
+        menu.current?.setAttribute("open", "");
+      }
+    }, 1500);
   }
 
   async function masOpciones() {
@@ -93,7 +110,7 @@ export function MenuCompartir({ ruta, texto, variante }: { ruta: string; texto: 
     }
   }
 
-  const opcion = "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-petroleo hover:bg-stone-100";
+  const opcion = "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-petroleo hover:bg-stone-100 max-sm:py-3 max-sm:text-base";
   return (
     <details ref={menu} data-compartir className={`relative ${variante === "boton" ? "w-full" : ""}`}>
       <summary
@@ -111,7 +128,9 @@ export function MenuCompartir({ ruta, texto, variante }: { ruta: string; texto: 
       <div
         role="menu"
         className={`absolute z-30 mt-2 space-y-1 rounded-xl border border-stone-200 bg-white p-1.5 shadow-lg ${
-          variante === "boton" ? "inset-x-0" : "right-0 w-44"
+          variante === "boton"
+            ? "inset-x-0"
+            : "max-sm:fixed max-sm:inset-x-3 max-sm:bottom-3 max-sm:z-50 max-sm:p-2 max-sm:shadow-2xl sm:right-0 sm:w-44"
         }`}
       >
         <button type="button" role="menuitem" onClick={copiar} className={opcion}>
@@ -122,6 +141,12 @@ export function MenuCompartir({ ruta, texto, variante }: { ruta: string; texto: 
           <IconoWhatsapp />
           Enviar por WhatsApp
         </a>
+        {bloqueado && (
+          <a role="menuitem" href={bloqueado} target="_blank" rel="noreferrer" onClick={() => { setBloqueado(null); cerrar(); }} className={`${opcion} bg-green-50`}>
+            <IconoWhatsapp />
+            Abrir WhatsApp
+          </a>
+        )}
         {puedeCompartir && (
           <button type="button" role="menuitem" onClick={masOpciones} className={opcion}>
             <span aria-hidden className="w-5 text-center">⋯</span>

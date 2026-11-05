@@ -20,7 +20,7 @@ export async function ofertar(formData: FormData) {
   const datos = esquemaOferta.safeParse(Object.fromEntries(formData));
   const loteId = String(formData.get("loteId") ?? "");
   if (!datos.success) {
-    redirect(`/lotes/${loteId}?error=${encodeURIComponent(datos.error.issues[0].message)}`);
+    redirect(`/lotes/${loteId}?error=${encodeURIComponent(datos.error.issues[0].message)}#aviso`);
   }
 
   const perfil = await obtenerPerfil();
@@ -37,12 +37,13 @@ export async function ofertar(formData: FormData) {
 
   if (error) {
     const mensaje = error.code === "23505" ? "Ya tenés una oferta pendiente para este lote" : error.message;
-    redirect(`/lotes/${loteId}?error=${encodeURIComponent(mensajeParaUsuario(mensaje))}`);
+    redirect(`/lotes/${loteId}?error=${encodeURIComponent(mensajeParaUsuario(mensaje))}#aviso`);
   }
 
   notificar.nuevaOferta(data.id);
   revalidatePath("/panel/comprador");
-  redirect(`/lotes/${loteId}?ok=${encodeURIComponent("¡Oferta enviada! Te avisamos cuando el vendedor responda.")}`);
+  // #aviso: en el celular la pantalla queda en el mensaje, no arriba de todo en las fotos.
+  redirect(`/lotes/${loteId}?ok=${encodeURIComponent("¡Oferta enviada! Te avisamos cuando el vendedor responda.")}#aviso`);
 }
 
 const esquemaDenuncia = z.object({
@@ -56,7 +57,7 @@ const esquemaDenuncia = z.object({
 export async function denunciar(formData: FormData) {
   const loteId = String(formData.get("loteId") ?? "");
   const volver = (tipo: "ok" | "error", mensaje: string): never =>
-    redirect(`/lotes/${loteId}?${tipo}=${encodeURIComponent(mensaje)}${tipo === "ok" ? "#denunciar" : ""}`);
+    redirect(`/lotes/${loteId}?${tipo}=${encodeURIComponent(mensaje)}${tipo === "ok" ? "#denunciar" : "#aviso"}`);
   const datos = esquemaDenuncia.safeParse(Object.fromEntries(formData));
   if (!datos.success) return volver("error", datos.error.issues[0].message);
   const perfil = await obtenerPerfil();

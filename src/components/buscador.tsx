@@ -30,7 +30,8 @@ type PropsBuscador = { variante: "encabezado" | "portada"; id: string; className
 // El del encabezado muestra lo que se buscó (al estar en /lotes?q=...).
 export function BuscadorDelEncabezado(props: PropsBuscador) {
   return (
-    <Suspense fallback={<Buscador {...props} />}>
+    // El provisorio (mientras carga) lleva otro id: un instante conviven los dos.
+    <Suspense fallback={<Buscador {...props} id={`${props.id}-cargando`} />}>
       <BuscadorConConsulta {...props} />
     </Suspense>
   );

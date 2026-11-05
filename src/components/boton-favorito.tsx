@@ -1,10 +1,14 @@
-import { cambiarFavorito } from "@/app/lotes/favoritos";
+"use client";
 
-// Corazón para guardar un lote en Favoritos. Es un formulario común, así que
-// funciona aunque la página no haya terminado de cargar su JavaScript.
+import { useState, useTransition } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { alternarFavorito, cambiarFavorito } from "@/app/lotes/favoritos";
+
+// Corazón para guardar un lote en Favoritos. Con JavaScript guarda sin recargar
+// la página; sin JavaScript es un formulario común, así que igual funciona.
 export function BotonFavorito({
   loteId,
-  guardado,
+  guardado: guardadoInicial,
   volver,
   conTexto = false,
 }: {
@@ -13,9 +17,32 @@ export function BotonFavorito({
   volver: string;
   conTexto?: boolean;
 }) {
+  const router = useRouter();
+  const ruta = usePathname();
+  // Se pinta al instante y se guarda sin recargar (la pantalla no salta arriba).
+  const [guardado, setGuardado] = useState(guardadoInicial);
+  const [, guardar] = useTransition();
   const texto = guardado ? "Quitar de favoritos" : "Guardar en favoritos";
+
+  function alTocar(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const nuevo = !guardado;
+    setGuardado(nuevo);
+    guardar(async () => {
+      const r = await alternarFavorito(loteId, nuevo ? "si" : "no", volver);
+      // En la lista de Favoritos, lo que se saca desaparece de la lista.
+      if (r.ok) {
+        if (ruta.startsWith("/panel/favoritos")) router.refresh();
+        return;
+      }
+      setGuardado(!nuevo);
+      if (r.ir) router.push(r.ir);
+      else if (r.error) alert(r.error);
+    });
+  }
+
   return (
-    <form action={cambiarFavorito}>
+    <form action={cambiarFavorito} onSubmit={alTocar}>
       <input type="hidden" name="loteId" value={loteId} />
       <input type="hidden" name="guardar" value={guardado ? "no" : "si"} />
       <input type="hidden" name="volver" value={volver} />

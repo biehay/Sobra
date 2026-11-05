@@ -17,6 +17,8 @@ export function AvisoCookies() {
     const segura = window.location.protocol === "https:" ? "; Secure" : "";
     document.cookie = `${COOKIE_AVISO}=ok; Max-Age=31536000; Path=/; SameSite=Lax${segura}`;
     setVisible(false);
+    // Para que el botón flotante "+ Publicar" vuelva a su lugar.
+    window.dispatchEvent(new Event("aviso-cookies-cerrado"));
   }
 
   return (
