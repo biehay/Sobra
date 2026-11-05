@@ -5,6 +5,7 @@ import { obtenerPerfil, sesionVerificada } from "@/lib/sesion";
 import { explicarErrorIA } from "@/lib/errores-ia";
 import { precioSugeridoCompleto, type InformeCompleto } from "@/lib/precio-sugerido";
 import { CATEGORIAS, CONDICIONES, type Condicion } from "@/lib/datos";
+import { iaDePrueba } from "@/lib/entorno";
 
 // Cada consulta usa la API de Anthropic (cuesta centavos). Para cuidar el saldo:
 // como máximo 15 por usuario por día, y la misma consulta se responde de la
@@ -31,7 +32,7 @@ export async function sugerirPrecioConIA(datos: unknown): Promise<ResultadoPreci
   const perfil = await obtenerPerfil();
   if (!perfil) return { ok: false, error: "Tu sesión venció. Volvé a ingresar." };
   if (!(await sesionVerificada())) return { ok: false, error: "Ingresá el código que te mandamos por email para usar esto." };
-  const dePrueba = process.env.SOBRA_IA_DE_PRUEBA === "1";
+  const dePrueba = iaDePrueba();
   if (!dePrueba && !process.env.ANTHROPIC_API_KEY) return { ok: false, error: "Falta configurar ANTHROPIC_API_KEY en el servidor." };
 
   const lote = esquema.safeParse(datos);

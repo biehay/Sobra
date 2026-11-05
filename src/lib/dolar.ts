@@ -1,4 +1,5 @@
 import "server-only";
+import { iaDePrueba } from "@/lib/entorno";
 
 // Dólar oficial (venta) del día, para pasar a pesos los precios que los
 // proveedores publican en dólares. Se consulta una fuente pública y se guarda
@@ -9,7 +10,7 @@ let guardado: { valor: number; hasta: number } | null = null;
 
 export async function dolarDelDia(): Promise<number | null> {
   // En el recorrido de pruebas (sin internet), un valor fijo. Nunca en producción.
-  if (process.env.SOBRA_IA_DE_PRUEBA === "1") return 1000;
+  if (iaDePrueba()) return 1000;
   if (guardado && guardado.hasta > Date.now()) return guardado.valor;
   try {
     const r = await fetch(FUENTE, { signal: AbortSignal.timeout(4000), cache: "no-store" });

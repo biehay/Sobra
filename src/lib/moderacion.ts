@@ -5,6 +5,7 @@ import { z } from "zod";
 import { CATEGORIAS } from "@/lib/datos";
 import { crearClienteAdmin } from "@/lib/supabase/admin";
 import { combinar, revisarReglas, TIPOS_MOTIVO, textoDelLote, type LoteAModerar, type Moderacion } from "@/lib/moderacion-reglas";
+import { iaDePrueba } from "@/lib/entorno";
 
 // El moderador: revisa cada publicación antes de que salga, con las reglas fijas
 // y con la IA mirando las fotos y el texto. Usa un modelo chico y rápido (la
@@ -119,7 +120,7 @@ export async function moderarLote(lote: LoteAModerar, rutasFotos: string[], vend
   if (vendedorId && (await superoElTope(vendedorId))) {
     return combinar(reglas, { resultado: "dudoso", motivos: [{ tipo: "sin_revision_ia", detalle: `El vendedor pasó las ${MODERACIONES_IA_POR_DIA} revisiones automáticas del día.` }], mensaje: "" });
   }
-  if (process.env.SOBRA_IA_DE_PRUEBA === "1") return combinar(reglas, consultaDePrueba(lote));
+  if (iaDePrueba()) return combinar(reglas, consultaDePrueba(lote));
   if (!process.env.ANTHROPIC_API_KEY) {
     return combinar(reglas, { resultado: "dudoso", motivos: [{ tipo: "sin_revision_ia", detalle: "Falta ANTHROPIC_API_KEY en el servidor." }], mensaje: "" });
   }

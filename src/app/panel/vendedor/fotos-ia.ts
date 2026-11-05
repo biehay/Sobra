@@ -4,6 +4,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { obtenerPerfil, sesionVerificada } from "@/lib/sesion";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { CONSULTAS_DE_PRUEBA, MAX_FOTOS_IA, proponerLoteDesdeFotos, type PropuestaLote } from "@/lib/lote-desde-fotos";
+import { iaDePrueba } from "@/lib/entorno";
 
 // Cada análisis usa la API de Anthropic. Para cuidar el saldo: como máximo 20
 // por usuario por día (en la memoria del servidor, igual que el precio con IA).
@@ -24,7 +25,7 @@ export async function completarConFotos(rutas: unknown, pista: unknown): Promise
   if (!fotos.length) return { ok: false, error: "Subí al menos una foto del lote." };
   const textoPista = typeof pista === "string" ? pista.trim().slice(0, 120) : "";
 
-  const dePrueba = process.env.SOBRA_IA_DE_PRUEBA === "1";
+  const dePrueba = iaDePrueba();
   if (!dePrueba && !process.env.ANTHROPIC_API_KEY) return { ok: false, error: "Falta configurar ANTHROPIC_API_KEY en el servidor." };
 
   const ahora = Date.now();

@@ -11,6 +11,7 @@ import { adivinarCategoria } from "@/lib/depreciacion";
 import { guardarReporte, precioReportado, quienReporta } from "@/lib/precios-reportados";
 import { PRECIO_LISTA_MINIMO } from "@/lib/datos";
 import { explicarErrorIA } from "@/lib/errores-ia";
+import { iaDePrueba } from "@/lib/entorno";
 
 // La calculadora "¿Te sobró material?" de la portada. La puede usar cualquiera,
 // así que la búsqueda de precios con IA (que cuesta) tiene límites: por persona,
@@ -62,7 +63,7 @@ export async function tasarDesdePortada(
   // Lo que pagaron otros usuarios por el mismo producto: entra en la comparación con la web.
   const reportado = await precioReportado(t, m || null);
 
-  const dePrueba = process.env.SOBRA_IA_DE_PRUEBA === "1";
+  const dePrueba = iaDePrueba();
   if (!dePrueba && !process.env.ANTHROPIC_API_KEY) {
     console.error("[Sobrá] Falta ANTHROPIC_API_KEY: la calculadora no puede buscar precios.");
     return { ok: false, error: "La búsqueda de precios no está configurada (falta ANTHROPIC_API_KEY)." };

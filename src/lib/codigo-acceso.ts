@@ -4,6 +4,7 @@ import { crearClienteAdmin } from "@/lib/supabase/admin";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { enviarEmail } from "@/lib/email/enviar";
 import { plantillas } from "@/lib/email/plantillas";
+import { codigosEnConsola } from "@/lib/entorno";
 
 // Segundo paso del ingreso: un código de 6 dígitos que se manda al email de la
 // cuenta. En la base se guarda solo un hash, atado a la sesión actual; lo
@@ -22,9 +23,8 @@ async function sesionActual() {
 }
 
 // Sin Resend, en desarrollo el código se muestra en la terminal de `npm run dev`.
-function mostrarEnConsola() {
-  return process.env.NODE_ENV === "development" || process.env.SOBRA_CODIGOS_EN_CONSOLA === "1";
-}
+// En desarrollo (o en el recorrido de pruebas), el código sale en la terminal. Nunca en la app publicada.
+const mostrarEnConsola = codigosEnConsola;
 
 // `soloEnTerminal`: en desarrollo, Resend no pudo mandarlo y el código quedó en la terminal.
 export async function enviarCodigoAcceso(): Promise<{ error?: string; soloEnTerminal?: boolean }> {

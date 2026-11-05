@@ -352,6 +352,13 @@ Cosas que quedaron a propósito sin definir y hay que completar antes de tener u
   - [ ] **Supabase de producción**: confirmación de email activada, "Secure password change" activado,
         contraseñas mínimas de 8 caracteres y los límites de envío de emails por hora.
   - [ ] **Resend**: alertas de rebotes y quejas de spam.
+- [ ] **Datos personales (Ley 25.326)**, con el abogado:
+  - [ ] Inscribir la base de datos en el Registro Nacional de Bases de Datos Personales (AAIP).
+  - [ ] Definir cómo atender un pedido de borrar la cuenta: borrar el usuario en Supabase borra en cascada
+        sus lotes y operaciones, y los datos de operaciones (facturación) hay que conservarlos el tiempo que
+        diga el contador. Para quien tiene operaciones, anonimizar el perfil en vez de borrar todo.
+  - [ ] Copias de seguridad: el plan gratis de Supabase no las guarda; con datos reales, pasar a un plan con
+        copias diarias.
 - [ ] **Publicar la app** (Vercel) con las variables de entorno de producción, incluida `CRON_SECRET` para la
       baja automática de precios y `NEXT_PUBLIC_SITE_URL` con la dirección real del sitio (sin ella, la vista
       previa al compartir por WhatsApp y el mapa del sitio apuntan a localhost).
