@@ -10,7 +10,7 @@ const enlace = "font-semibold text-marca hover:underline";
 export default function Terminos() {
   const comision = `${Math.round(TASA_COMISION * 100)}%`;
   return (
-    <PaginaLegal titulo="Términos y condiciones" actualizada="4 de noviembre de 2026">
+    <PaginaLegal titulo="Términos y condiciones" actualizada="5 de noviembre de 2026">
       <div className="rounded-xl border border-celeste/40 bg-celeste-claro p-5 text-petroleo">
         <p className="font-bold">Resumen</p>
         <ul className="mt-2">

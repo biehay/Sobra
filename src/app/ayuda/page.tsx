@@ -31,7 +31,7 @@ const TEMAS: { titulo: string; preguntas: [string, React.ReactNode][] }[] = [
   {
     titulo: "Comprar",
     preguntas: [
-      ["¿Por qué tengo que verificar mi cuenta para ofertar?", "Para que los vendedores operen tranquilos. Revisamos tus datos y te avisamos por email cuando ya podés ofertar."],
+      ["¿Necesito que verifiquen mi cuenta para ofertar?", "No. Con tu cuenta y el email confirmado ya podés ofertar. Mientras tu cuenta sea nueva podés tener hasta 3 ofertas abiertas a la vez; cuando la verificamos, sin límite. El vendedor ve si sos comprador nuevo o cuántas compras hiciste."],
       ["¿Cómo pago?", "Cuando el vendedor acepta tu oferta, ves en Mis compras los datos para transferirle a Sobrá. Retenemos el dinero hasta que retirás el material."],
       ["¿Qué es el código de retiro?", "Un código de 6 números que ves en Mis compras cuando se confirma tu pago. Dáselo al vendedor solo después de revisar que el material esté bien: entregarlo significa que lo aceptás."],
       ["El material no es lo que decía la publicación", <>No entregues el código y abrí un reclamo desde Mis compras. Te explicamos todo en <Link href="/devoluciones" className={enlace}>Devoluciones y reclamos</Link>.</>],
