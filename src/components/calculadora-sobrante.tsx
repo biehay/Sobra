@@ -331,8 +331,8 @@ export function FranjaVender({ cuenta }: { cuenta: Cuenta }) {
             </p>
           </div>
         </div>
-        <div className="flex-1 space-y-3 lg:space-y-2">
-          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.6fr)] gap-2 lg:flex lg:items-center lg:rounded-xl lg:bg-white lg:p-1.5 lg:ring-1 lg:ring-stone-200">
+        <div className="min-w-0 flex-1 space-y-3 lg:space-y-2">
+          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.6fr)] gap-2 lg:flex lg:flex-wrap lg:items-center lg:rounded-xl lg:bg-white lg:p-1.5 lg:ring-1 lg:ring-stone-200">
             <input
               id="franja-texto"
               value={c.texto}
@@ -342,10 +342,10 @@ export function FranjaVender({ cuenta }: { cuenta: Cuenta }) {
               aria-label="¿Qué te sobró?"
               placeholder="¿Qué te sobró? Ej.: porcelanato 60x60 gris"
               aria-describedby={c.error ? "franja-error" : undefined}
-              className={`${campo} col-span-3 shadow-sm outline-none lg:flex-[2] lg:border-0 lg:text-base lg:shadow-none`}
+              className={`${campo} col-span-3 shadow-sm outline-none lg:min-w-40 lg:flex-[2] lg:border-0 lg:text-base lg:shadow-none`}
             />
             <CampoCantidad c={c} id="franja-texto" clase="contents lg:flex lg:w-56 lg:gap-1 max-lg:[&>*]:w-full" />
-            <select value={c.condicion} onChange={(e) => c.setCondicion(e.target.value as Condicion)} aria-label="Estado" className={`${campo} max-lg:w-full`}>
+            <select value={c.condicion} onChange={(e) => c.setCondicion(e.target.value as Condicion)} aria-label="Estado" className={`${campo} max-lg:w-full lg:w-32`}>
               {Object.entries(ESTADO_CORTO).map(([valor, texto]) => (
                 <option key={valor} value={valor}>{texto}</option>
               ))}
@@ -361,7 +361,7 @@ export function FranjaVender({ cuenta }: { cuenta: Cuenta }) {
                 onChange={(e) => c.setPrecio(e.target.value)}
                 aria-label="Cuánto te costó nuevo"
                 placeholder="¿Cuánto te costó nuevo?"
-                className={`${campo} col-span-3 lg:w-48 ${sinFlechas}`}
+                className={`${campo} col-span-3 lg:w-44 ${sinFlechas}`}
               />
             )}
             <button type="button" onClick={c.calcular} disabled={c.buscando} className="btn col-span-3 whitespace-nowrap px-6 py-3 text-base">
