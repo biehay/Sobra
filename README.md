@@ -320,14 +320,27 @@ Cosas que quedaron a propósito sin definir y hay que completar antes de tener u
 - [ ] **Dominio** `sobra.com.ar`, verificado en Resend, y Resend como servidor de mail de Supabase con las
       plantillas de `supabase/templates/`.
 - [ ] **Borrar los datos de ejemplo**: `npm run ejemplos:borrar` (`npm run verificar` avisa si siguen cargados).
+- [ ] **Antes de publicar, terminar estas funciones** (salieron de la auditoría del 5/11/2026):
+  - [ ] **"Modo rápido" para publicar desde el celular**: fotos → la IA completa todo (precio incluido) →
+        confirmar la dirección y listo; el formulario completo queda como "Editar detalles". Acortar también la
+        ayuda del peso, que ocupa media pantalla.
+  - [ ] **"Publicamos por vos"**: que el admin pueda cargar las fotos de un vendedor, que la IA complete la
+        publicación y que quede en la cuenta de ese vendedor (con su aviso por email).
+  - [ ] **Programa Fundadores**: 0% de comisión por un tiempo (por ejemplo, 3 meses) para los primeros
+        vendedores; en el cálculo de la comisión, en su panel y en los términos.
+  - [ ] **Páginas por rubro y zona para Google** (por ejemplo, "sobrantes de fibra óptica en GBA Norte"), con
+        título y texto propios, sumadas al mapa del sitio.
+- [ ] **Tareas comerciales para el arranque** (no son código):
+  - [ ] Usar "Lo que se está buscando" para escribirles a empresas ("hay 8 personas buscando patchcords en GBA
+        Norte, ¿tenés?").
+  - [ ] Llevar la constancia de material recuperado como argumento de venta a constructoras grandes (informes
+        ambientales y licitaciones).
 - [ ] **Publicar la app** (Vercel) con las variables de entorno de producción, incluida `CRON_SECRET` para la
       baja automática de precios y `NEXT_PUBLIC_SITE_URL` con la dirección real del sitio (sin ella, la vista
       previa al compartir por WhatsApp y el mapa del sitio apuntan a localhost).
 
 ## Pendiente para próximas versiones
 
-- Publicar en "modo rápido" desde el celular: fotos → la IA completa todo (precio incluido) → confirmar la
-  dirección y listo; el formulario completo queda como "Editar detalles".
 - Preguntas públicas al vendedor en cada lote (filtrando teléfonos y emails).
 - Moderación: detectar fotos repetidas entre vendedores (la misma foto en lotes de distintas cuentas) y
   marcar denuncias abusivas (quien denuncia a propósito cosas que están bien).
