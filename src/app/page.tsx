@@ -164,9 +164,23 @@ export default async function Inicio() {
           )}
         </section>
       ) : !perfil ? (
-        <>
         <ParaVosVisitante />
-        <section className="contenedor pt-10">
+      ) : null}
+
+      {/* 3. Más productos: las mejores ofertas y lo recién publicado. */}
+      {masBaratos.length > 2 && (
+        <section className="contenedor pt-12">
+          <div className="mb-5 flex items-end justify-between">
+            <h2 className="text-2xl font-bold">Las mejores ofertas</h2>
+            <Link href="/lotes?orden=descuento" className="text-sm font-semibold text-marca hover:underline">Ver todas</Link>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">{masBaratos.slice(2, 8).map(tarjeta)}</div>
+        </section>
+      )}
+
+      {/* Sin cuenta: por qué crear una, después de ver los primeros productos (no antes). */}
+      {!perfil && (
+        <section className="contenedor pt-12">
           <div className="grid gap-6 rounded-2xl border border-celeste/40 bg-celeste-claro p-6 sm:p-8 lg:grid-cols-[1fr_auto] lg:items-center">
             <div>
               <h2 className="text-2xl font-bold text-petroleo">Creá tu cuenta gratis y no te pierdas ninguna oferta</h2>
@@ -189,18 +203,6 @@ export default async function Inicio() {
               <Link href="/ingresar" className="btn-sec px-6 py-3 text-base">Ya tengo cuenta</Link>
             </div>
           </div>
-        </section>
-        </>
-      ) : null}
-
-      {/* 3. Más productos: las mejores ofertas y lo recién publicado. */}
-      {masBaratos.length > 2 && (
-        <section className="contenedor pt-12">
-          <div className="mb-5 flex items-end justify-between">
-            <h2 className="text-2xl font-bold">Las mejores ofertas</h2>
-            <Link href="/lotes?orden=descuento" className="text-sm font-semibold text-marca hover:underline">Ver todas</Link>
-          </div>
-          <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">{masBaratos.slice(2, 8).map(tarjeta)}</div>
         </section>
       )}
 
@@ -237,9 +239,15 @@ export default async function Inicio() {
         <h2 className="mb-5 text-2xl font-bold">Explorá por categoría</h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {categorias.map((c) => (
-            <Link key={c} href={`/lotes?categoria=${encodeURIComponent(c)}`} className="tarjeta flex items-center justify-between gap-2 p-4 transition hover:border-celeste hover:shadow-md">
-              <span className="font-medium">{c}</span>
-              {porCategoria.get(c) ? <span className="rounded-full bg-celeste-claro px-2 py-0.5 text-xs font-semibold text-celeste-oscuro">{porCategoria.get(c)}</span> : null}
+            <Link key={c} href={`/lotes?categoria=${encodeURIComponent(c)}`} className="tarjeta flex flex-col items-start gap-1 p-3 transition hover:border-celeste hover:shadow-md sm:flex-row sm:items-center sm:justify-between sm:gap-2 sm:p-4">
+              {/* En el celular el número va abajo: así las palabras largas ("telecomunicaciones") entran enteras. */}
+              <span className="text-sm font-medium sm:min-w-0 sm:text-base">{c}</span>
+              {porCategoria.get(c) ? (
+                <span className="shrink-0 rounded-full bg-celeste-claro px-2 py-0.5 text-xs font-semibold text-celeste-oscuro">
+                  {porCategoria.get(c)}
+                  <span className="sm:hidden"> {porCategoria.get(c) === 1 ? "lote" : "lotes"}</span>
+                </span>
+              ) : null}
             </Link>
           ))}
         </div>

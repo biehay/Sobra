@@ -31,6 +31,9 @@ export default async function Catalogo({ searchParams }: PageProps<"/lotes">) {
   const pedido = typeof filtros.orden === "string" && filtros.orden in ORDENES ? (filtros.orden as keyof typeof ORDENES) : null;
   const claveOrden = pedido === "paravos" && !conCuenta ? "recientes" : (pedido ?? (conCuenta ? "paravos" : "recientes"));
   const orden = ORDENES[claveOrden];
+  // Paginación: de a 24 lotes; "Ver más" suma 24 (hasta 480 en una misma página).
+  const POR_PAGINA = 24;
+  const hasta = Math.min(480, Math.max(POR_PAGINA, Math.ceil((Number(filtros.hasta) || POR_PAGINA) / POR_PAGINA) * POR_PAGINA));
 
   const supabase = await crearClienteServidor();
   let consulta = supabase
@@ -39,7 +42,7 @@ export default async function Catalogo({ searchParams }: PageProps<"/lotes">) {
     .in("estado", ["publicado", "reservado"])
     .order(orden.columna, { ascending: orden.ascendente })
     // Con búsqueda, se traen más y se filtran acá (entiende tildes, plurales, sinónimos y categorías).
-    .limit(q ? 1000 : claveOrden === "descuento" || claveOrden === "paravos" ? 300 : 60);
+    .limit(q ? 1000 : claveOrden === "descuento" || claveOrden === "paravos" ? Math.max(300, hasta + 1) : hasta + 1);
   if (claveOrden === "descuento") consulta = consulta.not("precio_lista", "is", null);
   if (categoria) consulta = consulta.eq("categoria", categoria);
   if (zona) consulta = consulta.eq("zona", zona);
@@ -49,7 +52,9 @@ export default async function Catalogo({ searchParams }: PageProps<"/lotes">) {
   const rutaBusqueda = `/panel/busquedas?${new URLSearchParams(Object.entries({ q: q || categoria, categoria, zona }).filter(([, v]) => v))}`;
   const avisame = favoritos?.usuarioId === null ? `/registro?motivo=busqueda&volver=${encodeURIComponent(rutaBusqueda)}` : rutaBusqueda;
   // Para volver a esta misma búsqueda después de tocar el corazón.
-  const volver = `/lotes?${new URLSearchParams(Object.entries({ q, categoria, zona, condicion, orden: claveOrden }).filter(([, v]) => v))}`;
+  const parametros = (cambios: Record<string, string> = {}) =>
+    new URLSearchParams(Object.entries({ q, categoria, zona, condicion, orden: claveOrden, ...cambios }).filter(([, v]) => v));
+  const volver = `/lotes?${parametros(hasta > POR_PAGINA ? { hasta: String(hasta) } : {})}`;
   const filtrosActivos = [q, categoria, zona, condicion].filter(Boolean).length;
   let lotes = (data ?? []) as Lote[];
   // Búsqueda: si no eligió un orden, primero lo que mejor coincide; si eligió uno, se respeta.
@@ -61,10 +66,11 @@ export default async function Catalogo({ searchParams }: PageProps<"/lotes">) {
   }
   if (claveOrden === "descuento") {
     const rebaja = (l: Lote) => descuento(l.precio_publicado ?? l.precio_pedido, l.precio_lista) ?? 0;
-    lotes = lotes.filter((l) => rebaja(l) > 0).sort((a, b) => rebaja(b) - rebaja(a)).slice(0, 60);
+    lotes = lotes.filter((l) => rebaja(l) > 0).sort((a, b) => rebaja(b) - rebaja(a));
   }
-  if (claveOrden === "paravos" && perfil && !porRelevancia) lotes = (await ordenarParaUsuario(lotes, perfil.id, perfil.zona)).slice(0, 60);
-  lotes = lotes.slice(0, 60);
+  if (claveOrden === "paravos" && perfil && !porRelevancia) lotes = await ordenarParaUsuario(lotes, perfil.id, perfil.zona);
+  const hayMas = lotes.length > hasta;
+  lotes = lotes.slice(0, hasta);
   // Si no hay nada así, lo más parecido (entiende sinónimos y medidas) en vez de una página vacía.
   const parecidos = !lotes.length && (q || categoria) ? await parecidosABusqueda(q, categoria || null, zona || null, perfil?.id ?? null) : [];
 
@@ -135,8 +141,11 @@ export default async function Catalogo({ searchParams }: PageProps<"/lotes">) {
 
       {lotes.length ? (
         <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
-          {lotes.map((lote) => (
-            <TarjetaLote key={lote.id} lote={lote} favorito={estadoFavorito(favoritos, lote)} volver={volver} />
+          {lotes.map((lote, i) => (
+            // Cada tarjeta tiene su ancla: "Ver más" lleva directo a la primera nueva.
+            <div key={lote.id} id={`lote-${i + 1}`} className="scroll-mt-32">
+              <TarjetaLote lote={lote} favorito={estadoFavorito(favoritos, lote)} volver={volver} />
+            </div>
           ))}
         </div>
       ) : (
@@ -146,6 +155,14 @@ export default async function Catalogo({ searchParams }: PageProps<"/lotes">) {
             Probá con menos palabras o{" "}
             <Link href="/lotes" className="font-semibold text-marca hover:underline">mirá todos los lotes</Link>.
           </p>
+        </div>
+      )}
+
+      {hayMas && (
+        <div className="mt-8 text-center">
+          <Link href={`/lotes?${parametros({ hasta: String(hasta + POR_PAGINA) })}#lote-${hasta + 1}`} data-ver-mas className="btn-sec px-8">
+            Ver más lotes
+          </Link>
         </div>
       )}
 

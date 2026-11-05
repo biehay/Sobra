@@ -24,10 +24,16 @@ const COLUMNAS_PIE: [string, [string, string][]][] = [
   ["Legal", [["Términos y condiciones", "/terminos"], ["Privacidad y cookies", "/privacidad"]]],
 ];
 
+const DESCRIPCION_SITIO =
+  "Marketplace B2B de sobrantes de obra, instalaciones y fibra óptica en el AMBA. Publicaciones controladas, pago protegido y retiro coordinado.";
+
 export const metadata: Metadata = {
+  // Con la dirección pública del sitio, los links de las imágenes para compartir quedan completos.
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
   title: { default: "Sobrá · Vendé lo que te sobró", template: "%s · Sobrá" },
-  description:
-    "Marketplace B2B de sobrantes de obra, instalaciones y fibra óptica en el AMBA. Publicaciones controladas, pago protegido y retiro coordinado.",
+  description: DESCRIPCION_SITIO,
+  openGraph: { siteName: "Sobrá", locale: "es_AR", type: "website", title: "Sobrá · Sobrantes de obra con descuento", description: DESCRIPCION_SITIO },
+  twitter: { card: "summary_large_image" },
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {

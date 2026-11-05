@@ -325,8 +325,6 @@ Cosas que quedaron a propósito sin definir y hay que completar antes de tener u
 
 ## Pendiente para próximas versiones
 
-- Vista previa al compartir un lote (foto, título, precio y descuento en WhatsApp y redes), botón
-  "Compartir por WhatsApp" y mapa del sitio para Google. Se prueba con la app publicada (no con localhost).
 - Preguntas públicas al vendedor en cada lote (filtrando teléfonos y emails).
 - Moderación: detectar fotos repetidas entre vendedores (la misma foto en lotes de distintas cuentas) y
   marcar denuncias abusivas (quien denuncia a propósito cosas que están bien).

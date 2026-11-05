@@ -5,7 +5,7 @@ export const metadata: Metadata = { title: "Privacidad y cookies" };
 
 export default function Privacidad() {
   return (
-    <PaginaLegal titulo="Política de privacidad y cookies" actualizada="4 de noviembre de 2026">
+    <PaginaLegal titulo="Política de privacidad y cookies" actualizada="5 de noviembre de 2026">
       <p>
         En Sobrá cuidamos los datos de las personas y empresas que usan el marketplace. Esta política explica qué datos
         juntamos, para qué los usamos, quién los ve y qué derechos tenés, de acuerdo con la Ley 25.326 de Protección de
@@ -48,7 +48,12 @@ export default function Privacidad() {
         </li>
         <li>
           <strong>Visitas a los lotes:</strong> contamos cuántas personas ven cada lote para mostrárselo a su vendedor.
-          No guardamos tu IP ni quién sos: solo un código irreversible que cambia todos los días.
+          No guardamos tu IP ni quién sos: solo un código irreversible que cambia todos los días, y si llegaste
+          desde un link que alguien compartió (para saber cuánto se comparten los lotes).
+        </li>
+        <li>
+          <strong>Compartir:</strong> el botón “Compartir” arma un mensaje con el título, el precio y el link del lote
+          y lo abre en WhatsApp (o en la app que elijas). No recibimos ni guardamos a quién se lo mandás.
         </li>
       </ul>
       <p>

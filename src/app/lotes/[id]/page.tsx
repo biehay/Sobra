@@ -15,10 +15,35 @@ import { Aviso } from "@/components/aviso";
 import { DenunciarPublicacion } from "@/components/denunciar-publicacion";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { obtenerPerfil, sesionVerificada } from "@/lib/sesion";
-import { CONDICIONES, MODOS_RETIRO, descuento, proximaBaja, pesos, urlFoto, type Lote,  } from "@/lib/datos";
+import { CONDICIONES, MODOS_RETIRO, descuento, proximaBaja, pesos, urlFoto, type Lote } from "@/lib/datos";
+import type { Metadata } from "next";
+import { MenuCompartir } from "@/components/boton-compartir";
+import { rutaParaCompartir, textoParaCompartir } from "@/lib/compartir";
 import { BotonEnviar } from "@/components/boton-enviar";
 import { ofertar } from "./acciones";
 import { DETALLES } from "@/lib/depreciacion";
+
+// Título y descripción al compartir el link (la imagen la arma opengraph-image.tsx).
+export async function generateMetadata({ params }: PageProps<"/lotes/[id]">): Promise<Metadata> {
+  const { id } = await params;
+  if (!/^[0-9a-f-]{36}$/.test(id)) return {};
+  const supabase = await crearClienteServidor();
+  const { data } = await supabase.from("lotes").select("titulo, categoria, zona, localidad, precio_publicado, precio_pedido, precio_lista, estado").eq("id", id).maybeSingle();
+  if (!data) return {};
+  const precio = data.precio_publicado ?? data.precio_pedido;
+  const off = descuento(precio, data.precio_lista);
+  const descripcion = [
+    `${pesos(precio)}${off ? ` (${off}% menos que nuevo)` : ""}`,
+    `Retiro en ${data.localidad ? `${data.zona}, ${data.localidad}` : data.zona}`,
+    "Pago protegido: el vendedor cobra cuando retirás.",
+  ].join(" · ");
+  return {
+    title: data.titulo,
+    description: descripcion,
+    alternates: { canonical: `/lotes/${id}` },
+    openGraph: { siteName: "Sobrá", locale: "es_AR", type: "website", title: `${data.titulo} · ${pesos(precio)}`, description: descripcion, url: `/lotes/${id}` },
+  };
+}
 
 export default async function DetalleLote({ params, searchParams }: PageProps<"/lotes/[id]">) {
   const { id } = await params;
@@ -51,6 +76,7 @@ export default async function DetalleLote({ params, searchParams }: PageProps<"/
       usuarioId: perfil?.id,
       ip: h.get("x-forwarded-for")?.split(",")[0].trim() || h.get("x-real-ip") || "",
       navegador: h.get("user-agent") ?? "",
+      compartido: ref === "compartido",
     };
     after(() => registrarVisita(lote.id, visitante));
   }
@@ -182,7 +208,10 @@ export default async function DetalleLote({ params, searchParams }: PageProps<"/
                 </Link>
               )
             )}
-            {/* Denunciar, a la vista: justo debajo de favoritos. */}
+            {/* Compartir (WhatsApp y demás) y denunciar, a la vista: debajo de favoritos. */}
+            {["publicado", "reservado"].includes(lote.estado) && (
+              <MenuCompartir variante="boton" ruta={rutaParaCompartir(lote.id)} texto={textoParaCompartir(lote.titulo, precio, off)} />
+            )}
             {["publicado", "reservado"].includes(lote.estado) && !esMio && (
               <DenunciarPublicacion loteId={lote.id} conCuenta={!!perfil} yaDenuncio={(misDenuncias ?? 0) > 0} soloVista={perfil?.rol === "admin"} />
             )}

@@ -94,6 +94,7 @@ if (urlValida) {
           ["20261113000000_moderacion.sql", "/rest/v1/moderaciones?select=id&limit=1"],
           ["20261114000000_denuncias.sql", "/rest/v1/denuncias?select=id&limit=1"],
           ["20261115000000_sanciones_y_muestreo.sql", "/rest/v1/faltas?select=id&limit=1"],
+          ["20261117000000_visitas_compartidas.sql", "/rest/v1/visitas_lote?select=compartido&limit=1"],
         ];
         for (const [archivo, ruta] of migraciones) {
           const r = await pedir(ruta, servicio);

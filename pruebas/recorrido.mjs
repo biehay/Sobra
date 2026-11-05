@@ -178,11 +178,11 @@ try {
   // 1. Visitante ------------------------------------------------------------
   const anon = await nuevaPagina(browser, "visitante", 390, false);
   await anon.goto(BASE);
-  esperar(await anon.locator("text=Usamos solo las cookies necesarias").isVisible(), "se ve el aviso de cookies");
+  esperar(await anon.locator("text=Solo usamos cookies necesarias").isVisible(), "se ve el aviso de cookies");
   await captura(anon, "portada-aviso-cookies-celular");
   await anon.click("button:has-text('Entendido')");
   await anon.reload();
-  esperar(!(await anon.locator("text=Usamos solo las cookies necesarias").isVisible()), "el aviso no vuelve después de Entendido");
+  esperar(!(await anon.locator("text=Solo usamos cookies necesarias").isVisible()), "el aviso no vuelve después de Entendido");
   await anon.setViewportSize({ width: 1280, height: 900 });
   for (const ruta of ["/privacidad", "/devoluciones", "/ayuda", "/terminos"]) {
     const r = await anon.goto(BASE + ruta);
@@ -876,8 +876,43 @@ try {
   // Denuncias: cualquiera con cuenta puede denunciar un lote (una vez); el admin las ve
   // agrupadas y decide. La pausa automática con 3 personas está en supabase/tests/denuncias.sql.
   const [{ id: idPastina }] = await api(`/rest/v1/lotes?select=id&titulo=eq.${encodeURIComponent("Pastina gris x 10 kg")}`);
+  // Compartir: al pegar el link en WhatsApp se ve la foto, el título y el precio.
+  const html = await fetch(`${BASE}/lotes/${idPastina}`).then((r) => r.text());
+  const meta = (prop) => html.match(new RegExp(`<meta property="${prop}" content="([^"]*)"`))?.[1] ?? "";
+  esperar(meta("og:title").includes("Pastina gris x 10 kg") && meta("og:description").includes("Pago protegido"), "el link del lote trae título y descripción para compartir");
+  const imagenOG = await fetch(meta("og:image").replace(/^https?:\/\/[^/]+/, BASE));
+  const bytesOG = Buffer.from(await imagenOG.arrayBuffer());
+  esperar(
+    imagenOG.headers.get("content-type") === "image/png" && bytesOG.readUInt32BE(16) === 1200 && bytesOG.readUInt32BE(20) === 630,
+    "la imagen para compartir se genera (PNG de 1200×630)",
+  );
+  fs.writeFileSync(`${OUT}/compartir-lote.png`, bytesOG);
+  esperar((await fetch(`${BASE}/sitemap.xml`).then((r) => r.text())).includes(`/lotes/${idPastina}`), "el mapa del sitio incluye los lotes publicados");
+  esperar((await fetch(`${BASE}/robots.txt`).then((r) => r.text())).includes("Disallow: /panel"), "robots.txt no deja indexar los paneles");
   await anon.goto(`${BASE}/lotes/${idPastina}`);
+  await anon.click("[data-compartir] summary");
+  esperar(await anon.isVisible("[data-compartir] button:has-text('Copiar link')"), "Compartir ofrece copiar el link");
+  const enlaceWhatsapp = await anon.getAttribute("[data-compartir] a:has-text('WhatsApp')", "href");
+  esperar(decodeURIComponent(enlaceWhatsapp).includes(`/lotes/${idPastina}?ref=compartido`) && decodeURIComponent(enlaceWhatsapp).includes("Pastina gris x 10 kg"), "Compartir arma el mensaje de WhatsApp con el link del lote");
   esperar(await anon.isVisible("text=Ingresá para denunciarla"), "sin cuenta, para denunciar hay que ingresar");
+  // Quien entra por un link compartido queda contado (sin datos de la persona). Es un
+  // visitante nuevo: cada visitante cuenta una vez por día y por lote.
+  const ctxCompartido = await browser.newContext({ userAgent: `${NAVEGADOR} Compartido` });
+  const desdeWhatsapp = await ctxCompartido.newPage();
+  await desdeWhatsapp.goto(`${BASE}/lotes/${idPastina}?ref=compartido`);
+  await new Promise((r) => setTimeout(r, 1500));
+  await ctxCompartido.close();
+  esperar((await api(`/rest/v1/visitas_lote?select=compartido&lote_id=eq.${idPastina}&compartido=is.true`)).length === 1, "se cuentan las visitas que llegan por un link compartido");
+  // En el catálogo, cada tarjeta tiene el ícono de compartir al lado del corazón.
+  await anon.goto(`${BASE}/lotes?q=pastina`);
+  await anon.click("main [data-compartir] summary");
+  const compartirTarjeta = await anon.getAttribute("main [data-compartir] a:has-text('WhatsApp')", "href");
+  esperar(compartirTarjeta.startsWith("https://wa.me/") && decodeURIComponent(compartirTarjeta).includes(`/lotes/${idPastina}?ref=compartido`), "cada tarjeta se puede compartir por WhatsApp");
+  await anon.click("main [data-compartir] button:has-text('Copiar link')");
+  esperar(
+    await anon.waitForSelector("main [data-compartir] >> text=Link copiado", { timeout: 3000 }).then(() => true, () => false),
+    "desde la tarjeta se puede copiar el link",
+  );
   await vend.goto(`${BASE}/lotes/${idPastina}`);
   esperar(!(await vend.isVisible("[data-denunciar]")), "el vendedor no puede denunciar su propio lote");
   for (const [pg, motivo, detalle] of [[comp, "robado", "Tiene el logo de una empresa de servicios"], [comp2, "estafa", ""]]) {

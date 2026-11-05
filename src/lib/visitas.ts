@@ -14,7 +14,8 @@ function hoy() {
   return new Date(Date.now() - 3 * 3_600_000).toISOString().slice(0, 10); // Buenos Aires (UTC-3)
 }
 
-export async function registrarVisita(loteId: string, visitante: { usuarioId?: string; ip: string; navegador: string }) {
+// `compartido`: si llegó desde un link compartido (?ref=compartido).
+export async function registrarVisita(loteId: string, visitante: { usuarioId?: string; ip: string; navegador: string; compartido?: boolean }) {
   if (BOTS.test(visitante.navegador)) return;
   const admin = crearClienteAdmin();
   if (!admin) return;
@@ -23,7 +24,7 @@ export async function registrarVisita(loteId: string, visitante: { usuarioId?: s
   const hash = createHash("sha256").update(`${dia}|${quien}`).digest("hex");
   const { error } = await admin
     .from("visitas_lote")
-    .upsert({ lote_id: loteId, dia, visitante: hash }, { onConflict: "lote_id,dia,visitante", ignoreDuplicates: true });
+    .upsert({ lote_id: loteId, dia, visitante: hash, compartido: !!visitante.compartido }, { onConflict: "lote_id,dia,visitante", ignoreDuplicates: true });
   if (error) console.error("[Sobrá] No se pudo registrar la visita", error.message);
 }
 

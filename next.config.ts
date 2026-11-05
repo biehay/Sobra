@@ -12,6 +12,8 @@ const csp = [
   `img-src 'self' blob: data: ${supabase}`,
   "font-src 'self'",
   `connect-src 'self' ${supabase}`,
+  // Solo para abrir la app de WhatsApp de escritorio al compartir (whatsapp://).
+  "frame-src 'self' whatsapp:",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
@@ -26,6 +28,11 @@ const redLocal = ["192.168.*.*", "10.*.*.*", "172.*.*.*"];
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Las imágenes para compartir (opengraph-image) leen la letra y los colores de estos archivos.
+  outputFileTracingIncludes: {
+    "/opengraph-image*": ["./assets/fuentes/**/*", "./src/app/globals.css"],
+    "/lotes/**/opengraph-image*": ["./assets/fuentes/**/*", "./src/app/globals.css"],
+  },
   ...(isDev ? { allowedDevOrigins: redLocal } : {}),
   experimental: {
     // Los comprobantes de transferencia (hasta 5 MB) se suben por una Server Action.

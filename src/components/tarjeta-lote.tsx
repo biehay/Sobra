@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { CONDICIONES, descuento, pesos, urlFoto, type Lote } from "@/lib/datos";
 import { BotonFavorito } from "@/components/boton-favorito";
+import { MenuCompartir } from "@/components/boton-compartir";
+import { rutaParaCompartir, textoParaCompartir } from "@/lib/compartir";
 
 // `favorito`: si el usuario lo guardó. Sin usuario logueado (undefined) no se muestra el corazón.
 // `motivo`: por qué se lo recomendamos (por ejemplo "Va con Porcelanato 60x60").
@@ -60,11 +62,11 @@ export function TarjetaLote({
           </p>
         </div>
       </Link>
-      {favorito !== undefined && (
-        <div className="absolute right-2 top-2 sm:right-3 sm:top-3">
-          <BotonFavorito loteId={lote.id} guardado={favorito} volver={volver} />
-        </div>
-      )}
+      {/* Arriba a la derecha de la foto: favoritos y, debajo, compartir. */}
+      <div className="absolute right-2 top-2 flex flex-col gap-1.5 sm:right-3 sm:top-3 sm:gap-2">
+        {favorito !== undefined && <BotonFavorito loteId={lote.id} guardado={favorito} volver={volver} />}
+        {lote.estado !== "vendido" && <MenuCompartir variante="icono" ruta={rutaParaCompartir(lote.id)} texto={textoParaCompartir(lote.titulo, precio, off)} />}
+      </div>
     </div>
   );
 }

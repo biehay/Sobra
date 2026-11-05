@@ -20,21 +20,20 @@ export function AvisoCookies() {
   }
 
   return (
-    <div role="region" aria-label="Aviso de cookies" className="fixed inset-x-0 bottom-0 z-30 p-3 print:hidden sm:p-4">
+    <div role="region" aria-label="Aviso de cookies" className="fixed inset-x-0 bottom-0 z-30 p-2 print:hidden sm:p-4">
       <form
         action="/aviso-cookies"
         method="post"
         onSubmit={entendido}
-        className="mx-auto flex max-w-3xl flex-col gap-3 rounded-xl border border-stone-200 bg-white p-4 text-sm shadow-lg sm:flex-row sm:items-center"
+        className="mx-auto flex max-w-3xl items-center gap-3 rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs shadow-lg sm:p-4 sm:text-sm"
       >
         <p className="flex-1 text-stone-700">
-          Usamos solo las cookies necesarias para que puedas iniciar sesión. No usamos cookies de publicidad ni de
-          seguimiento.{" "}
+          Solo usamos cookies necesarias para tu sesión<span className="hidden sm:inline">: nada de publicidad ni seguimiento</span>.{" "}
           <Link href="/privacidad#cookies" className="font-semibold text-marca hover:underline">
-            Más información
+            Más info
           </Link>
         </p>
-        <button className="btn shrink-0">Entendido</button>
+        <button className="btn shrink-0 px-4 py-2 text-sm">Entendido</button>
       </form>
     </div>
   );

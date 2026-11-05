@@ -18,11 +18,12 @@ const OFERTAS = [
 ];
 
 const flecha = (
-  <svg aria-hidden viewBox="0 0 20 20" className="size-4 text-stone-400" fill="currentColor">
+  <svg aria-hidden viewBox="0 0 20 20" className="size-4 text-stone-400 max-[359px]:hidden" fill="currentColor">
     <path d="M5.3 7.3a1 1 0 0 1 1.4 0L10 10.6l3.3-3.3a1 1 0 1 1 1.4 1.4l-4 4a1 1 0 0 1-1.4 0l-4-4a1 1 0 0 1 0-1.4Z" />
   </svg>
 );
-const claseMenu = "flex items-center gap-1 rounded-lg px-2 py-2 text-sm font-medium hover:bg-stone-100 sm:px-3";
+// En celulares muy angostos (menos de 360 px) se achican los márgenes y se ocultan las flechitas para que entre todo.
+const claseMenu = "flex items-center gap-1 rounded-lg px-2 py-2 text-sm font-medium hover:bg-stone-100 max-[359px]:px-1.5 sm:px-3";
 
 export async function Encabezado() {
   const perfil = await obtenerPerfil();

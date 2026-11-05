@@ -137,6 +137,13 @@ export default async function Admin({ searchParams }: PageProps<"/admin">) {
     ["Usuarios que publicaron", new Set(lotes.map((l) => l.vendedor_id)).size],
     ["Usuarios verificados", perfiles.filter((p) => p.rol === "usuario" && p.verificado).length],
   ];
+  // Cuánto mueve el boca a boca: visitas que llegaron por un link compartido (últimos 30 días).
+  const { count: visitasCompartidas } = await supabase
+    .from("visitas_lote")
+    .select("lote_id", { count: "exact", head: true })
+    .eq("compartido", true)
+    .gte("dia", new Date(ahora - 30 * 86_400_000).toISOString().slice(0, 10));
+  metricas.push(["Visitas por links compartidos (30 días)", visitasCompartidas ?? 0]);
 
   // Qué tipo de recomendación lleva a la gente a abrir lotes (últimos 30 días).
   const { data: recsData } = await supabase.rpc("metricas_recomendaciones");
@@ -165,7 +172,7 @@ export default async function Admin({ searchParams }: PageProps<"/admin">) {
         </div>
       </div>
 
-      <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         {metricas.map(([titulo, valor]) => (
           <div key={titulo} className="tarjeta p-4">
             <p className="text-xs text-stone-500">{titulo}</p>
