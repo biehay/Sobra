@@ -111,7 +111,7 @@ export default async function DetalleLote({ params, searchParams }: PageProps<"/
                 />
               ))
             ) : (
-              <div className="flex aspect-[4/3] w-full items-center justify-center rounded-xl bg-stone-100 text-stone-400 sm:col-span-2">
+              <div className="flex h-32 w-full items-center justify-center rounded-xl bg-stone-100 text-stone-400 sm:col-span-2 sm:aspect-[4/3] sm:h-auto">
                 Sin fotos
               </div>
             )}

@@ -88,11 +88,15 @@ export default async function Imagen({ params }: { params: Promise<{ id: string 
 
         {/* Los datos */}
         <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", width: 600, padding: "48px 52px", color: "#ffffff" }}>
-          <img src={logo} alt="" width={194} height={48} style={{ width: 194, height: 48 }} />
+          <img src={logo} alt="" width={194} height={48} style={{ width: 194, height: 48, flexShrink: 0 }} />
           {lote ? (
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              <div style={{ fontSize: 22, letterSpacing: 2, textTransform: "uppercase", color: c.celeste, fontWeight: 700 }}>{recortar(lote.categoria, 40)}</div>
-              <div style={{ fontSize: 50, fontWeight: 700, lineHeight: 1.12, marginTop: 14 }}>{recortar(lote.titulo, 70)}</div>
+            // El bloque del medio se achica si hace falta: el renglón de abajo (retiro) siempre se ve.
+            <div style={{ display: "flex", flexDirection: "column", flexShrink: 1, overflow: "hidden", margin: "20px 0" }}>
+              <div style={{ fontSize: 20, letterSpacing: 1, textTransform: "uppercase", color: c.celeste, fontWeight: 700 }}>{recortar(lote.categoria, 34)}</div>
+              {/* Títulos largos: letra más chica y como mucho tres renglones. */}
+              <div style={{ fontSize: lote.titulo.length > 45 ? 38 : 50, fontWeight: 700, lineHeight: 1.12, marginTop: 12 }}>
+                {recortar(lote.titulo, lote.titulo.length > 45 ? 62 : 70)}
+              </div>
               <div style={{ display: "flex", alignItems: "baseline", marginTop: 26 }}>
                 <div style={{ fontSize: 72, fontWeight: 700 }}>{precio ? pesos(precio) : "A convenir"}</div>
               </div>
@@ -108,7 +112,7 @@ export default async function Imagen({ params }: { params: Promise<{ id: string 
               <div style={{ fontSize: 50, fontWeight: 700, lineHeight: 1.12 }}>Sobrantes de obra con descuento</div>
             </div>
           )}
-          <div style={{ display: "flex", flexDirection: "column", fontSize: 24, color: "rgba(255,255,255,0.85)" }}>
+          <div style={{ display: "flex", flexDirection: "column", flexShrink: 0, fontSize: 24, color: "rgba(255,255,255,0.85)" }}>
             {lote ? <span>Retiro en {lote.localidad ? `${lote.zona}, ${lote.localidad}` : lote.zona}</span> : null}
             <span style={{ marginTop: 6 }}>Pago protegido hasta que retirás</span>
           </div>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { QuitarAncla } from "@/components/quitar-ancla";
 import { buscarLotes } from "@/lib/sugerencias";
 import type { Metadata } from "next";
 import { TarjetaLote } from "@/components/tarjeta-lote";
@@ -158,6 +159,7 @@ export default async function Catalogo({ searchParams }: PageProps<"/lotes">) {
         </div>
       )}
 
+      <QuitarAncla key={hasta} />
       {hayMas && (
         <div className="mt-8 text-center">
           <Link href={`/lotes?${parametros({ hasta: String(hasta + POR_PAGINA) })}#lote-${hasta + 1}`} data-ver-mas className="btn-sec px-8">
